@@ -494,33 +494,88 @@ function mostrarSucessoPromocao(msg) {
     if (el) el.innerHTML += `<p style="color:#27ae60;margin-top:8px;">${msg}</p>`;
 }
 
+const ROLES_VERIFICAR_DECLARACAO = new Set(['secretaria', 'admin', 'diretor', 'coordenador']);
+
+function usuarioPodeVerificarDeclaracao() {
+    const u = JSON.parse(localStorage.getItem('usuario') || '{}');
+    return ROLES_VERIFICAR_DECLARACAO.has(u.tipo);
+}
+
+function renderResultadoVerificacao(res, container) {
+    if (!container) return;
+    container.innerHTML = `
+        <div class="rel-aviso rel-verificacao-ok">
+            <p><strong>Documento autêntico</strong></p>
+            <p>Aluno: ${res.aluno}</p>
+            <p>Ano letivo: ${res.anoLetivo} · Resultado: ${res.resultado}</p>
+            <p>Instituição: ${res.instituicao}</p>
+            <p>Emitido em: ${new Date(res.dataEmissao).toLocaleString('pt-BR')}</p>
+            <p class="rel-hash">Hash: ${res.hashDocumento}</p>
+        </div>`;
+}
+
+function configurarVerificacaoDeclaracao() {
+    const btn = document.getElementById('btnVerificarCodigo');
+    const input = document.getElementById('codigoVerificacao');
+    if (!btn || !input) return;
+
+    const executar = async () => {
+        const codigo = input.value.trim();
+        if (!codigo) return alert('Informe o código da declaração');
+        const destino = document.getElementById('resultadoVerificacao') || document.getElementById('conteudo');
+        try {
+            const res = await api.verificarDeclaracao(codigo);
+            renderResultadoVerificacao(res, destino);
+        } catch (erro) {
+            if (destino) {
+                destino.innerHTML = `<p class="rel-erro" style="color:#c0392b;padding:12px 0;">❌ ${erro.message}</p>`;
+            } else {
+                exibirErroRelatorio(erro.message);
+            }
+        }
+    };
+
+    btn.addEventListener('click', executar);
+    input.addEventListener('keydown', (evento) => {
+        if (evento.key === 'Enter') {
+            evento.preventDefault();
+            executar();
+        }
+    });
+}
+
 async function initDeclaracaoCurso() {
     const params = new URLSearchParams(window.location.search);
     const declaracaoIdUrl = params.get('declaracaoId');
+    const modoVerificar = params.get('modo') === 'verificar';
 
-    document.getElementById('btnVerificarCodigo')?.addEventListener('click', async () => {
-        const codigo = document.getElementById('codigoVerificacao').value.trim();
-        if (!codigo) return alert('Informe o código');
-        try {
-            const res = await api.verificarDeclaracao(codigo);
-            document.getElementById('conteudo').innerHTML = `
-                <div class="rel-aviso rel-verificacao-ok">
-                    <p><strong>Documento autêntico</strong></p>
-                    <p>Aluno: ${res.aluno}</p>
-                    <p>Ano letivo: ${res.anoLetivo} · Resultado: ${res.resultado}</p>
-                    <p>Instituição: ${res.instituicao}</p>
-                    <p>Emitido em: ${new Date(res.dataEmissao).toLocaleString('pt-BR')}</p>
-                    <p>Hash: ${res.hashDocumento}</p>
-                </div>`;
-        } catch (erro) {
-            exibirErroRelatorio(erro.message);
+    try {
+        await api.verificarToken();
+        definirNomeUsuario();
+    } catch {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    if (!usuarioPodeVerificarDeclaracao()) {
+        document.getElementById('blocoVerificacao')?.remove();
+        if (modoVerificar) {
+            exibirErroRelatorio('Acesso negado. Apenas secretaria, administrador e coordenador podem verificar declarações.');
+            return;
         }
-    });
+    } else {
+        configurarVerificacaoDeclaracao();
+    }
+
+    if (modoVerificar) {
+        document.getElementById('blocoFiltrosDeclaracao')?.remove();
+        const titulo = document.getElementById('tituloDeclaracao');
+        if (titulo) titulo.textContent = 'Verificar autenticidade — Declaração de Curso';
+        return;
+    }
 
     if (declaracaoIdUrl) {
         try {
-            await api.verificarToken();
-            definirNomeUsuario();
             document.getElementById('blocoFiltrosDeclaracao')?.remove();
             const res = await api.obterDeclaracao(declaracaoIdUrl);
             document.getElementById('conteudo').innerHTML = res.html;
@@ -590,6 +645,11 @@ async function initAcademicoHub() {
             if (subtitulo) {
                 subtitulo.textContent = 'Consulte boletim e ficha apenas das disciplinas vinculadas ao seu cadastro.';
             }
+        }
+
+        if (usuarioPodeVerificarDeclaracao()) {
+            const cardVerificar = document.getElementById('cardVerificarDeclaracao');
+            if (cardVerificar) cardVerificar.style.display = '';
         }
     } catch {
         window.location.href = 'index.html';

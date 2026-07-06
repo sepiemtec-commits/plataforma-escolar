@@ -317,6 +317,31 @@ body.relatorio-page {
     background: #f0fff4;
 }
 
+.rel-bloco-verificacao {
+    margin-bottom: 28px;
+    padding: 20px;
+    border: 1px solid #cfd8dc;
+    border-radius: 6px;
+    background: #f8fbfc;
+}
+
+.rel-subtitulo {
+    margin: 0 0 8px;
+    font-size: 19px;
+    color: var(--rel-azul);
+}
+
+.rel-verificacao-dica {
+    margin: 0 0 16px;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.rel-filtros-verificacao {
+    margin-bottom: 0;
+}
+
 @media print {
     .rel-topbar, .rel-filtros, .rel-acoes-linha, .no-print { display: none !important; }
     .rel-container { max-width: 100%; padding: 0; }

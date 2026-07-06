@@ -400,34 +400,37 @@ input:focus, select:focus, textarea:focus {
     font-size: 17px;
     cursor: pointer;
     color: white;
-    transition: transform 0.15s, opacity 0.15s;
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    opacity: 0.72;
 }
 
 .btn-presenca:hover {
     transform: scale(1.08);
+    opacity: 0.9;
 }
 
 .btn-presenca.ativo {
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 0 0 5px currentColor;
+    opacity: 1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
     transform: scale(1.05);
 }
 
 .btn-p {
-    background: #3498db;
+    background: #85c1e9;
 }
 
 .btn-p.ativo {
-    color: #3498db;
-    background: #3498db;
-    color: white;
+    background: #154360;
+    color: #fff;
 }
 
 .btn-f {
-    background: #e74c3c;
+    background: #f1948a;
 }
 
 .btn-f.ativo {
-    background: #e74c3c;
+    background: #7b241c;
+    color: #fff;
 }
 
 .status-registrado {
@@ -876,7 +879,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .btn-presenca-xs.ativo {
-    box-shadow: 0 0 0 2px #fff, 0 0 0 3px currentColor;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
 @media (max-width: 640px) {
@@ -950,8 +953,8 @@ input:focus, select:focus, textarea:focus {
     }
 }
 
-.badge-p { background: #3498db; }
-.badge-f { background: #e74c3c; }
+.badge-p { background: #154360; }
+.badge-f { background: #7b241c; }
 
 /* Notas e Conceitos Acadêmicos */
 .notas-academicas {

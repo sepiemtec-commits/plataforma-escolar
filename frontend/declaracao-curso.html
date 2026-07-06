@@ -14,7 +14,20 @@
     </div>
 
     <div class="rel-container">
-        <h1 class="rel-titulo">Declaração de Curso</h1>
+        <h1 class="rel-titulo" id="tituloDeclaracao">Declaração de Curso</h1>
+
+        <section class="rel-bloco-verificacao no-print" id="blocoVerificacao">
+            <h2 class="rel-subtitulo">Verificar autenticidade</h2>
+            <p class="rel-verificacao-dica">Digite o código impresso na declaração para confirmar que o documento é autêntico. Disponível a qualquer momento para secretaria, administrador e coordenador.</p>
+            <div class="rel-filtros rel-filtros-verificacao">
+                <div>
+                    <label for="codigoVerificacao">Código da declaração</label>
+                    <input type="text" id="codigoVerificacao" placeholder="Ex.: ABC12345" autocomplete="off" spellcheck="false">
+                </div>
+                <button type="button" class="rel-btn rel-btn-primario" id="btnVerificarCodigo">Verificar</button>
+            </div>
+            <div id="resultadoVerificacao" aria-live="polite"></div>
+        </section>
 
         <div class="rel-filtros no-print" id="blocoFiltrosDeclaracao">
             <div>
@@ -35,14 +48,6 @@
             </div>
             <button type="button" class="rel-btn rel-btn-primario" id="btnCarregar">Listar declarações</button>
             <button type="button" class="rel-btn rel-btn-imprimir" id="btnImprimir">Imprimir</button>
-        </div>
-
-        <div class="rel-filtros no-print" style="margin-top:0;">
-            <div>
-                <label for="codigoVerificacao">Verificar autenticidade</label>
-                <input type="text" id="codigoVerificacao" placeholder="Código da declaração">
-            </div>
-            <button type="button" class="rel-btn rel-btn-secundario" id="btnVerificarCodigo">Verificar</button>
         </div>
 
         <div id="conteudo"></div>

@@ -63,7 +63,7 @@ router.get('/declaracao/:declaracaoId', autenticacao, async (req, res) => {
   }
 });
 
-router.get('/verificar/:codigo', async (req, res) => {
+router.get('/verificar/:codigo', autenticacao, verificarRole(...rolesGestao), async (req, res) => {
   try {
     const decl = await DeclaracaoCurso.findOne({ codigoVerificacao: req.params.codigo.toUpperCase() })
       .populate('aluno_id', 'nome');
