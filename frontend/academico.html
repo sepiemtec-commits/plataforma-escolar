@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acadêmico — EdPlus</title>
+    <link rel="stylesheet" href="styles/relatorios.css">
+</head>
+<body class="relatorio-page" data-pagina="academico-hub">
+    <div class="rel-topbar">
+        <div>
+            <a href="#" id="linkVoltar">← Voltar</a>
+            <a href="academico.html">Acadêmico</a>
+        </div>
+        <span id="nomeUsuario"></span>
+    </div>
+
+    <div class="rel-container">
+        <h1 class="rel-titulo">📚 Módulos Acadêmicos</h1>
+        <p style="color:#666;margin-bottom:24px;">Fichas, histórico escolar, boletins e notas — estilo Edukante.</p>
+
+        <div class="rel-hub-grid">
+            <a class="rel-hub-card" href="ficha-individual.html">
+                <h3>📋 Ficha Individual</h3>
+                <p>Resultados da aprendizagem por componente curricular, faltas e dados do aluno.</p>
+            </a>
+            <a class="rel-hub-card" href="ficha-matricula.html">
+                <h3>📝 Ficha de Matrícula</h3>
+                <p>Dados acadêmicos e pessoais para impressão da matrícula.</p>
+            </a>
+            <a class="rel-hub-card" href="historico-escolar.html">
+                <h3>📖 Histórico Escolar</h3>
+                <p>Registro anual por série, instituição e resultado de progressão.</p>
+            </a>
+            <a class="rel-hub-card" href="boletim-academico.html">
+                <h3>📊 Boletim Acadêmico</h3>
+                <p>Notas por bimestre (AV1, AV2, Média) e resultados finais.</p>
+            </a>
+            <a class="rel-hub-card" href="gestao-boletins.html">
+                <h3>📁 Gestão de Boletins</h3>
+                <p>Visão geral de todos os alunos, médias e situação acadêmica.</p>
+            </a>
+            <a class="rel-hub-card" href="promocao-escolar.html">
+                <h3>🎓 Promoção Escolar</h3>
+                <p>Promove alunos aprovados automaticamente para a série seguinte.</p>
+            </a>
+            <a class="rel-hub-card" href="declaracao-curso.html">
+                <h3>📜 Declaração de Curso</h3>
+                <p>Documento oficial com assinatura eletrônica da instituição.</p>
+            </a>
+            <a class="rel-hub-card" href="notas-historico.html">
+                <h3>✏️ Notas (Histórico)</h3>
+                <p>Lançamento de CH, nota e faltas por disciplina no histórico escolar.</p>
+            </a>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/academico.js"></script>
+    <script src="js/relatorio-pages.js"></script>
+</body>
+</html>

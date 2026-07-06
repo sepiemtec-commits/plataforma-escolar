@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas — Histórico Escolar — EdPlus</title>
+    <link rel="stylesheet" href="styles/relatorios.css">
+</head>
+<body class="relatorio-page" data-pagina="notas-historico">
+    <div class="rel-topbar no-print">
+        <div><a href="historico-escolar.html">← Histórico Escolar</a></div>
+        <span id="nomeUsuario"></span>
+    </div>
+
+    <div class="rel-container">
+        <h1 class="rel-titulo">Notas</h1>
+
+        <div class="rel-acoes-linha no-print">
+            <button type="button" class="rel-btn rel-btn-primario" id="btnSalvar">Salvar</button>
+        </div>
+
+        <div id="conteudo"><p class="rel-carregando">Carregando...</p></div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/academico.js"></script>
+    <script src="js/relatorio-pages.js"></script>
+</body>
+</html>

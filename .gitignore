@@ -1,0 +1,56 @@
+# .gitignore - Arquivos a ignorar no Git
+
+# Dependências
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.DS_Store
+
+# Build e dist
+dist/
+build/
+*.min.js
+*.min.css
+
+# Logs
+logs/
+*.log
+
+# Arquivos temporários
+tmp/
+temp/
+*.tmp
+
+# Banco de dados (local)
+*.db
+*.sqlite
+data/
+
+# Cache
+.cache/
+.eslintcache
+.prettier-ignore
+
+# OS
+Thumbs.db
+.DS_Store
+*.iml
+
+# Arquivos enviados
+uploads/
+private-key.pem

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Educacional - Login</title>
+    <link rel="stylesheet" href="styles/login.css">
+</head>
+<body>
+    <div class="container-login">
+        <div class="login-box">
+            <h1>🎓 Plataforma Educacional</h1>
+            <p class="subtitle">Gestão Escolar Completa</p>
+
+            <form id="loginForm" class="form-login">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="seu.email@escola.com"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input 
+                        type="password" 
+                        id="senha" 
+                        name="senha" 
+                        placeholder="••••••••"
+                        required
+                    >
+                    <button type="button" class="btn-show-password" id="togglePassword">👁️</button>
+                </div>
+
+                <button type="submit" class="btn-login">Entrar</button>
+            </form>
+
+            <p class="subtitle-login">Matrículas e cadastros são realizados pela secretaria escolar.</p>
+
+            <div id="mensagemErro" class="erro" style="display: none;"></div>
+            <div id="mensagemSucesso" class="sucesso" style="display: none;"></div>
+        </div>
+
+        <div class="info-box">
+            <h2>Bem-vindo!</h2>
+            <p>Acesse como:</p>
+            <ul>
+                <li>👨‍🏫 <strong>Professor:</strong> Registre presença, notas e conteúdo</li>
+                <li>👨‍💼 <strong>Coordenador:</strong> Monitore desempenho dos alunos</li>
+                <li>👔 <strong>Diretor:</strong> Visualize estatísticas gerais</li>
+                <li>📋 <strong>Secretaria:</strong> Cadastre alunos, funcionários e turmas</li>
+                <li>👨‍🎓 <strong>Aluno:</strong> Acompanhe seu desempenho</li>
+                <li>👨‍👩‍👧 <strong>Responsável:</strong> Receba alertas e boletim</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>

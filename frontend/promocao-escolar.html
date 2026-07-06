@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promoção Escolar — EdPlus</title>
+    <link rel="stylesheet" href="styles/relatorios.css">
+</head>
+<body class="relatorio-page" data-pagina="promocao-escolar">
+    <div class="rel-topbar no-print">
+        <div><a href="academico.html">← Acadêmico</a></div>
+        <span id="nomeUsuario"></span>
+    </div>
+
+    <div class="rel-container">
+        <h1 class="rel-titulo">Promoção Automática de Alunos</h1>
+        <p class="rel-descricao">Alunos com média geral ≥ 6,0 são promovidos para a série seguinte. Declaração de curso é emitida automaticamente com assinatura eletrônica da instituição.</p>
+
+        <div class="rel-filtros no-print">
+            <div>
+                <label for="filtroTurmaPromocao">Turma (opcional)</label>
+                <select id="filtroTurmaPromocao">
+                    <option value="">Todas as turmas</option>
+                </select>
+            </div>
+            <button type="button" class="rel-btn rel-btn-primario" id="btnPreviewPromocao">Simular</button>
+            <button type="button" class="rel-btn rel-btn-sucesso" id="btnExecutarPromocao">Executar promoção</button>
+        </div>
+
+        <div id="resumoPromocao" class="rel-resumo-promocao no-print"></div>
+        <div id="conteudo"><p class="rel-aviso">Clique em <strong>Simular</strong> para ver quem será promovido, retido ou concluinte.</p></div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/academico.js"></script>
+    <script src="js/relatorio-pages.js"></script>
+</body>
+</html>

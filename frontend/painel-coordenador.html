@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Coordenador</title>
+    <link rel="stylesheet" href="styles/painel.css">
+</head>
+<body>
+    <div class="container-principal">
+        <aside class="sidebar">
+            <div class="logo">🎓 EdPlus</div>
+            <ul class="menu">
+                <li><a href="#" class="ativo" onclick="carregarSecao('dashboard')">📊 Dashboard</a></li>
+                <li><a href="#" onclick="carregarSecao('turmas')">👥 Turmas</a></li>
+                <li><a href="#" onclick="carregarSecao('desempenho')">📈 Desempenho</a></li>
+                <li><a href="#" onclick="carregarSecao('diagnostico')">🔍 Diagnóstico</a></li>
+                <li><a href="academico.html">📚 Acadêmico</a></li>
+                <li><a href="#" onclick="carregarSecao('notificacoes')">📬 Notificações</a></li>
+                <li><a href="#" onclick="fazerLogout()">🚪 Sair</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Painel do Coordenador Pedagógico</h1>
+                <div class="user-info">
+                    <p id="nomeUsuario">Carregando...</p>
+                    <button class="btn-logout" onclick="fazerLogout()">Logout</button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <section id="dashboard">
+                <div class="grid-paineis">
+                    <div class="card">
+                        <h3>Turmas</h3>
+                        <div class="card-valor" id="totalTurmas">0</div>
+                        <p class="card-descricao">Turmas na escola</p>
+                    </div>
+                    <div class="card">
+                        <h3>Alunos em Recuperação</h3>
+                        <div class="card-valor" id="alunosRecuperacao">0</div>
+                        <p class="card-descricao">Que precisam de atenção</p>
+                    </div>
+                    <div class="card">
+                        <h3>Taxa de Frequência</h3>
+                        <div class="card-valor" id="frequenciaEscola">0%</div>
+                        <p class="card-descricao">Média geral</p>
+                    </div>
+                </div>
+
+                <h2 style="margin: 30px 0 20px 0;">📊 Desempenho por Disciplina</h2>
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>Disciplina</th>
+                            <th>Média Geral</th>
+                            <th>Alunos em Recuperação</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaDisciplinas">
+                        <tr>
+                            <td colspan="4" style="text-align: center;">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- TURMAS -->
+            <section id="turmas" style="display: none;">
+                <h2>👥 Turmas da Escola</h2>
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>Turma</th>
+                            <th>Professor</th>
+                            <th>Alunos</th>
+                            <th>Frequência</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaTurmas">
+                        <tr>
+                            <td colspan="5" style="text-align: center;">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- DESEMPENHO -->
+            <section id="desempenho" style="display: none;">
+                <h2>📈 Análise de Desempenho</h2>
+                <div class="formulario" style="margin-bottom: 30px;">
+                    <div class="form-group">
+                        <label for="periodoDesempenho">Período</label>
+                        <select id="periodoDesempenho" onchange="carregarDesempenho()">
+                            <option value="1º Bimestre">1º Bimestre</option>
+                            <option value="2º Bimestre">2º Bimestre</option>
+                            <option value="3º Bimestre">3º Bimestre</option>
+                            <option value="4º Bimestre">4º Bimestre</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="conteudoDesempenho"></div>
+            </section>
+
+            <!-- DIAGNÓSTICO -->
+            <section id="diagnostico" style="display: none;">
+                <h2>🔍 Diagnóstico de Alunos</h2>
+                <div class="formulario" style="margin-bottom: 30px;">
+                    <div class="form-group">
+                        <label for="periodoDiagnostico">Selecione o Período</label>
+                        <select id="periodoDiagnostico">
+                            <option value="1º Bimestre">1º Bimestre</option>
+                            <option value="2º Bimestre">2º Bimestre</option>
+                            <option value="3º Bimestre">3º Bimestre</option>
+                            <option value="4º Bimestre">4º Bimestre</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-sucesso" onclick="gerarDiagnostico()">🔍 Gerar Diagnóstico</button>
+                </div>
+
+                <div id="conteudoDiagnostico" style="margin-top: 20px;"></div>
+            </section>
+
+            <!-- NOTIFICAÇÕES -->
+            <section id="notificacoes" style="display: none;">
+                <h2>📬 Enviar Notificações</h2>
+                <div class="formulario" style="max-width: 600px;">
+                    <form id="formularioNotificacao">
+                        <div class="form-group">
+                            <label for="notificacaoTipo">Tipo de Notificação</label>
+                            <select id="notificacaoTipo" required>
+                                <option value="desempenho">Alerta de Desempenho</option>
+                                <option value="geral">Notificação Geral</option>
+                                <option value="boletim">Enviar Boletim</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notificacaoTitulo">Título</label>
+                            <input type="text" id="notificacaoTitulo" placeholder="Título da notificação" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notificacaoMensagem">Mensagem</label>
+                            <textarea id="notificacaoMensagem" rows="5" placeholder="Digite a mensagem" required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-sucesso">✓ Enviar</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/painel-coordenador.js"></script>
+</body>
+</html>

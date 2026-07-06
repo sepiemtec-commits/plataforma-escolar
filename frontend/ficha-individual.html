@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha Individual — EdPlus</title>
+    <link rel="stylesheet" href="styles/relatorios.css">
+</head>
+<body class="relatorio-page" data-pagina="ficha-individual">
+    <div class="rel-topbar no-print">
+        <div>
+            <a href="academico.html">← Acadêmico</a>
+        </div>
+        <span id="nomeUsuario"></span>
+    </div>
+
+    <div class="rel-container">
+        <h1 class="rel-titulo">Ficha Individual do Aluno</h1>
+
+        <div class="rel-filtros no-print">
+            <div>
+                <label for="filtroEnsino">Nível de Ensino</label>
+                <select id="filtroEnsino"></select>
+            </div>
+            <div>
+                <label for="filtroAno">Ano / Série</label>
+                <select id="filtroAno"></select>
+            </div>
+            <div>
+                <label for="filtroTurma">Turma</label>
+                <select id="filtroTurma"></select>
+            </div>
+            <div>
+                <label for="selectAluno">Aluno</label>
+                <select id="selectAluno"></select>
+            </div>
+            <button type="button" class="rel-btn rel-btn-primario" id="btnCarregar">Listar</button>
+            <button type="button" class="rel-btn rel-btn-imprimir" id="btnImprimir">Imprimir</button>
+        </div>
+
+        <div id="conteudo"></div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/academico.js"></script>
+    <script src="js/relatorio-pages.js"></script>
+</body>
+</html>

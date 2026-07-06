@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Aluno</title>
+    <link rel="stylesheet" href="styles/painel.css">
+</head>
+<body>
+    <div class="container-principal">
+        <aside class="sidebar">
+            <div class="logo">🎓 EdPlus</div>
+            <ul class="menu">
+                <li><a href="#" class="ativo" onclick="carregarSecao('boletim')">📊 Boletim</a></li>
+                <li><a href="#" onclick="carregarSecao('notas')">📝 Minhas Notas</a></li>
+                <li><a href="#" onclick="carregarSecao('presenca')">📋 Presença</a></li>
+                <li><a href="#" onclick="carregarSecao('conteudo')">📚 Conteúdo</a></li>
+                <li><a href="academico.html">📚 Acadêmico</a></li>
+                <li><a href="#" onclick="fazerLogout()">🚪 Sair</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Painel do Aluno</h1>
+                <div class="user-info">
+                    <p id="nomeUsuario">Carregando...</p>
+                    <button class="btn-logout" onclick="fazerLogout()">Logout</button>
+                </div>
+            </div>
+
+            <section id="boletim">
+                <div class="grid-paineis">
+                    <div class="card">
+                        <h3>Frequência</h3>
+                        <div class="card-valor" id="frequencia">0%</div>
+                    </div>
+                    <div class="card">
+                        <h3>Faltas</h3>
+                        <div class="card-valor" id="faltas">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Situação Geral</h3>
+                        <div class="card-valor" id="situacao">-</div>
+                    </div>
+                </div>
+
+                <h2 style="margin: 30px 0 20px 0;">📊 Desempenho por Disciplina</h2>
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>Disciplina</th>
+                            <th>Período</th>
+                            <th>Média</th>
+                            <th>Frequência</th>
+                            <th>Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaBoletim">
+                        <tr>
+                            <td colspan="5" style="text-align: center;">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="notas" style="display: none;">
+                <h2>📝 Minhas Notas</h2>
+                <div id="filtroNotas" style="margin-bottom: 20px;">
+                    <label>Período:
+                        <select id="periodoFiltro" onchange="carregarNotas()">
+                            <option value="">Todos</option>
+                            <option value="1º Bimestre">1º Bimestre</option>
+                            <option value="2º Bimestre">2º Bimestre</option>
+                            <option value="3º Bimestre">3º Bimestre</option>
+                            <option value="4º Bimestre">4º Bimestre</option>
+                        </select>
+                    </label>
+                </div>
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>Disciplina</th>
+                            <th>Tipo</th>
+                            <th>Período</th>
+                            <th>Nota</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaNotas">
+                        <tr>
+                            <td colspan="5" style="text-align: center;">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="presenca" style="display: none;">
+                <h2>📋 Minha Presença</h2>
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Turma</th>
+                            <th>Status</th>
+                            <th>Professor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaPresenca">
+                        <tr>
+                            <td colspan="4" style="text-align: center;">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="conteudo" style="display: none;">
+                <h2>📚 Conteúdo das Aulas</h2>
+                <div id="listaConteudo"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/painel-aluno.js"></script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Professor</title>
+    <link rel="stylesheet" href="styles/painel.css">
+</head>
+<body>
+    <div class="container-principal">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">🎓 EdPlus</div>
+            <ul class="menu">
+                <li><a href="#" class="ativo" data-secao="dashboard">🏠 Portal</a></li>
+                <li><a href="#" data-secao="presenca">📋 Presença</a></li>
+                <li><a href="#" data-secao="avaliacoes">📝 Avaliações</a></li>
+                <li><a href="#" data-secao="conteudo">📚 Conteúdo</a></li>
+                <li><a href="#" data-secao="alunos">👨‍🎓 Alunos</a></li>
+                <li><a href="academico.html">📚 Acadêmico</a></li>
+                <li><a href="#" id="btnLogoutMenu">🚪 Sair</a></li>
+            </ul>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="main-content">
+            <div class="header header-portal">
+                <h1>EdPlus — Portal Acadêmico</h1>
+                <div class="user-info">
+                    <p id="nomeUsuario">Carregando...</p>
+                    <button class="btn-logout" id="btnLogoutHeader">Logout</button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD / PORTAL -->
+            <section id="dashboard">
+                <div class="portal-professor">
+                    <div class="portal-bloco">
+                        <div class="portal-bloco-header">
+                            <span class="portal-bloco-titulo">📅 Meus Horários</span>
+                            <select id="filtroTurnoHorario" class="portal-select-header" aria-label="Turno">
+                                <option value="Manhã">Manhã</option>
+                                <option value="Tarde">Tarde</option>
+                                <option value="Noite">Noite</option>
+                            </select>
+                        </div>
+                        <div class="portal-bloco-body portal-bloco-body-p0">
+                            <div class="tabela-horarios-wrap">
+                                <table class="tabela tabela-horarios" id="tabelaHorarios">
+                                    <thead>
+                                        <tr>
+                                            <th>Horário</th>
+                                            <th>Segunda</th>
+                                            <th>Terça</th>
+                                            <th>Quarta</th>
+                                            <th>Quinta</th>
+                                            <th>Sexta</th>
+                                            <th>Sábado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="corpoHorarios">
+                                        <tr><td colspan="7" style="text-align:center;color:#999;padding:16px;">Carregando...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="portal-bloco">
+                        <div class="portal-bloco-header portal-bloco-header-col">
+                            <span class="portal-bloco-titulo">📚 Minhas Disciplinas</span>
+                            <select id="selectDisciplinaTurma" class="portal-select-header portal-select-largo" aria-label="Disciplina e turma">
+                                <option value="">Selecione turma e disciplina</option>
+                            </select>
+                        </div>
+                        <div class="portal-bloco-body portal-bloco-body-p0" id="corpoDisciplinasProfessor">
+                            <p class="presenca-vazio">Carregando disciplinas...</p>
+                        </div>
+                        <div class="portal-grid-acoes">
+                            <button type="button" class="portal-acao portal-acao-notas" data-acao="avaliacoes">
+                                <span class="portal-acao-icone">📝</span>
+                                <span>Lançar Notas</span>
+                            </button>
+                            <button type="button" class="portal-acao portal-acao-material" data-acao="conteudo">
+                                <span class="portal-acao-icone">📁</span>
+                                <span>Material Apoio</span>
+                            </button>
+                            <button type="button" class="portal-acao portal-acao-diario" data-acao="conteudo">
+                                <span class="portal-acao-icone">📖</span>
+                                <span>Diário de Aula</span>
+                            </button>
+                            <button type="button" class="portal-acao portal-acao-alunos" data-acao="alunos">
+                                <span class="portal-acao-icone">👥</span>
+                                <span>Visualizar Alunos</span>
+                            </button>
+                            <button type="button" class="portal-acao portal-acao-boletim" data-acao="avaliacoes">
+                                <span class="portal-acao-icone">📊</span>
+                                <span>Visualizar Boletim</span>
+                            </button>
+                            <button type="button" class="portal-acao portal-acao-frequencia" data-acao="presenca">
+                                <span class="portal-acao-icone">🏫</span>
+                                <span>Lançar Frequência</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="painelAlunosAtencao" class="portal-bloco portal-bloco-secundario" style="display: none;">
+                        <div class="portal-bloco-header portal-bloco-header-toggle">
+                            <span class="portal-bloco-titulo">⚠️ Alunos com Baixo Desempenho</span>
+                            <label class="toggle-atencao" title="Exibir alunos em recuperação da turma e disciplina selecionadas">
+                                <span class="toggle-atencao-label">Exibir card</span>
+                                <input type="checkbox" id="toggleAlunosAtencao" role="switch" aria-label="Exibir alunos com baixo desempenho">
+                                <span class="toggle-trilha toggle-trilha-atencao" aria-hidden="true"></span>
+                            </label>
+                        </div>
+                        <div class="portal-bloco-body portal-bloco-body-p0" id="corpoAlunosAtencao">
+                            <p id="atencaoFiltroInfo" class="atencao-filtro-info">Selecione turma e disciplina acima para filtrar.</p>
+                            <table class="tabela">
+                                <thead>
+                                    <tr>
+                                        <th>Aluno</th>
+                                        <th>Série / Turma</th>
+                                        <th>Disciplina</th>
+                                        <th>Situação</th>
+                                        <th>Média</th>
+                                        <th>Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaAlunosAtencao">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: #7f8c8d;">Ative o card para visualizar</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TURMAS -->
+            <section id="turmas" style="display: none;">
+                <h2 style="margin-bottom: 20px;">🏫 Minhas Turmas</h2>
+                <div id="listaTurmasProfessor" class="grid-turmas-professor"></div>
+            </section>
+
+            <!-- PRESENÇA -->
+            <section id="presenca" style="display: none;">
+                <div class="portal-professor">
+                    <div class="portal-bloco">
+                        <div class="portal-bloco-header">
+                            <span class="portal-bloco-titulo">🏫 Lançar Frequência</span>
+                        </div>
+                        <div class="portal-bloco-body">
+                            <div class="presenca-filtros">
+                                <div class="form-group">
+                                    <label for="turmaId">Turma</label>
+                                    <select id="turmaId" required>
+                                        <option value="">Selecione uma turma</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dataPresenca">Data</label>
+                                    <input type="date" id="dataPresenca" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="disciplinaPresenca">Disciplina</label>
+                                    <select id="disciplinaPresenca" required>
+                                        <option value="">Selecione a disciplina</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p id="dicaDisciplinaPresenca" class="presenca-dica"></p>
+                            <p id="contadorAlunosPresenca" class="presenca-contador"></p>
+                        </div>
+                    </div>
+
+                    <div id="listaAlunos" class="lista-presenca-alunos">
+                        <p class="presenca-vazio">Selecione a turma e a data para ver os alunos matriculados</p>
+                    </div>
+
+                    <div class="presenca-acoes-bar" id="presencaAcoesBar" style="display: none;">
+                        <button type="button" class="btn btn-sucesso" id="btnSalvarPresenca">💾 Salvar frequência</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AVALIAÇÕES -->
+            <section id="avaliacoes" style="display: none;">
+                <div class="notas-academicas">
+                    <h2 class="notas-academicas-titulo">Notas e Conceitos Acadêmicos</h2>
+
+                    <div class="notas-filtros">
+                        <div class="filtros-grid-notas">
+                            <div class="form-group">
+                                <label for="filtroAnoLetivo">Ano Letivo Vigente</label>
+                                <input type="text" id="filtroAnoLetivo" readonly class="campo-ano-vigente">
+                            </div>
+                            <div class="form-group">
+                                <label for="filtroPeriodo">Período de Ensino</label>
+                                <select id="filtroPeriodo">
+                                    <option value="Manhã">Manhã</option>
+                                    <option value="Tarde">Tarde</option>
+                                    <option value="Noite">Noite</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="filtroEnsino">Ensino</label>
+                                <select id="filtroEnsino">
+                                    <option value="Fundamental I">Fundamental I</option>
+                                    <option value="Fundamental II">Fundamental II</option>
+                                    <option value="Ensino Médio">Ensino Médio</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="filtroSerie">Série</label>
+                                <select id="filtroSerie">
+                                    <option value="">Selecione a turma</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="avaliacaoTurma">Turma</label>
+                                <select id="avaliacaoTurma">
+                                    <option value="">Selecione</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="filtroModulo">Módulo</label>
+                                <select id="filtroModulo">
+                                    <option value="Único">Único</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="avaliacaoDisciplina">Disciplina</label>
+                                <select id="avaliacaoDisciplina" required>
+                                    <option value="">Selecione a disciplina</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="filtroUnidade">Unidade</label>
+                                <select id="filtroUnidade">
+                                    <option value="1º Bimestre">1º Bimestre</option>
+                                    <option value="2º Bimestre">2º Bimestre</option>
+                                    <option value="3º Bimestre">3º Bimestre</option>
+                                    <option value="4º Bimestre">4º Bimestre</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="notas-acoes">
+                            <button type="button" class="btn-notas-listar" id="btnListarNotas">Listar</button>
+                            <button type="button" class="btn-notas-salvar" id="btnSalvarNotas">Salvar</button>
+                            <label class="toggle-comportamental">
+                                <input type="checkbox" id="toggleComportamental">
+                                Incluir AV3 (Comportamental)
+                            </label>
+                        </div>
+
+                        <div class="alerta alerta-info notas-arquivo-anterior">
+                            <p style="margin:0 0 10px;">
+                                O ano letivo vigente é usado para lançamento de notas.
+                                O ano anterior (<strong id="labelAnoAnterior">—</strong>) fica arquivado em planilha XLS
+                                com alunos, notas, presenças, professores e equipe escolar.
+                            </p>
+                            <button type="button" class="btn btn-pequeno btn-info" id="btnBaixarArquivoAnoAnterior">
+                                📥 Baixar arquivo XLS do ano anterior
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="gradeAvaliacoes" class="notas-tabela-wrapper">
+                        <p class="notas-vazio">Selecione os filtros e clique em <strong>Listar</strong></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CONTEÚDO PROGRAMÁTICO -->
+            <section id="conteudo" style="display: none;">
+                <div class="formulario" style="margin-bottom: 30px;">
+                    <h2 style="margin-bottom: 20px;">📚 Registrar Conteúdo Programático</h2>
+                    <form id="formularioConteudo">
+                        <div class="form-group">
+                            <label for="conteudoTurma">Turma</label>
+                            <select id="conteudoTurma" required>
+                                <option value="">Selecione uma turma</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="conteudoDisciplina">Disciplina</label>
+                            <select id="conteudoDisciplina" required>
+                                <option value="">Selecione a disciplina</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="conteudoTitulo">Título</label>
+                            <input type="text" id="conteudoTitulo" placeholder="Ex: Frações" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="conteudoDescricao">Descrição</label>
+                            <textarea id="conteudoDescricao" rows="4" placeholder="Descreva o conteúdo da aula"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="conteudoTopicos">Tópicos (separados por vírgula)</label>
+                            <input type="text" id="conteudoTopicos" placeholder="Ex: Conceito, Operações, Exercícios">
+                        </div>
+
+                        <button type="submit" class="btn btn-sucesso">✓ Registrar Conteúdo</button>
+                    </form>
+                </div>
+
+                <h2 style="margin-bottom: 20px;">📋 Conteúdos Registrados</h2>
+                <div id="listaConteudos"></div>
+            </section>
+
+            <!-- ALUNOS -->
+            <section id="alunos" style="display: none;">
+                <h2 style="margin-bottom: 20px;">👨‍🎓 Meus Alunos</h2>
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Matrícula</th>
+                            <th>Email</th>
+                            <th>Frequência</th>
+                            <th>Situação</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaAlunos">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #7f8c8d;">Carregando alunos...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/disciplinas.js"></script>
+    <script src="js/painel-professor.js"></script>
+</body>
+</html>
