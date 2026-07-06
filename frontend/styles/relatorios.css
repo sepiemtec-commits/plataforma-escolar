@@ -9,7 +9,8 @@
 
 body.relatorio-page {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-weight: 500;
     background: #fff;
     color: #333;
 }
@@ -27,7 +28,7 @@ body.relatorio-page {
     color: #fff;
     text-decoration: none;
     margin-right: 18px;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .rel-topbar a:hover { text-decoration: underline; }
@@ -40,7 +41,7 @@ body.relatorio-page {
 
 .rel-titulo {
     color: var(--rel-azul);
-    font-size: 22px;
+    font-size: 23px;
     margin: 0 0 20px;
     font-weight: 600;
 }
@@ -58,7 +59,7 @@ body.relatorio-page {
 
 .rel-filtros label {
     display: block;
-    font-size: 12px;
+    font-size: 13px;
     color: #666;
     margin-bottom: 4px;
 }
@@ -97,7 +98,7 @@ body.relatorio-page {
     border-radius: 3px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .rel-btn-primario {
@@ -118,7 +119,7 @@ body.relatorio-page {
 .rel-tabela {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .rel-tabela thead tr {
@@ -157,7 +158,7 @@ body.relatorio-page {
 
 .rel-boletim-grupo {
     text-align: center;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .rel-ficha-dados {
@@ -165,7 +166,7 @@ body.relatorio-page {
     grid-template-columns: 1fr 1fr;
     gap: 8px 30px;
     margin-bottom: 24px;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .rel-ficha-dados p { margin: 4px 0; }
@@ -202,7 +203,7 @@ body.relatorio-page {
 
 .rel-hub-card p {
     color: #666;
-    font-size: 13px;
+    font-size: 14px;
     margin: 0;
 }
 
@@ -215,7 +216,7 @@ body.relatorio-page {
 
 .rel-escola-nome {
     text-align: center;
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 600;
     margin-bottom: 8px;
 }
@@ -269,31 +270,31 @@ body.relatorio-page {
     text-align: justify;
     line-height: 1.8;
     margin-bottom: 32px;
-    font-size: 15px;
+    font-size: 16px;
 }
 
 .rel-assinatura-eletronica {
     border-top: 2px solid var(--rel-azul);
     padding-top: 20px;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.7;
 }
 
 .rel-codigo-verificacao {
     margin-top: 12px;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .rel-hash {
     font-family: monospace;
-    font-size: 11px;
+    font-size: 12px;
     color: #666;
     word-break: break-all;
 }
 
 .rel-aviso-assinatura {
     margin-top: 12px;
-    font-size: 11px;
+    font-size: 12px;
     color: #888;
     font-style: italic;
 }

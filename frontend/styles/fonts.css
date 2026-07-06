@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --fonte-base: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --texto-xs: 13px;
+    --texto-sm: 14px;
+    --texto-base: 15px;
+    --texto-md: 16px;
+    --texto-lg: 19px;
+    --texto-xl: 23px;
+    --texto-2xl: 29px;
+    --texto-3xl: 33px;
+}
+
+html {
+    font-size: 17px;
+}
+
+body {
+    font-family: var(--fonte-base);
+    font-weight: 500;
+    font-size: var(--texto-base);
+    line-height: 1.5;
+}
+
+.sidebar .menu a,
+.menu a {
+    font-family: var(--fonte-base);
+    font-weight: 600;
+    font-size: var(--texto-base);
+}
+
+h1,
+h2,
+h3,
+h4,
+.header h1,
+.header-portal h1,
+.logo,
+.secao-form,
+.portal-bloco-titulo,
+.card h3,
+.card-turma-professor h3,
+.notas-academicas-titulo,
+.accordion-sanfona-titulo,
+.modal-documentos-header h2,
+.detalhe-turma-header h2,
+.rel-titulo,
+.rel-subtitulo {
+    font-family: var(--fonte-base);
+    font-weight: 700;
+}
+
+.tabela,
+.tabela th,
+.tabela td,
+.tabela-horarios,
+.tabela-horarios th,
+.tabela-horarios td,
+.tabela-notas-academicas,
+.tabela-notas-academicas th,
+.tabela-notas-academicas td,
+.tabela-resumo-turma,
+.tabela-resumo-turma th,
+.tabela-resumo-turma td,
+.portal-disciplinas-tabela,
+.portal-disciplinas-tabela th,
+.portal-disciplinas-tabela td,
+table {
+    font-family: var(--fonte-base);
+    font-weight: 400;
+    font-size: var(--texto-base);
+}
+
+input,
+select,
+textarea,
+button,
+.btn,
+label {
+    font-family: var(--fonte-base);
+    font-size: var(--texto-base);
+}

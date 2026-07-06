@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Plataforma Escolar">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e88e5"/>
+      <stop offset="100%" stop-color="#00838f"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffb74d"/>
+      <stop offset="100%" stop-color="#f57c00"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <path d="M128 52 L208 92 L208 188 C208 198 200 206 190 206 H66 C56 206 48 198 48 188 V92 Z" fill="#ffffff" opacity="0.95"/>
+  <path d="M128 44 L220 92 L128 140 L36 92 Z" fill="url(#roof)"/>
+  <rect x="92" y="118" width="72" height="72" rx="8" fill="#e3f2fd" stroke="#1565c0" stroke-width="6"/>
+  <path d="M104 154 H152 M104 170 H152 M104 138 H136" stroke="#1565c0" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="176" cy="170" r="22" fill="#43a047"/>
+  <path d="M168 170 L174 176 L186 162" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

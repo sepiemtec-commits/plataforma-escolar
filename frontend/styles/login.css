@@ -17,7 +17,8 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-weight: 500;
     background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%);
     min-height: 100vh;
     display: flex;
@@ -76,26 +77,26 @@ body {
 h1 {
     color: var(--cor-primaria);
     margin-bottom: 10px;
-    font-size: 28px;
+    font-size: 29px;
 }
 
 .subtitle {
     color: #7f8c8d;
     margin-bottom: 30px;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .subtitle-login {
     color: #7f8c8d;
     margin-top: 20px;
-    font-size: 13px;
+    font-size: 14px;
     text-align: center;
     line-height: 1.5;
 }
 
 h2 {
     margin-bottom: 20px;
-    font-size: 22px;
+    font-size: 23px;
 }
 
 .info-box ul {
@@ -106,7 +107,7 @@ h2 {
 .info-box li {
     padding: 10px 0;
     border-bottom: 1px solid rgba(255,255,255,0.2);
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .form-group {
@@ -119,7 +120,7 @@ label {
     margin-bottom: 8px;
     color: var(--cor-primaria);
     font-weight: 600;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 input {
@@ -127,7 +128,7 @@ input {
     padding: 12px;
     border: 2px solid #bdc3c7;
     border-radius: 5px;
-    font-size: 14px;
+    font-size: 15px;
     transition: border-color 0.3s;
     font-family: inherit;
 }
@@ -144,7 +145,7 @@ input:focus {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 19px;
     padding: 5px 10px;
 }
 
@@ -155,7 +156,7 @@ input:focus {
     color: white;
     border: none;
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.3s;
@@ -222,7 +223,7 @@ input:focus {
     padding: 12px;
     border-radius: 5px;
     margin-top: 15px;
-    font-size: 14px;
+    font-size: 15px;
     border-left: 4px solid var(--cor-erro);
 }
 
@@ -232,7 +233,7 @@ input:focus {
     padding: 12px;
     border-radius: 5px;
     margin-top: 15px;
-    font-size: 14px;
+    font-size: 15px;
     border-left: 4px solid var(--cor-sucesso);
 }
 
@@ -247,7 +248,7 @@ input:focus {
     }
 
     h1 {
-        font-size: 24px;
+        font-size: 25px;
     }
 
     .login-box {

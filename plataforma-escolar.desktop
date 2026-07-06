@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Plataforma Escolar
+GenericName=Gestão Escolar
+Comment=Abre a Plataforma Escolar EdPlus (login, secretaria, professor)
+Exec="/home/guest/Área de trabalho/plataforma-escolar/scripts/launch-desktop.sh"
+Icon=/home/guest/Área de trabalho/plataforma-escolar/assets/plataforma-escolar.svg
+Path=/home/guest/Área de trabalho/plataforma-escolar
+Terminal=false
+Categories=Education;Office;
+StartupNotify=true
+StartupWMClass=plataforma-escolar
