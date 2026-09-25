@@ -148,10 +148,41 @@ body {
     align-items: flex-start;
     margin: 16px 0;
     font-size: 0.92rem;
+    line-height: 1.45;
+    cursor: pointer;
+    color: var(--cor-texto);
+    font-weight: 400;
+}
+
+/* login.css aplica width:100% em todo input — não pode valer no checkbox */
+.assinar-check input[type='checkbox'] {
+    width: 1.1rem;
+    height: 1.1rem;
+    min-width: 1.1rem;
+    margin: 0.2rem 0 0;
+    padding: 0;
+    flex-shrink: 0;
+    accent-color: var(--cor-20);
+    border: 1px solid var(--cor-borda);
+    border-radius: 3px;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.assinar-check-texto {
+    flex: 1;
+    min-width: 0;
 }
 
 .assinar-check a {
     color: var(--cor-20);
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .assinar-check a {
+        white-space: normal;
+    }
 }
 
 .assinar-rodape {
