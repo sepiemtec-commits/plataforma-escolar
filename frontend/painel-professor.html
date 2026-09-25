@@ -3,30 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
     <title>Painel do Professor</title>
-    <link rel="stylesheet" href="styles/painel.css">
-    <link rel="stylesheet" href="styles/fonts.css">
+    <link rel="stylesheet" href="/styles/painel.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
 </head>
 <body>
     <div class="container-principal">
         <!-- SIDEBAR -->
         <aside class="sidebar">
-            <div class="logo">🎓 EdPlus</div>
+            <div class="logo">VEHO</div>
             <ul class="menu">
-                <li><a href="#" class="ativo" data-secao="dashboard">🏠 Portal</a></li>
-                <li><a href="#" data-secao="presenca">📋 Presença</a></li>
-                <li><a href="#" data-secao="avaliacoes">📝 Avaliações</a></li>
-                <li><a href="#" data-secao="conteudo">📚 Conteúdo</a></li>
-                <li><a href="#" data-secao="alunos">👨‍🎓 Alunos</a></li>
-                <li><a href="academico.html">📚 Acadêmico</a></li>
-                <li><a href="#" id="btnLogoutMenu">🚪 Sair</a></li>
+                <li><a href="#" class="ativo" data-secao="dashboard">Portal</a></li>
+                <li><a href="#" data-secao="presenca">Presença</a></li>
+                <li><a href="#" data-secao="avaliacoes">Avaliações</a></li>
+                <li><a href="#" data-secao="conteudo">Conteúdo Programático</a></li>
+                <li><a href="diario-aula.html">Diário de Classe</a></li>
+                <li><a href="#" data-secao="alunos">Alunos</a></li>
+                <li><a href="#" data-secao="ia-pedagogica">IA Pedagógica</a></li>
+                <li><a href="#" data-secao="htpc">Reuniões pedagógicas</a></li>
+                <li><a href="#" data-secao="pei">PEI</a></li>
+                <li><a href="#" data-secao="bncc">BNCC</a></li>
+                <li><a href="#" data-secao="simulados">Simulados SAEB/SARESP</a></li>
+                <li><a href="academico.html">Acadêmico</a></li>
+                <li><a href="#" id="btnLogoutMenu">Sair</a></li>
             </ul>
         </aside>
 
         <!-- CONTEÚDO PRINCIPAL -->
         <main class="main-content">
             <div class="header header-portal">
-                <h1>EdPlus — Portal Acadêmico</h1>
+                <h1>VEHO — Portal Acadêmico</h1>
                 <div class="user-info">
                     <p id="nomeUsuario">Carregando...</p>
                     <button class="btn-logout" id="btnLogoutHeader">Logout</button>
@@ -38,57 +53,45 @@
                 <div class="portal-professor">
                     <div class="portal-bloco">
                         <div class="portal-bloco-header">
-                            <span class="portal-bloco-titulo">📅 Meus Horários</span>
-                            <select id="filtroTurnoHorario" class="portal-select-header" aria-label="Turno">
-                                <option value="Manhã">Manhã</option>
-                                <option value="Tarde">Tarde</option>
-                                <option value="Noite">Noite</option>
-                            </select>
+                            <span class="portal-bloco-titulo" id="tituloMeusHorarios">📅 Meus Horários</span>
+                            <div class="portal-horario-header-acoes">
+                                <button type="button" id="btnVoltarDiasHorario" class="btn-voltar-horarios" hidden>
+                                    ← Dias da semana
+                                </button>
+                                <select id="filtroTurnoHorario" class="portal-select-header" aria-label="Turno">
+                                    <option value="todos">Todos os turnos</option>
+                                    <option value="Manhã">Manhã</option>
+                                    <option value="Tarde">Tarde</option>
+                                    <option value="Noite">Noite</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="portal-bloco-body portal-bloco-body-p0">
-                            <div class="tabela-horarios-wrap">
-                                <table class="tabela tabela-horarios" id="tabelaHorarios">
-                                    <thead>
-                                        <tr>
-                                            <th>Horário</th>
-                                            <th>Segunda</th>
-                                            <th>Terça</th>
-                                            <th>Quarta</th>
-                                            <th>Quinta</th>
-                                            <th>Sexta</th>
-                                            <th>Sábado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="corpoHorarios">
-                                        <tr><td colspan="7" style="text-align:center;color:#999;padding:16px;">Carregando...</td></tr>
-                                    </tbody>
-                                </table>
+                            <div id="vistaListaDiasHorario" class="horarios-dias-vista">
+                                <p class="horarios-dias-hint">Escolha o dia da semana para ver o quadro de horários.</p>
+                                <div id="listaDiasHorario" class="horarios-dias-lista" aria-live="polite">
+                                    <p class="horarios-dias-vazio">Carregando...</p>
+                                </div>
+                            </div>
+                            <div id="vistaQuadroDiaHorario" class="tabela-horarios-wrap" hidden>
+                                <div id="corpoQuadroDiaHorario"></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="portal-bloco">
-                        <div class="portal-bloco-header portal-bloco-header-col">
-                            <span class="portal-bloco-titulo">📚 Minhas Disciplinas</span>
-                            <select id="selectDisciplinaTurma" class="portal-select-header portal-select-largo" aria-label="Disciplina e turma">
-                                <option value="">Selecione turma e disciplina</option>
-                            </select>
-                        </div>
-                        <div class="portal-bloco-body portal-bloco-body-p0" id="corpoDisciplinasProfessor">
-                            <p class="presenca-vazio">Carregando disciplinas...</p>
-                        </div>
                         <div class="portal-grid-acoes">
                             <button type="button" class="portal-acao portal-acao-notas" data-acao="avaliacoes">
                                 <span class="portal-acao-icone">📝</span>
                                 <span>Lançar Notas</span>
                             </button>
                             <button type="button" class="portal-acao portal-acao-material" data-acao="conteudo">
-                                <span class="portal-acao-icone">📁</span>
-                                <span>Material Apoio</span>
+                                <span class="portal-acao-icone">📚</span>
+                                <span>Conteúdo Programático</span>
                             </button>
-                            <button type="button" class="portal-acao portal-acao-diario" data-acao="conteudo">
+                            <button type="button" class="portal-acao portal-acao-diario" data-link="diario-aula.html">
                                 <span class="portal-acao-icone">📖</span>
-                                <span>Diário de Aula</span>
+                                <span>Diário de Classe</span>
                             </button>
                             <button type="button" class="portal-acao portal-acao-alunos" data-acao="alunos">
                                 <span class="portal-acao-icone">👥</span>
@@ -108,14 +111,14 @@
                     <div id="painelAlunosAtencao" class="portal-bloco portal-bloco-secundario" style="display: none;">
                         <div class="portal-bloco-header portal-bloco-header-toggle">
                             <span class="portal-bloco-titulo">⚠️ Alunos com Baixo Desempenho</span>
-                            <label class="toggle-atencao" title="Exibir alunos em recuperação da turma e disciplina selecionadas">
+                            <label class="toggle-atencao" title="Exibir alunos em recuperação">
                                 <span class="toggle-atencao-label">Exibir card</span>
                                 <input type="checkbox" id="toggleAlunosAtencao" role="switch" aria-label="Exibir alunos com baixo desempenho">
                                 <span class="toggle-trilha toggle-trilha-atencao" aria-hidden="true"></span>
                             </label>
                         </div>
                         <div class="portal-bloco-body portal-bloco-body-p0" id="corpoAlunosAtencao">
-                            <p id="atencaoFiltroInfo" class="atencao-filtro-info">Selecione turma e disciplina acima para filtrar.</p>
+                            <p id="atencaoFiltroInfo" class="atencao-filtro-info">Alunos em situação de recuperação nas suas disciplinas.</p>
                             <table class="tabela">
                                 <thead>
                                     <tr>
@@ -172,6 +175,23 @@
                             </div>
                             <p id="dicaDisciplinaPresenca" class="presenca-dica"></p>
                             <p id="contadorAlunosPresenca" class="presenca-contador"></p>
+                            <div id="resumoTaxasPresenca" class="presenca-taxas" style="display:none;" aria-live="polite">
+                                <div class="presenca-taxa-item presenca-taxa-presente">
+                                    <span class="presenca-taxa-label">Presença</span>
+                                    <strong id="taxaPresencaValor">0%</strong>
+                                    <small id="qtdPresencaValor">0</small>
+                                </div>
+                                <div class="presenca-taxa-item presenca-taxa-falta">
+                                    <span class="presenca-taxa-label">Faltas</span>
+                                    <strong id="taxaFaltaValor">0%</strong>
+                                    <small id="qtdFaltaValor">0</small>
+                                </div>
+                                <div class="presenca-taxa-item">
+                                    <span class="presenca-taxa-label">Lançados</span>
+                                    <strong id="taxaLancadosValor">0%</strong>
+                                    <small id="qtdLancadosValor">0/0</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -194,11 +214,12 @@
                         <div class="filtros-grid-notas">
                             <div class="form-group">
                                 <label for="filtroAnoLetivo">Ano Letivo Vigente</label>
-                                <input type="text" id="filtroAnoLetivo" readonly class="campo-ano-vigente">
+                                <input type="text" id="filtroAnoLetivo" readonly class="campo-ano-vigente" title="Definido na configuração da escola">
                             </div>
                             <div class="form-group">
                                 <label for="filtroPeriodo">Período de Ensino</label>
                                 <select id="filtroPeriodo">
+                                    <option value="">Todos</option>
                                     <option value="Manhã">Manhã</option>
                                     <option value="Tarde">Tarde</option>
                                     <option value="Noite">Noite</option>
@@ -207,15 +228,13 @@
                             <div class="form-group">
                                 <label for="filtroEnsino">Ensino</label>
                                 <select id="filtroEnsino">
-                                    <option value="Fundamental I">Fundamental I</option>
-                                    <option value="Fundamental II">Fundamental II</option>
-                                    <option value="Ensino Médio">Ensino Médio</option>
+                                    <option value="">Selecione</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="filtroSerie">Série</label>
                                 <select id="filtroSerie">
-                                    <option value="">Selecione a turma</option>
+                                    <option value="">Selecione a série</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -258,7 +277,7 @@
 
                         <div class="alerta alerta-info notas-arquivo-anterior">
                             <p style="margin:0 0 10px;">
-                                O ano letivo vigente é usado para lançamento de notas.
+                                O ano letivo vigente vem da configuração da escola (não é um valor fixo no sistema).
                                 O ano anterior (<strong id="labelAnoAnterior">—</strong>) fica arquivado em planilha XLS
                                 com alunos, notas, presenças, professores e equipe escolar.
                             </p>
@@ -277,7 +296,12 @@
             <!-- CONTEÚDO PROGRAMÁTICO -->
             <section id="conteudo" style="display: none;">
                 <div class="formulario" style="margin-bottom: 30px;">
-                    <h2 style="margin-bottom: 20px;">📚 Registrar Conteúdo Programático</h2>
+                    <h2 style="margin-bottom: 8px;">📚 Registrar Conteúdo Programático</h2>
+                    <p style="color:#566573;margin:0 0 20px;font-size:14px;">
+                        Atalho para registrar só o conteúdo.
+                        O lançamento completo (presença, conteúdo e observações) fica em
+                        <a href="diario-aula.html">Diário de Classe</a>.
+                    </p>
                     <form id="formularioConteudo">
                         <div class="form-group">
                             <label for="conteudoTurma">Turma</label>
@@ -308,6 +332,12 @@
                             <input type="text" id="conteudoTopicos" placeholder="Ex: Conceito, Operações, Exercícios">
                         </div>
 
+                        <div class="form-group">
+                            <label for="conteudoBncc">Códigos BNCC (separados por vírgula)</label>
+                            <input type="text" id="conteudoBncc" placeholder="Ex: EF05CO01, EF05MA01">
+                            <small style="color:#7a8794;">Busque códigos na seção BNCC do menu.</small>
+                        </div>
+
                         <button type="submit" class="btn btn-sucesso">✓ Registrar Conteúdo</button>
                     </form>
                 </div>
@@ -318,7 +348,7 @@
 
             <!-- ALUNOS -->
             <section id="alunos" style="display: none;">
-                <h2 style="margin-bottom: 20px;">👨‍🎓 Meus Alunos</h2>
+                <h2 style="margin-bottom: 20px;">Meus Alunos</h2>
                 <table class="tabela">
                     <thead>
                         <tr>
@@ -337,12 +367,316 @@
                     </tbody>
                 </table>
             </section>
+
+            <!-- IA PEDAGÓGICA -->
+            <section id="ia-pedagogica" style="display: none;">
+                <div class="formulario" style="margin-bottom: 24px;">
+                    <h2 style="margin-bottom: 8px;">IA Pedagógica</h2>
+                    <p style="color:#566573;margin:0 0 20px;font-size:14px;">
+                        Gere um parecer descritivo e orientações a partir das notas e da frequência do aluno.
+                        Revise o texto antes de salvar — a sugestão não substitui o julgamento do professor.
+                    </p>
+
+                    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                        <div class="form-group">
+                            <label for="iaTurma">Turma</label>
+                            <select id="iaTurma">
+                                <option value="">Selecione</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="iaAluno">Aluno</label>
+                            <select id="iaAluno" disabled>
+                                <option value="">Selecione a turma</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="iaDisciplina">Disciplina (opcional)</label>
+                            <select id="iaDisciplina">
+                                <option value="">Todas / geral</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-sucesso" id="btnGerarParecerIA">Gerar parecer</button>
+                    <p id="iaAviso" style="margin-top:12px;font-size:13px;color:#7a8794;"></p>
+
+                    <div id="iaResultado" hidden style="margin-top:20px;">
+                        <div class="form-group">
+                            <label for="iaParecer">Parecer</label>
+                            <textarea id="iaParecer" rows="6" style="width:100%;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="iaOrientacoes">Orientações pedagógicas</label>
+                            <textarea id="iaOrientacoes" rows="7" style="width:100%;"></textarea>
+                        </div>
+                        <div id="iaSnapshot" style="font-size:13px;color:#566573;margin-bottom:12px;"></div>
+                        <button type="button" class="btn btn-primario" id="btnSalvarParecerIA">Salvar parecer revisado</button>
+                    </div>
+                </div>
+
+                <h2 style="margin-bottom: 12px;">Histórico do aluno</h2>
+                <div id="iaHistorico">
+                    <p style="color:#7f8c8d;">Selecione um aluno para ver pareceres salvos.</p>
+                </div>
+            </section>
+
+            <!-- Reuniões pedagógicas -->
+            <section id="htpc" style="display:none;">
+                <h2 style="margin-bottom:12px;">Reuniões pedagógicas</h2>
+                <p style="color:#566573;font-size:14px;margin:0 0 16px;">Marque sua presença nas reuniões em que você foi convidado.</p>
+                <div id="listaHtpcProf"><p style="color:#7f8c8d;">Carregando...</p></div>
+            </section>
+
+            <!-- PEI -->
+            <section id="pei" style="display:none;">
+                <h2 style="margin-bottom:12px;">PEI — Alunos da sua turma</h2>
+                <div class="formulario" style="max-width:720px;margin-bottom:20px;">
+                    <form id="formPeiProf">
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div class="form-group">
+                                <label for="peiProfTurma">Turma</label>
+                                <select id="peiProfTurma"><option value="">Selecione</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="peiProfAluno">Aluno</label>
+                                <select id="peiProfAluno" disabled><option value="">Turma primeiro</option></select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiProfDiagnostico">Diagnóstico</label>
+                            <textarea id="peiProfDiagnostico" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiProfNecessidades">Necessidades</label>
+                            <textarea id="peiProfNecessidades" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiProfMetas">Metas (uma por linha)</label>
+                            <textarea id="peiProfMetas" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiProfEstrategias">Estratégias</label>
+                            <textarea id="peiProfEstrategias" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sucesso">Criar PEI</button>
+                    </form>
+                </div>
+                <div id="listaPeiProf"><p style="color:#7f8c8d;">Carregando...</p></div>
+            </section>
+
+            <!-- BNCC -->
+            <section id="bncc" style="display:none;">
+                <h2 style="margin-bottom:12px;">BNCC embarcada</h2>
+                <p style="color:#566573;font-size:14px;margin:0 0 16px;">Catálogo com foco em Computação + amostra de Língua Portuguesa e Matemática.</p>
+                <div class="formulario" style="max-width:720px;margin-bottom:16px;">
+                    <div class="form-row" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="bnccQ">Busca</label>
+                            <input type="text" id="bnccQ" placeholder="Código ou palavra">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="bnccArea">Área</label>
+                            <select id="bnccArea">
+                                <option value="">Todas</option>
+                                <option value="computacao">Computação</option>
+                                <option value="lingua_portuguesa">Língua Portuguesa</option>
+                                <option value="matematica">Matemática</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="bnccAno">Ano</label>
+                            <input type="text" id="bnccAno" placeholder="Ex: 5">
+                        </div>
+                        <button type="button" class="btn btn-primario" id="btnBuscarBncc">Buscar</button>
+                    </div>
+                </div>
+                <div id="listaBncc"><p style="color:#7f8c8d;">Use a busca para listar habilidades.</p></div>
+            </section>
+
+            <!-- Simulados SAEB/SARESP -->
+            <section id="simulados" style="display:none;">
+                <h2 style="margin-bottom:8px;">Simulados SAEB / SARESP</h2>
+                <p style="color:#566573;font-size:14px;margin:0 0 16px;">Banco de itens, agendamento, correção e resultados.</p>
+
+                <div class="formulario" style="max-width:760px;margin-bottom:24px;">
+                    <h3 style="margin:0 0 12px;">Agendar simulado</h3>
+                    <form id="formSimulado">
+                        <div class="form-group">
+                            <label for="simTitulo">Título</label>
+                            <input type="text" id="simTitulo" required placeholder="Ex: Simulado SAEB Matemática — 5º ano">
+                        </div>
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                            <div class="form-group">
+                                <label for="simFonte">Fonte</label>
+                                <select id="simFonte">
+                                    <option value="saeb">SAEB</option>
+                                    <option value="saresp">SARESP</option>
+                                    <option value="misto">Misto</option>
+                                    <option value="escola">Escola</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="simArea">Área</label>
+                                <select id="simArea">
+                                    <option value="matematica">Matemática</option>
+                                    <option value="lingua_portuguesa">Língua Portuguesa</option>
+                                    <option value="mista">Mista</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="simQtd">Qtd. itens</label>
+                                <input type="number" id="simQtd" min="3" max="20" value="5">
+                            </div>
+                        </div>
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                            <div class="form-group">
+                                <label for="simTurma">Turma</label>
+                                <select id="simTurma"><option value="">Opcional</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="simData">Data início</label>
+                                <input type="date" id="simData" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="simAnoRef">Ano ref.</label>
+                                <input type="text" id="simAnoRef" placeholder="2026">
+                            </div>
+                        </div>
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end;">
+                            <div class="form-group">
+                                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                    <input type="checkbox" id="simOnline" checked>
+                                    Prova online (alunos)
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="simDuracao">Duração (min)</label>
+                                <input type="number" id="simDuracao" min="0" max="300" value="60" title="0 = sem limite">
+                            </div>
+                            <div class="form-group">
+                                <label for="simDataFim">Data fim (opc.)</label>
+                                <input type="date" id="simDataFim">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-sucesso">Agendar simulado</button>
+                    </form>
+                </div>
+
+                <h3 style="margin:0 0 10px;">Meus simulados</h3>
+                <div id="listaSimuladosProf"><p style="color:#7f8c8d;">Carregando...</p></div>
+
+                <h3 style="margin:24px 0 10px;">Construir item no banco</h3>
+                <div class="formulario" style="max-width:760px;margin-bottom:24px;">
+                    <form id="formItemBanco">
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                            <div class="form-group">
+                                <label for="itemCodigo">Código</label>
+                                <input type="text" id="itemCodigo" required placeholder="Ex: ESC-MAT-5-01">
+                            </div>
+                            <div class="form-group">
+                                <label for="itemArea">Área</label>
+                                <select id="itemArea" required>
+                                    <option value="matematica">Matemática</option>
+                                    <option value="lingua_portuguesa">Língua Portuguesa</option>
+                                    <option value="ciencias">Ciências</option>
+                                    <option value="outra">Outra</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="itemAno">Ano / série</label>
+                                <input type="text" id="itemAno" placeholder="Ex: 5">
+                            </div>
+                        </div>
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <div class="form-group">
+                                <label for="itemDificuldade">Dificuldade</label>
+                                <select id="itemDificuldade">
+                                    <option value="facil">Fácil</option>
+                                    <option value="medio" selected>Médio</option>
+                                    <option value="dificil">Difícil</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="itemBncc">Habilidade BNCC (opcional)</label>
+                                <input type="text" id="itemBncc" placeholder="Ex: EF05MA01">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemEnunciado">Enunciado</label>
+                            <textarea id="itemEnunciado" rows="3" required placeholder="Texto da questão"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemImagem">Imagem do enunciado (opcional)</label>
+                            <input type="file" id="itemImagem" accept="image/jpeg,image/png,image/webp,image/gif">
+                            <input type="hidden" id="itemImagemUrl" value="">
+                            <div id="itemImagemPreview" style="margin-top:8px;"></div>
+                        </div>
+                        <p style="font-size:13px;color:#566573;margin:0 0 8px;">Alternativas (preencha pelo menos A e B)</p>
+                        <div id="itemAlternativas">
+                            <div class="form-row alt-linha" style="display:grid;grid-template-columns:60px 1fr;gap:8px;margin-bottom:8px;">
+                                <input type="text" class="alt-letra" value="A" maxlength="1" required>
+                                <input type="text" class="alt-texto" placeholder="Texto da alternativa A" required>
+                            </div>
+                            <div class="form-row alt-linha" style="display:grid;grid-template-columns:60px 1fr;gap:8px;margin-bottom:8px;">
+                                <input type="text" class="alt-letra" value="B" maxlength="1" required>
+                                <input type="text" class="alt-texto" placeholder="Texto da alternativa B" required>
+                            </div>
+                            <div class="form-row alt-linha" style="display:grid;grid-template-columns:60px 1fr;gap:8px;margin-bottom:8px;">
+                                <input type="text" class="alt-letra" value="C" maxlength="1">
+                                <input type="text" class="alt-texto" placeholder="Texto da alternativa C (opcional)">
+                            </div>
+                            <div class="form-row alt-linha" style="display:grid;grid-template-columns:60px 1fr;gap:8px;margin-bottom:8px;">
+                                <input type="text" class="alt-letra" value="D" maxlength="1">
+                                <input type="text" class="alt-texto" placeholder="Texto da alternativa D (opcional)">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="itemGabarito">Gabarito</label>
+                            <select id="itemGabarito" required>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sucesso" id="btnSalvarItem">Salvar item no banco</button>
+                        <p id="itemBancoAviso" style="font-size:13px;color:#7a8794;margin-top:8px;"></p>
+                    </form>
+                </div>
+
+                <h3 style="margin:24px 0 10px;">Banco de itens</h3>
+                <div class="form-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                    <select id="filtroItemFonte">
+                        <option value="">Todas as fontes</option>
+                        <option value="saeb">SAEB</option>
+                        <option value="saresp">SARESP</option>
+                        <option value="escola">Escola (meus itens)</option>
+                    </select>
+                    <select id="filtroItemArea">
+                        <option value="">Todas as áreas</option>
+                        <option value="matematica">Matemática</option>
+                        <option value="lingua_portuguesa">LP</option>
+                        <option value="ciencias">Ciências</option>
+                    </select>
+                    <button type="button" class="btn btn-pequeno btn-primario" id="btnBuscarItens">Buscar itens</button>
+                </div>
+                <div id="listaItensSim"><p style="color:#7f8c8d;">Clique em buscar para ver o banco.</p></div>
+
+                <div id="painelCorrecaoSim" style="display:none;margin-top:24px;" class="formulario">
+                    <h3 style="margin:0 0 10px;">Correção / lançamento</h3>
+                    <p id="simCorrecaoMeta" style="font-size:13px;color:#566573;"></p>
+                    <div id="simCorrecaoAlunos"></div>
+                    <button type="button" class="btn btn-sucesso" id="btnCorrigirSim" style="margin-top:12px;">Corrigir e atualizar média da escola</button>
+                </div>
+            </section>
         </main>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/disciplinas.js"></script>
-    <script src="js/painel-professor.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/disciplinas.js"></script>
+    <script src="/js/painel-professor.js"></script>
+    <script src="/js/pwa-register.js"></script>
 </body>
 </html>

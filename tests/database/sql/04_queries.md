@@ -1,0 +1,11 @@
+-- Consultas representativas (TOKEN 10) — executar com EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+-- Placeholders: :escola_id :turma_id :aluno_id :page :page_size
+
+-- Q1 filtros + paginação + ordenação (lista alunos da escola)
+-- Q2 join turmas×matriculas×alunos
+-- Q3 grade de notas (turma+disciplina)
+-- Q4 frequência por turma/data
+-- Q5 boletim do aluno
+-- Q6 dashboard recuperação
+-- Q7 relatório agregado escola
+-- Q8 N+1 anti-pattern (loop) vs join único

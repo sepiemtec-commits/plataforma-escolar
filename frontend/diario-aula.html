@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+    <title>Diário de Classe — VEHO</title>
+    <link rel="stylesheet" href="/styles/relatorios.css">
+    <link rel="stylesheet" href="/styles/painel.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
+</head>
+<body class="relatorio-page" data-pagina="diario-aula">
+    <div class="rel-topbar no-print">
+        <div class="rel-topbar-nav">
+            <a href="#" class="rel-btn-voltar" id="linkVoltar">← Voltar</a>
+        </div>
+        <span id="nomeUsuario"></span>
+    </div>
+
+    <div class="rel-container">
+        <h1 class="rel-titulo no-print">📖 Diário de Classe</h1>
+        <p class="rel-verificacao-dica no-print" id="dicaDiarioClasse">
+            Lance presença/falta, conteúdo programático e observações do dia.
+            Coordenação pode consultar o período e imprimir em PDF.
+        </p>
+
+        <div class="rel-filtros no-print" id="filtrosModoDiario">
+            <div>
+                <label for="filtroModoUsoDiario">Modo</label>
+                <select id="filtroModoUsoDiario">
+                    <option value="lancar">Lançar diário do dia</option>
+                    <option value="consultar">Consultar / Imprimir</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- LANÇAMENTO DO DIA -->
+        <div id="painelLancarDiario" class="no-print">
+            <div class="rel-filtros">
+                <div>
+                    <label for="filtroDataLancar">Data da aula</label>
+                    <input type="date" id="filtroDataLancar">
+                </div>
+                <div>
+                    <label for="filtroTurmaLancar">Turma</label>
+                    <select id="filtroTurmaLancar">
+                        <option value="">Selecione a turma</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filtroDisciplinaLancar">Disciplina</label>
+                    <select id="filtroDisciplinaLancar">
+                        <option value="">Selecione a disciplina</option>
+                    </select>
+                </div>
+                <button type="button" class="rel-btn rel-btn-primario" id="btnAbrirDiaDiario">Abrir diário do dia</button>
+            </div>
+
+            <div id="formularioDiarioDia" hidden>
+                <div class="diario-lancamento-cab no-print">
+                    <strong id="rotuloDiarioDia"></strong>
+                    <span id="statusDiarioDia" class="diario-status"></span>
+                </div>
+
+                <section class="diario-secao-form">
+                    <h2 class="diario-secao-titulo">1. Presenças e faltas</h2>
+                    <div id="resumoTaxasDiario" class="presenca-taxas" style="display:none;margin-bottom:12px;" aria-live="polite">
+                        <div class="presenca-taxa-item presenca-taxa-presente">
+                            <span class="presenca-taxa-label">Presença</span>
+                            <strong id="diarioTaxaPresenca">0%</strong>
+                        </div>
+                        <div class="presenca-taxa-item presenca-taxa-falta">
+                            <span class="presenca-taxa-label">Faltas</span>
+                            <strong id="diarioTaxaFalta">0%</strong>
+                        </div>
+                        <div class="presenca-taxa-item">
+                            <span class="presenca-taxa-label">Lançados</span>
+                            <strong id="diarioTaxaLancados">0</strong>
+                        </div>
+                    </div>
+                    <div id="listaPresencaDiario" class="lista-presenca-alunos"></div>
+                    <div class="diario-acoes-linha">
+                        <button type="button" class="rel-btn rel-btn-primario" id="btnSalvarPresencaDiario">💾 Salvar presenças/faltas</button>
+                    </div>
+                </section>
+
+                <section class="diario-secao-form">
+                    <h2 class="diario-secao-titulo">2. Conteúdo programático</h2>
+                    <div class="diario-form-grid">
+                        <div class="form-group" style="grid-column:1/-1;">
+                            <label for="diarioTitulo">Título</label>
+                            <input type="text" id="diarioTitulo" placeholder="Ex: Frações equivalentes" required>
+                        </div>
+                        <div class="form-group" style="grid-column:1/-1;">
+                            <label for="diarioDescricao">Descrição da aula</label>
+                            <textarea id="diarioDescricao" rows="3" placeholder="O que foi trabalhado na aula"></textarea>
+                        </div>
+                        <div class="form-group" style="grid-column:1/-1;">
+                            <label for="diarioTopicos">Tópicos (separados por vírgula)</label>
+                            <input type="text" id="diarioTopicos" placeholder="Ex: Conceito, Exemplos, Exercícios">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="diario-secao-form">
+                    <h2 class="diario-secao-titulo">3. Observações</h2>
+                    <div class="form-group">
+                        <label for="diarioObservacoes">Observações do dia</label>
+                        <textarea id="diarioObservacoes" rows="3" placeholder="Ocorrências, comportamento da turma, recados etc."></textarea>
+                    </div>
+                    <div class="diario-acoes-linha">
+                        <button type="button" class="rel-btn rel-btn-primario" id="btnSalvarConteudoDiario">💾 Salvar conteúdo e observações</button>
+                        <button type="button" class="rel-btn rel-btn-imprimir" id="btnSalvarTudoDiario">✓ Salvar tudo</button>
+                        <button type="button" class="rel-btn" id="btnImprimirDiaDiario">Imprimir / PDF do dia</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- CONSULTA / IMPRESSÃO -->
+        <div id="painelConsultarDiario" class="no-print" hidden>
+            <div class="rel-filtros">
+                <div>
+                    <label for="filtroModoDiario">Visualizar por</label>
+                    <select id="filtroModoDiario">
+                        <option value="periodo">Período</option>
+                        <option value="dia">Dia</option>
+                    </select>
+                </div>
+                <div id="grupoDataDiario" style="display:none;">
+                    <label for="filtroDataDiario">Data</label>
+                    <input type="date" id="filtroDataDiario">
+                </div>
+                <div id="grupoPeriodoDiario">
+                    <label for="filtroPeriodoDiario">Período</label>
+                    <select id="filtroPeriodoDiario">
+                        <option value="1º Bimestre">1º Bimestre</option>
+                        <option value="2º Bimestre">2º Bimestre</option>
+                        <option value="3º Bimestre">3º Bimestre</option>
+                        <option value="4º Bimestre">4º Bimestre</option>
+                        <option value="Anual" selected>Ano letivo completo</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filtroTurmaDiario">Turma</label>
+                    <select id="filtroTurmaDiario">
+                        <option value="">Selecione a turma</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filtroDisciplinaDiario">Disciplina</label>
+                    <select id="filtroDisciplinaDiario">
+                        <option value="">Selecione a disciplina</option>
+                    </select>
+                </div>
+                <div id="grupoProfessorDiario" style="display:none;">
+                    <label for="filtroProfessorDiario">Professor</label>
+                    <select id="filtroProfessorDiario">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <button type="button" class="rel-btn rel-btn-primario" id="btnCarregarDiario">Gerar diário</button>
+                <button type="button" class="rel-btn rel-btn-imprimir" id="btnImprimir">Imprimir / PDF</button>
+            </div>
+        </div>
+
+        <div id="conteudo">
+            <p class="rel-aviso no-print" id="avisoInicialDiario">
+                Selecione data, turma e disciplina e clique em <strong>Abrir diário do dia</strong>.
+            </p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/academico.js"></script>
+    <script src="/js/diario-classe.js"></script>
+    <script src="/js/relatorio-pages.js"></script>
+    <script src="/js/pwa-register.js"></script>
+</body>
+</html>

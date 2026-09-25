@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { Usuario, Turma, Escola } = require('../database/schema');
-const { autenticacao, verificarRole } = require('../middleware/autenticacao');
+const { Usuario, Turma, Escola, DisciplinaConfig } = require('../database/schema');
+const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
 const {
   montarBoletimCompleto,
   montarFichaIndividual,
   montarFichaMatricula
 } = require('../services/boletim');
+const { montarDiarioAula, montarDiaDiarioAula } = require('../services/diario');
 const { inferirNivel, labelAno } = require('../constants/ensino');
 const { gerarArquivoXlsAnoLetivo } = require('../services/arquivoAnoLetivo');
 const { gerarListaFuncionariosXls } = require('../services/funcionariosXls');
@@ -16,17 +17,24 @@ const {
   filtrarBoletimPorProfessor,
   filtrarFichaPorProfessor
 } = require('../utils/professorDisciplinas');
+const {
+  filtroEscola,
+  assertAlunoEscola,
+  assertTurmaEscola,
+  responderErroTenant
+} = require('../utils/tenant');
 
 const rolesGestao = ['admin', 'diretor', 'coordenador', 'secretaria', 'professor'];
+const rolesDiario = ['admin', 'diretor', 'coordenador', 'secretaria', 'professor'];
 
 async function podeVerAluno(req, alunoId) {
-  if (['admin', 'diretor', 'coordenador', 'secretaria', 'professor'].includes(req.usuario.tipo)) {
+  try {
+    // aluno (si mesmo), responsável (filho vinculado) e equipe da escola
+    await assertAlunoEscola(req, alunoId);
     return true;
+  } catch {
+    return false;
   }
-  if (req.usuario.tipo === 'aluno') {
-    return String(req.usuario._id) === String(alunoId);
-  }
-  return false;
 }
 
 router.get('/ficha-individual/:alunoId', autenticacao, async (req, res) => {
@@ -87,15 +95,12 @@ function nivelDaTurma(turma) {
   return turma ? inferirNivel(turma) : null;
 }
 
-router.get('/gestao-boletins', autenticacao, verificarRole('admin', 'diretor', 'coordenador', 'secretaria'), async (req, res) => {
+router.get('/gestao-boletins', autenticacao, verificarRole('admin', 'diretor', 'coordenador', 'secretaria'), requerEscola, async (req, res) => {
   try {
-    const filtro = { tipo: 'aluno', ativo: true };
-    if (req.usuario.escola_id) filtro.escola_id = req.usuario.escola_id;
+    const filtro = { tipo: 'aluno', ativo: true, ...filtroEscola(req) };
 
     const alunos = await Usuario.find(filtro).select('nome cpf email');
-    const turmas = await Turma.find(
-      req.usuario.escola_id ? { escola_id: req.usuario.escola_id } : {}
-    );
+    const turmas = await Turma.find(filtroEscola(req));
     const turmaPorAluno = {};
     turmas.forEach(t => {
       (t.alunos || []).forEach(aid => {
@@ -134,32 +139,33 @@ router.get('/gestao-boletins', autenticacao, verificarRole('admin', 'diretor', '
   }
 });
 
-router.get('/alunos', autenticacao, verificarRole(...rolesGestao, 'aluno'), async (req, res) => {
+router.get('/alunos', autenticacao, verificarRole(...rolesGestao, 'aluno'), requerEscola, async (req, res) => {
   try {
     if (req.usuario.tipo === 'aluno') {
       return res.json({ sucesso: true, alunos: [{ _id: req.usuario._id, nome: req.usuario.nome, cpf: req.usuario.cpf }] });
     }
 
     const { turma_id } = req.query;
-    const filtro = { tipo: 'aluno', ativo: true };
-    if (req.usuario.escola_id) filtro.escola_id = req.usuario.escola_id;
+    const filtro = { tipo: 'aluno', ativo: true, ...filtroEscola(req) };
 
     if (turma_id) {
-      const turma = await Turma.findById(turma_id).populate('alunos', 'nome cpf email matriculaNumero');
-      if (!turma) return res.status(404).json({ sucesso: false, mensagem: 'Turma não encontrada' });
+      const turma = await assertTurmaEscola(req, turma_id, {
+        populate: { path: 'alunos', select: 'nome cpf email matriculaNumero' }
+      });
       return res.json({ sucesso: true, alunos: turma.alunos || [] });
     }
 
     const alunos = await Usuario.find(filtro).select('nome cpf email matriculaNumero').sort({ nome: 1 });
     res.json({ sucesso: true, alunos });
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao listar alunos' });
   }
 });
 
-router.get('/turmas-filtro', autenticacao, verificarRole(...rolesGestao, 'aluno'), async (req, res) => {
+router.get('/turmas-filtro', autenticacao, verificarRole(...rolesGestao, 'aluno'), requerEscola, async (req, res) => {
   try {
-    const filtro = req.usuario.escola_id ? { escola_id: req.usuario.escola_id } : {};
+    const filtro = filtroEscola(req);
     const turmas = await Turma.find(filtro)
       .populate('alunos', 'nome cpf email matriculaNumero')
       .sort({ ano: 1, nome: 1 });
@@ -213,6 +219,86 @@ router.get('/arquivo-ano-letivo/:anoLetivo', autenticacao, verificarRole(...role
   } catch (error) {
     console.error('Erro ao gerar arquivo do ano letivo:', error);
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao gerar arquivo XLS' });
+  }
+});
+
+router.get('/diario-aula', autenticacao, verificarRole(...rolesDiario), async (req, res) => {
+  try {
+    const diario = await montarDiarioAula(req.usuario, req.query);
+    res.json({ sucesso: true, diario });
+  } catch (error) {
+    console.error('Erro ao gerar diário de aula:', error);
+    res.status(error.status || 500).json({
+      sucesso: false,
+      mensagem: error.message || 'Erro ao gerar diário de aula'
+    });
+  }
+});
+
+router.get('/diario-aula/dia', autenticacao, verificarRole(...rolesDiario), async (req, res) => {
+  try {
+    const dia = await montarDiaDiarioAula(req.usuario, req.query);
+    res.json({ sucesso: true, dia });
+  } catch (error) {
+    console.error('Erro ao carregar diário do dia:', error);
+    res.status(error.status || 500).json({
+      sucesso: false,
+      mensagem: error.message || 'Erro ao carregar diário do dia'
+    });
+  }
+});
+
+router.get('/diario-aula/opcoes', autenticacao, verificarRole(...rolesDiario), async (req, res) => {
+  try {
+    const filtroTurma = req.usuario.escola_id ? { escola_id: req.usuario.escola_id } : {};
+    const turmas = await Turma.find(filtroTurma).sort({ ano: 1, nome: 1 });
+
+    let disciplinas = [];
+    if (req.usuario.tipo === 'professor') {
+      disciplinas = disciplinasDoProfessor(req.usuario);
+    } else if (req.usuario.escola_id) {
+      const configs = await DisciplinaConfig.find({
+        escola_id: req.usuario.escola_id,
+        ativo: true
+      }).sort({ nome: 1 });
+      disciplinas = configs.map(d => d.nome);
+    }
+
+    let professores = [];
+    if (['admin', 'diretor', 'coordenador', 'secretaria'].includes(req.usuario.tipo)) {
+      professores = await Usuario.find({
+        escola_id: req.usuario.escola_id,
+        tipo: 'professor',
+        ativo: { $ne: false }
+      }).select('nome disciplinas disciplina').sort({ nome: 1 });
+    }
+
+    const escola = await Escola.findById(req.usuario.escola_id).select('configuracao.anoLetivo nome');
+
+    res.json({
+      sucesso: true,
+      anoLetivo: escola?.configuracao?.anoLetivo || new Date().getFullYear(),
+      escola: escola?.nome || '',
+      turmas: turmas.map(t => ({
+        _id: t._id,
+        nome: t.nome,
+        nivel: t.nivel,
+        ano: t.ano,
+        serie: t.serie,
+        turno: t.turno || 'Manhã'
+      })),
+      disciplinas,
+      professores: professores.map(p => ({
+        _id: p._id,
+        nome: p.nome,
+        disciplinas: Array.isArray(p.disciplinas) && p.disciplinas.length
+          ? p.disciplinas
+          : (p.disciplina ? [p.disciplina] : [])
+      }))
+    });
+  } catch (error) {
+    console.error('Erro ao carregar opções do diário:', error);
+    res.status(500).json({ sucesso: false, mensagem: 'Erro ao carregar opções do diário' });
   }
 });
 

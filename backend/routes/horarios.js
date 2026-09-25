@@ -6,6 +6,8 @@ const { DIAS_SEMANA, SLOTS_POR_TURNO, slotsDoTurno } = require('../constants/hor
 const { disciplinasDoProfessor } = require('../utils/professorDisciplinas');
 const { disciplinaPermitidaParaTurma } = require('../constants/disciplinas');
 const { formatarNomeDisciplina } = require('../utils/formatarDisciplina');
+const { validarGradeHorarios } = require('../utils/conflitosAgenda');
+const { asScalarString } = require('../utils/sanitizeQuery');
 
 router.get('/slots', autenticacao, (req, res) => {
   res.json({
@@ -26,7 +28,7 @@ router.get('/turma/:turmaId', autenticacao, verificarRole('secretaria', 'diretor
       return res.status(404).json({ sucesso: false, mensagem: 'Turma não encontrada' });
     }
 
-    const turno = req.query.turno || turma.turno || 'Manhã';
+    const turno = asScalarString(req.query.turno) || turma.turno || 'Manhã';
     const horarios = await HorarioAula.find({
       turma_id: turma._id,
       turno
@@ -57,25 +59,78 @@ router.get('/turma/:turmaId', autenticacao, verificarRole('secretaria', 'diretor
 
 router.get('/professor', autenticacao, verificarRole('professor'), async (req, res) => {
   try {
-    const turno = req.query.turno || 'Manhã';
-    const horarios = await HorarioAula.find({
+    const turnoQuery = asScalarString(req.query.turno) || 'Manhã';
+    const filtro = {
       escola_id: req.usuario.escola_id,
-      professor_id: req.usuario._id,
-      turno
-    })
+      professor_id: req.usuario._id
+    };
+
+    if (turnoQuery && turnoQuery !== 'todos') {
+      filtro.turno = turnoQuery;
+    }
+
+    const horarios = await HorarioAula.find(filtro)
       .populate('turma_id', 'nome serie ano nivel turno')
-      .sort({ horaInicio: 1, diaSemana: 1 });
+      .sort({ turno: 1, horaInicio: 1, diaSemana: 1 });
+
+    const turnosNoQuadro = [...new Set(horarios.map(h => h.turno))];
+    const turno = turnoQuery === 'todos'
+      ? 'todos'
+      : (turnoQuery || turnosNoQuadro[0] || 'Manhã');
+
+    const slots = turno === 'todos'
+      ? [...new Set(turnosNoQuadro.flatMap(t => slotsDoTurno(t)))]
+      : slotsDoTurno(turno);
 
     res.json({
       sucesso: true,
       turno,
-      slots: slotsDoTurno(turno),
+      turnosDisponiveis: turnosNoQuadro.length ? turnosNoQuadro : ['Manhã', 'Tarde', 'Noite'],
+      slots,
+      slotsPorTurno: Object.fromEntries(
+        (turnosNoQuadro.length ? turnosNoQuadro : [turno === 'todos' ? 'Manhã' : turno])
+          .map(t => [t, slotsDoTurno(t)])
+      ),
       diasSemana: DIAS_SEMANA,
-      horarios
+      horarios,
+      totalTempos: horarios.length
     });
   } catch (error) {
     console.error('Erro ao listar horários do professor:', error);
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao carregar horários' });
+  }
+});
+
+router.get('/professor/:professorId', autenticacao, verificarRole('secretaria', 'diretor', 'coordenador'), async (req, res) => {
+  try {
+    const professor = await Usuario.findOne({
+      _id: req.params.professorId,
+      escola_id: req.usuario.escola_id,
+      tipo: 'professor',
+      ativo: true
+    }).select('nome disciplina disciplinas cargaHorariaSemanal turno');
+
+    if (!professor) {
+      return res.status(404).json({ sucesso: false, mensagem: 'Professor não encontrado' });
+    }
+
+    const horarios = await HorarioAula.find({
+      escola_id: req.usuario.escola_id,
+      professor_id: professor._id
+    })
+      .populate('turma_id', 'nome turno serie ano nivel')
+      .sort({ turno: 1, diaSemana: 1, horaInicio: 1 });
+
+    res.json({
+      sucesso: true,
+      professor,
+      horarios,
+      totalTempos: horarios.length,
+      diasSemana: DIAS_SEMANA
+    });
+  } catch (error) {
+    console.error('Erro ao listar lotação do professor:', error);
+    res.status(500).json({ sucesso: false, mensagem: 'Erro ao carregar lotação do professor' });
   }
 });
 
@@ -133,18 +188,38 @@ router.put('/turma/:turmaId', autenticacao, verificarRole('secretaria', 'diretor
       }
     }
 
+    const conflitos = await validarGradeHorarios({
+      escolaId: req.usuario.escola_id,
+      turmaId: turma._id,
+      turno: turnoFinal,
+      horarios: lista
+    });
+    if (!conflitos.ok) {
+      return res.status(409).json({ sucesso: false, mensagem: conflitos.mensagem });
+    }
+
     await HorarioAula.deleteMany({ turma_id: turma._id, turno: turnoFinal });
 
     if (lista.length) {
-      await HorarioAula.insertMany(lista.map(item => ({
-        escola_id: req.usuario.escola_id,
-        turma_id: turma._id,
-        professor_id: item.professor_id,
-        disciplina: formatarNomeDisciplina(item.disciplina),
-        diaSemana: item.diaSemana,
-        horaInicio: item.horaInicio,
-        turno: turnoFinal
-      })));
+      try {
+        await HorarioAula.insertMany(lista.map(item => ({
+          escola_id: req.usuario.escola_id,
+          turma_id: turma._id,
+          professor_id: item.professor_id,
+          disciplina: formatarNomeDisciplina(item.disciplina),
+          diaSemana: item.diaSemana,
+          horaInicio: item.horaInicio,
+          turno: turnoFinal
+        })));
+      } catch (err) {
+        if (err.code === 11000) {
+          return res.status(409).json({
+            sucesso: false,
+            mensagem: 'Conflito de horário: turma ou professor já possui aula neste horário'
+          });
+        }
+        throw err;
+      }
     }
 
     await Log.create({

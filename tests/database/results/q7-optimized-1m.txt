@@ -1,0 +1,41 @@
+                                                                                 QUERY PLAN                                                                                  
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.29..1221.42 rows=100 width=91) (actual time=0.185..2.610 rows=100 loops=1)
+   Buffers: shared hit=1209 read=103
+   ->  Index Scan using idx_turmas_escola_nome on turmas t  (cost=0.29..15264.41 rows=1250 width=91) (actual time=0.180..2.598 rows=100 loops=1)
+         Index Cond: (escola_id = 1)
+         Buffers: shared hit=1209 read=103
+         SubPlan 1
+           ->  Aggregate  (cost=2.33..2.33 rows=1 width=8) (actual time=0.007..0.007 rows=1 loops=100)
+                 Buffers: shared hit=314
+                 ->  Index Only Scan using idx_matriculas_turma_aluno on matriculas m  (cost=0.42..2.23 rows=40 width=0) (actual time=0.004..0.006 rows=40 loops=100)
+                       Index Cond: (turma_id = t.id)
+                       Heap Fetches: 0
+                       Buffers: shared hit=314
+         SubPlan 2
+           ->  Aggregate  (cost=3.43..3.44 rows=1 width=32) (actual time=0.007..0.007 rows=1 loops=100)
+                 Buffers: shared hit=325
+                 ->  Index Only Scan using idx_boletins_turma_media_situacao on boletins b  (cost=0.42..3.32 rows=40 width=6) (actual time=0.003..0.005 rows=40 loops=100)
+                       Index Cond: (turma_id = t.id)
+                       Heap Fetches: 0
+                       Buffers: shared hit=325
+         SubPlan 3
+           ->  Aggregate  (cost=2.67..2.68 rows=1 width=8) (actual time=0.004..0.004 rows=1 loops=100)
+                 Buffers: shared hit=224 read=76
+                 ->  Index Only Scan using idx_boletins_turma_situacao on boletins b_1  (cost=0.42..2.67 rows=2 width=0) (actual time=0.004..0.004 rows=0 loops=100)
+                       Index Cond: ((turma_id = t.id) AND (situacao = 'recuperacao'::text))
+                       Heap Fetches: 0
+                       Buffers: shared hit=224 read=76
+         SubPlan 4
+           ->  Aggregate  (cost=3.43..3.44 rows=1 width=32) (actual time=0.005..0.005 rows=1 loops=100)
+                 Buffers: shared hit=325
+                 ->  Index Only Scan using idx_boletins_turma_media_situacao on boletins b_2  (cost=0.42..3.32 rows=40 width=6) (actual time=0.001..0.003 rows=40 loops=100)
+                       Index Cond: (turma_id = t.id)
+                       Heap Fetches: 0
+                       Buffers: shared hit=325
+ Planning:
+   Buffers: shared hit=313 read=6
+ Planning Time: 2.298 ms
+ Execution Time: 2.847 ms
+(37 rows)
+

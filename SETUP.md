@@ -50,10 +50,12 @@ Use estes dados para fazer login e testar:
 
 | Função | Email | Senha |
 |--------|-------|-------|
-| Professor | prof@escola.com | senha123 |
+| Professor | professor@escola.com | senha123 |
 | Diretor | diretor@escola.com | senha123 |
-| Coordenador | coord@escola.com | senha123 |
-| Aluno | aluno@escola.com | senha123 |
+| Coordenador | coordenador@escola.com | senha123 |
+| Secretaria | secretaria@escola.com | senha123 |
+| Aluno | aluno1@escola.com | senha123 |
+| Responsável | responsavel@escola.com | senha123 |
 
 *Crie novos usuários através da rota `/auth/registrar` ou painel de administração*
 

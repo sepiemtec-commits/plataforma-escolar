@@ -1,27 +1,26 @@
-/* Relatórios Acadêmicos - estilo Edukante */
-:root {
-    --rel-azul: #3d6a9f;
-    --rel-azul-escuro: #2e5080;
-    --rel-azul-claro: #4a7eb8;
-    --rel-borda: #dce4ec;
-    --rel-fundo: #f7f9fc;
-}
+/* Relatórios Acadêmicos — VEHO (paleta 50/30/20) */
+@import url('tokens.css');
 
 body.relatorio-page {
     margin: 0;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 500;
-    background: #fff;
-    color: #333;
+    background: var(--cor-50);
+    color: var(--cor-texto);
 }
 
 .rel-topbar {
-    background: linear-gradient(180deg, var(--rel-azul-claro) 0%, var(--rel-azul) 100%);
+    background: var(--cor-sidebar);
     color: #fff;
     padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .rel-topbar a {
@@ -32,6 +31,37 @@ body.relatorio-page {
 }
 
 .rel-topbar a:hover { text-decoration: underline; }
+
+.rel-topbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.rel-btn-voltar {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    color: #fff;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 0;
+}
+
+.rel-btn-voltar:hover {
+    background: rgba(255, 255, 255, 0.28);
+    text-decoration: none;
+}
+
+.rel-topbar-nav a:not(.rel-btn-voltar) {
+    margin-right: 0;
+}
 
 .rel-container {
     max-width: 1200px;
@@ -87,7 +117,7 @@ body.relatorio-page {
 }
 
 .rel-erro {
-    color: #c0392b;
+    color: var(--cor-erro);
     padding: 20px;
     text-align: center;
 }
@@ -342,7 +372,240 @@ body.relatorio-page {
     margin-bottom: 0;
 }
 
+/* Diário de aula */
+.rel-bloco-card {
+    border: 1px solid var(--rel-borda);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 18px;
+    background: #fff;
+}
+
+.rel-bloco-card .rel-subtitulo {
+    margin-top: 0;
+}
+
+.diario-cabecalho {
+    text-align: center;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--rel-azul);
+    padding-bottom: 16px;
+}
+
+.diario-doc-titulo {
+    margin: 8px 0 12px;
+    color: var(--rel-azul);
+    font-size: 22px;
+}
+
+.diario-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 6px 16px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.diario-meta p {
+    margin: 0;
+}
+
+.diario-secao {
+    margin-top: 28px;
+}
+
+.diario-secao-titulo {
+    margin: 0 0 12px;
+    color: var(--rel-azul-escuro);
+    font-size: 17px;
+    border-bottom: 1px solid var(--rel-borda);
+    padding-bottom: 6px;
+}
+
+.diario-conteudos-lista {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.diario-conteudo-item {
+    margin-bottom: 14px;
+    page-break-inside: avoid;
+}
+
+.diario-conteudo-cab {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: baseline;
+}
+
+.diario-conteudo-cab small {
+    color: #666;
+}
+
+.diario-conteudo-desc,
+.diario-conteudo-topicos,
+.diario-conteudo-obs {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #444;
+    line-height: 1.45;
+}
+
+.diario-secao-form {
+    background: #fff;
+    border: 1px solid var(--rel-borda);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 18px;
+}
+
+.diario-lancamento-cab {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    font-size: 15px;
+}
+
+.diario-status {
+    color: #006064;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.diario-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.diario-form-grid .form-group,
+.diario-secao-form .form-group {
+    margin-bottom: 0;
+}
+
+.diario-form-grid label,
+.diario-secao-form label {
+    display: block;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.diario-form-grid input,
+.diario-form-grid textarea,
+.diario-secao-form input,
+.diario-secao-form textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #b0c4de;
+    border-radius: 4px;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.diario-acoes-linha {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+@media (max-width: 700px) {
+    .diario-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.diario-resumo-freq {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.diario-resumo-freq > div {
+    background: var(--rel-fundo);
+    border: 1px solid var(--rel-borda);
+    border-radius: 4px;
+    padding: 10px 12px;
+    text-align: center;
+}
+
+.diario-resumo-freq span {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.diario-resumo-freq strong {
+    font-size: 18px;
+    color: var(--rel-azul-escuro);
+}
+
+.diario-tabela-freq td,
+.diario-tabela-chamada td {
+    font-size: 13px;
+}
+
+.diario-nome-aluno {
+    text-align: left !important;
+}
+
+.diario-chip {
+    display: inline-block;
+    padding: 2px 7px;
+    margin: 2px;
+    border-radius: 3px;
+    background: #eceff1;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.diario-chip-presente { background: #c8e6c9; color: #1b5e20; }
+.diario-chip-falta { background: var(--cor-erro-fundo); color: var(--cor-erro); }
+.diario-chip-justificada { background: #fff9c4; color: #f57f17; }
+.diario-chip-atraso { background: #ffe0b2; color: #e65100; }
+
+.diario-rodape {
+    margin-top: 36px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rel-borda);
+    font-size: 12px;
+    color: #666;
+}
+
+.diario-assinatura {
+    display: flex;
+    justify-content: space-around;
+    gap: 24px;
+    margin-top: 40px;
+    text-align: center;
+    page-break-inside: avoid;
+}
+
+.diario-assinatura p {
+    margin: 4px 0;
+    color: #333;
+    font-size: 13px;
+}
+
+.diario-assinatura small {
+    color: #666;
+}
+
 @media print {
     .rel-topbar, .rel-filtros, .rel-acoes-linha, .no-print { display: none !important; }
     .rel-container { max-width: 100%; padding: 0; }
+    .diario-documento {
+        border: none;
+        padding: 0;
+    }
+    .diario-resumo-freq > div {
+        background: #fff;
+    }
 }

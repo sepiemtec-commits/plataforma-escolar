@@ -2,14 +2,12 @@
 
 require('dotenv').config();
 
-const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const path = require('path');
+const { obterJwtSecret } = require('./utils/jwtSecret');
+const { createApp } = require('./app');
+const { connectMongo } = require('./utils/mongoConnect');
 
-const app = express();
+const isProd = process.env.NODE_ENV === 'production';
 
 // ==================== VALIDAÇÃO DE VARIÁVEIS ====================
 if (!process.env.MONGODB_URI) {
@@ -17,103 +15,61 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 
-// ==================== MIDDLEWARE ====================
-app.use(helmet());
+try {
+  obterJwtSecret();
+  console.log('✓ JWT_SECRET validada');
+} catch (err) {
+  console.error(`❌ ${err.message}`);
+  process.exit(1);
+}
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || '*', // permite funcionar mesmo se não configurar
-  credentials: true
-}));
+if (isProd && (!process.env.FRONTEND_URL || process.env.FRONTEND_URL === '*')) {
+  console.warn('⚠️  FRONTEND_URL deve ser a URL pública em produção (CORS).');
+}
 
-app.use(morgan('dev'));
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const app = createApp();
 
 // ==================== CONEXÃO MONGODB ====================
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('✓ Conectado ao MongoDB');
+connectMongo(mongoose, process.env.MONGODB_URI)
+  .then((opts) => {
+    console.log(`✓ Conectado ao MongoDB (maxPoolSize=${opts.maxPoolSize}, waitQueueTimeoutMS=${opts.waitQueueTimeoutMS})`);
   })
-  .catch(err => {
+  .catch((err) => {
     console.error('✗ Erro ao conectar MongoDB:', err.message);
     process.exit(1);
   });
 
-// ==================== ROTAS ====================
-const rotasAutenticacao = require('./routes/autenticacao');
-const rotasPresenca = require('./routes/presenca');
-const rotasAvaliacao = require('./routes/avaliacao');
-const rotasConteudo = require('./routes/conteudo');
-const rotasPainel = require('./routes/painel');
-const rotasUsuarios = require('./routes/usuarios');
-const rotasNotificacoes = require('./routes/notificacoes');
-const rotasTurmas = require('./routes/turmas');
-const rotasRelatorios = require('./routes/relatorios');
-const rotasHistorico = require('./routes/historico');
-const rotasDocumentos = require('./routes/documentos');
-const rotasPromocao = require('./routes/promocao');
-const rotasDisciplinas = require('./routes/disciplinas');
-const rotasHorarios = require('./routes/horarios');
-
-app.use('/api/auth', rotasAutenticacao);
-app.use('/api/presenca', rotasPresenca);
-app.use('/api/avaliacao', rotasAvaliacao);
-app.use('/api/conteudo', rotasConteudo);
-app.use('/api/painel', rotasPainel);
-app.use('/api/usuarios', rotasUsuarios);
-app.use('/api/notificacoes', rotasNotificacoes);
-app.use('/api/turmas', rotasTurmas);
-app.use('/api/relatorios', rotasRelatorios);
-app.use('/api/historico', rotasHistorico);
-app.use('/api/documentos', rotasDocumentos);
-app.use('/api/promocao', rotasPromocao);
-app.use('/api/disciplinas', rotasDisciplinas);
-app.use('/api/horarios', rotasHorarios);
-
-// ==================== HEALTH CHECK ====================
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    timestamp: new Date()
-  });
-});
-
-// ==================== FRONTEND ESTÁTICO ====================
-const frontendPath = path.join(__dirname, '../frontend');
-app.use(express.static(frontendPath));
-
-// ==================== 404 ====================
-app.use((req, res) => {
-  if (req.path.startsWith('/api')) {
-    return res.status(404).json({
-      sucesso: false,
-      mensagem: 'Rota não encontrada'
-    });
-  }
-
-  res.status(404).sendFile(path.join(frontendPath, 'index.html'));
-});
-
-// ==================== ERROR HANDLER ====================
-app.use((err, req, res, next) => {
-  console.error(err);
-
-  res.status(err.status || 500).json({
-    sucesso: false,
-    mensagem: process.env.NODE_ENV === 'production'
-      ? 'Erro interno do servidor'
-      : err.message
-  });
-});
-
 // ==================== INICIAR SERVIDOR ====================
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
-app.listen(PORT, () => {
+function obterIpsLan() {
+  try {
+    const os = require('os');
+    const nets = os.networkInterfaces();
+    const ips = [];
+    for (const nome of Object.keys(nets || {})) {
+      for (const net of nets[nome] || []) {
+        if (net.family === 'IPv4' && !net.internal) ips.push(net.address);
+      }
+    }
+    return ips;
+  } catch {
+    return [];
+  }
+}
+
+app.listen(PORT, HOST, () => {
   console.log('\n🚀 Servidor iniciado');
-  console.log(`📌 Porta: ${PORT}`);
+  console.log(`📌 Porta: ${PORT} (bind ${HOST})`);
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 http://localhost:${PORT}\n`);
+  console.log(`🔗 http://localhost:${PORT}`);
+  const lan = obterIpsLan();
+  if (lan.length) {
+    console.log('📱 No celular (mesma Wi‑Fi), abra:');
+    lan.forEach((ip) => console.log(`   http://${ip}:${PORT}`));
+  }
+  console.log('');
 });
+
+module.exports = app;

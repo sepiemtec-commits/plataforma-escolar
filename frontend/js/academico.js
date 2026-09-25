@@ -23,22 +23,64 @@ function parseNotaBR(valor) {
 
 function obterAlunoIdUrl() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('alunoId');
+    return params.get('alunoId') || params.get('aluno');
 }
 
 function voltarAcademico() {
     window.location.href = 'academico.html';
 }
 
+function obterPainelUsuario() {
+    const paineis = {
+        diretor: 'painel-diretor.html',
+        coordenador: 'painel-coordenador.html',
+        secretaria: 'painel-secretaria.html',
+        professor: 'painel-professor.html',
+        aluno: 'painel-aluno.html',
+        responsavel: 'painel-responsavel.html',
+        admin: 'painel-secretaria.html'
+    };
+
+    try {
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        return paineis[usuario.tipo] || 'academico.html';
+    } catch {
+        return 'index.html';
+    }
+}
+
+function configurarBotaoVoltar(idElemento = 'linkVoltar', fallbackHref) {
+    const el = document.getElementById(idElemento);
+    if (!el || el.dataset.voltarConfigurado === '1') return;
+
+    el.dataset.voltarConfigurado = '1';
+    el.addEventListener('click', (evento) => {
+        evento.preventDefault();
+        const origemInterna = document.referrer && document.referrer.startsWith(window.location.origin);
+        if (origemInterna && window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+        window.location.href = fallbackHref || obterPainelUsuario();
+    });
+}
+
+function configurarNavegacaoPadrao() {
+    configurarBotaoImprimir();
+    configurarBotaoVoltar('linkVoltar');
+}
+
 function configurarBotaoImprimir() {
     document.querySelectorAll('#btnImprimir, .btn-imprimir-rel').forEach(btn => {
+        if (btn.dataset.imprimirConfigurado === '1') return;
+        btn.dataset.imprimirConfigurado = '1';
         btn.addEventListener('click', () => window.print());
     });
 }
 
 function preencherSelect(select, opcoes, placeholder) {
     if (!select) return;
-    select.innerHTML = `<option value="">${placeholder}</option>`;
+    select.innerHTML = `<option value="">${escaparHtml(placeholder)}</option>`;
     opcoes.forEach(({ value, label }) => {
         const opt = document.createElement('option');
         opt.value = value;
@@ -193,7 +235,73 @@ function aoPronto(fn) {
     }
 }
 
-aoPronto(configurarBotaoImprimir);
+aoPronto(configurarNavegacaoPadrao);
+
+async function listarAlunosDoResponsavel() {
+    const resposta = await api.carregarPainelResponsavel();
+    return resposta.painel?.alunosDetalhes || [];
+}
+
+async function initRelatorioResponsavel(callback, alunoIdUrl, btnCarregar) {
+    const alunos = await listarAlunosDoResponsavel();
+    if (!alunos.length) {
+        exibirErroRelatorio?.('Nenhum aluno vinculado a este responsável.');
+        return;
+    }
+
+    const alunoDireto = alunoIdUrl || (alunos.length === 1 ? String(alunos[0]._id) : null);
+
+    if (alunoDireto) {
+        const permitido = alunos.some(a => String(a._id) === String(alunoDireto));
+        if (!permitido) {
+            exibirErroRelatorio?.('Acesso negado a este aluno.');
+            return;
+        }
+        document.querySelector('.rel-filtros')?.remove();
+        try {
+            await callback(String(alunoDireto));
+        } catch (erro) {
+            exibirErroRelatorio?.(erro.message);
+        }
+        return;
+    }
+
+    // Vários filhos: mostra só o seletor de aluno (sem filtros de turma da gestão)
+    const barra = document.querySelector('.rel-filtros');
+    if (barra) {
+        barra.querySelectorAll('div').forEach(div => {
+            if (!div.querySelector('#selectAluno') && !div.querySelector('#btnCarregar')) {
+                div.remove();
+            }
+        });
+        barra.querySelector('#btnNovoAno')?.remove();
+    }
+
+    const select = document.getElementById('selectAluno');
+    if (select) {
+        preencherSelect(
+            select,
+            alunos.map(a => ({ value: String(a._id), label: a.nome })),
+            'Selecione o aluno'
+        );
+    }
+
+    if (btnCarregar) {
+        btnCarregar.type = 'button';
+        btnCarregar.addEventListener('click', async () => {
+            const id = select?.value;
+            if (!id) {
+                alert('Selecione o aluno');
+                return;
+            }
+            try {
+                await callback(id);
+            } catch (erro) {
+                exibirErroRelatorio?.(erro.message) || alert(erro.message);
+            }
+        });
+    }
+}
 
 async function initRelatorioPage(callback) {
     try {
@@ -204,6 +312,7 @@ async function initRelatorioPage(callback) {
     }
 
     definirNomeUsuario?.();
+    configurarBotaoVoltar('linkVoltar');
 
     const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
     const btnCarregar = document.getElementById('btnCarregar');
@@ -219,6 +328,11 @@ async function initRelatorioPage(callback) {
                 exibirErroRelatorio?.(erro.message);
             }
         }
+        return;
+    }
+
+    if (usuario.tipo === 'responsavel') {
+        await initRelatorioResponsavel(callback, alunoIdUrl, btnCarregar);
         return;
     }
 
@@ -275,7 +389,7 @@ async function initRelatorioPage(callback) {
 
 function renderBoletimTabela(boletim, container) {
     const colsBim = BIMESTRES.map(bim => `
-        <th colspan="3" class="rel-boletim-grupo">${bim}</th>
+        <th colspan="3" class="rel-boletim-grupo">${escaparHtml(bim)}</th>
     `).join('');
 
     const subCols = BIMESTRES.map(() =>
@@ -285,23 +399,23 @@ function renderBoletimTabela(boletim, container) {
     const linhas = boletim.disciplinas.map(d => {
         const bimCells = BIMESTRES.map(bim => {
             const b = d.bimestres[bim] || {};
-            return `<td>${formatarNotaBR(b.av1)}</td><td>${formatarNotaBR(b.av2)}</td><td><strong>${formatarNotaBR(b.media)}</strong></td>`;
+            return `<td>${escaparHtml(formatarNotaBR(b.av1))}</td><td>${escaparHtml(formatarNotaBR(b.av2))}</td><td><strong>${escaparHtml(formatarNotaBR(b.media))}</strong></td>`;
         }).join('');
 
         return `<tr>
-            <td>${d.disciplina}</td>
-            <td>${d.cargaHoraria} Hrs</td>
-            <td>${d.professor}</td>
+            <td>${escaparHtml(d.disciplina)}</td>
+            <td>${escaparHtml(d.cargaHoraria)} Hrs</td>
+            <td>${escaparHtml(d.professor)}</td>
             ${bimCells}
-            <td><strong>${formatarNotaBR(d.mediaFinal)}</strong></td>
-            <td>${d.faltas}</td>
+            <td><strong>${escaparHtml(formatarNotaBR(d.mediaFinal))}</strong></td>
+            <td>${escaparHtml(d.faltas)}</td>
         </tr>`;
     }).join('');
 
     container.innerHTML = `
-        <p class="rel-escola-nome">${boletim.escola?.nome || 'Escola'} — Boletim Acadêmico</p>
+        <p class="rel-escola-nome">${escaparHtml(boletim.escola?.nome || 'Escola')} — Boletim Acadêmico</p>
         <p style="text-align:center;margin-bottom:16px;">
-            <strong>${boletim.aluno.nome}</strong> · ${boletim.turma?.nome || ''} · ${boletim.anoLetivo}
+            <strong>${escaparHtml(boletim.aluno.nome)}</strong> · ${escaparHtml(boletim.turma?.nome || '')} · ${escaparHtml(boletim.anoLetivo)}
         </p>
         <div style="overflow-x:auto">
         <table class="rel-tabela">

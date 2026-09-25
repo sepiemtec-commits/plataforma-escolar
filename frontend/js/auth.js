@@ -3,7 +3,8 @@ const PAINEL_POR_TIPO = {
     coordenador: 'painel-coordenador.html',
     secretaria: 'painel-secretaria.html',
     professor: 'painel-professor.html',
-    aluno: 'painel-aluno.html'
+    aluno: 'painel-aluno.html',
+    responsavel: 'painel-responsavel.html'
 };
 
 async function exigirPerfil(tipoEsperado) {

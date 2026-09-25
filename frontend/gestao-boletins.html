@@ -3,13 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Boletins — EdPlus</title>
-    <link rel="stylesheet" href="styles/relatorios.css">
-    <link rel="stylesheet" href="styles/fonts.css">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+    <title>Gestão de Boletins — VEHO</title>
+    <link rel="stylesheet" href="/styles/relatorios.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
 </head>
 <body class="relatorio-page" data-pagina="gestao-boletins">
     <div class="rel-topbar no-print">
-        <div><a href="academico.html">← Acadêmico</a></div>
+        <div class="rel-topbar-nav">
+            <a href="#" class="rel-btn-voltar" id="linkVoltar">← Voltar</a>
+        </div>
         <span id="nomeUsuario"></span>
     </div>
 
@@ -38,8 +49,9 @@
         <div id="conteudo"><p class="rel-carregando">Carregando...</p></div>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/academico.js"></script>
-    <script src="js/relatorio-pages.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/academico.js"></script>
+    <script src="/js/relatorio-pages.js"></script>
+    <script src="/js/pwa-register.js"></script>
 </body>
 </html>

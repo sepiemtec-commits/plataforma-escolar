@@ -2,20 +2,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('loginForm');
-    const togglePassword = document.getElementById('togglePassword');
-    const inputSenha = document.getElementById('senha');
-
-    // Toggle mostrar/ocultar senha
-    togglePassword.addEventListener('click', () => {
-        if (inputSenha.type === 'password') {
-            inputSenha.type = 'text';
-            togglePassword.textContent = '🙈';
-        } else {
-            inputSenha.type = 'password';
-            togglePassword.textContent = '👁️';
-        }
-    });
-
     // Submeter formulário
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -43,29 +29,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Redirecionar para dashboard apropriado
                 setTimeout(() => {
                     const usuario = resposta.usuario;
-                    switch (usuario.tipo) {
-                        case 'diretor':
-                            window.location.href = 'painel-diretor.html';
-                            break;
-                        case 'coordenador':
-                            window.location.href = 'painel-coordenador.html';
-                            break;
-                        case 'professor':
-                            window.location.href = 'painel-professor.html';
-                            break;
-                        case 'secretaria':
-                            window.location.href = 'painel-secretaria.html';
-                            break;
-                        case 'aluno':
-                            window.location.href = 'painel-aluno.html';
-                            break;
-                        default:
-                            window.location.href = 'index.html';
-                    }
-                }, 1500);
+                    const destinos = {
+                        diretor: 'painel-diretor.html',
+                        coordenador: 'painel-coordenador.html',
+                        professor: 'painel-professor.html',
+                        secretaria: 'painel-secretaria.html',
+                        aluno: 'painel-aluno.html',
+                        responsavel: 'painel-responsavel.html'
+                    };
+                    window.location.href = destinos[usuario.tipo] || 'index.html';
+                }, 800);
             }
         } catch (erro) {
-            divErro.textContent = '❌ ' + erro.message;
+            divErro.textContent = erro.message;
             divErro.style.display = 'block';
         }
     });

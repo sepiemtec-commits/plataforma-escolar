@@ -1,0 +1,55 @@
+/**
+ * VEHO Edu — cinza + azul + branco
+ *
+ * 50% Branco / cinza-claro  → fundos
+ * 30% Cinza-azulado         → estrutura (sidebar, tipografia)
+ * 20% Azul                  → ações, links, estados ativos
+ *
+ * Vermelho: SOMENTE falta (F), logout/sair e erros.
+ */
+
+:root {
+    /* --- Base: branco, cinza, azul --- */
+    --cor-50: #F4F6F8;              /* fundo dominante (cinza muito claro) */
+    --cor-30: #5A6A7A;              /* cinza-azulado estrutural */
+    --cor-20: #3A6EA5;              /* azul de ação */
+
+    --cor-30-hover: #4A5866;
+    --cor-20-hover: #2F5A8A;
+    --cor-20-suave: rgba(58, 110, 165, 0.14);
+    --cor-50-forte: #E4E9EF;        /* cinza um pouco mais marcado */
+    --cor-superficie: #FFFFFF;      /* branco */
+    --cor-texto: #3D4A57;           /* cinza-azulado escuro para texto */
+    --cor-texto-suave: #7A8794;
+    --cor-borda: #D0D7DE;
+
+    /* Sidebar / headers um tom mais fechado (ainda cinza-azul, sem navy agressivo) */
+    --cor-sidebar: #4A5B6C;
+
+    /* Sucesso / aviso — discretos (não vermelho) */
+    --cor-sucesso: #4A7C59;
+    --cor-aviso: #9A7B4F;
+
+    /* Vermelho restrito */
+    --cor-erro: #C62828;
+    --cor-erro-hover: #A31F1F;
+    --cor-erro-fundo: #FDECEA;
+    --cor-erro-borda: #F5C6C2;
+
+    /* Aliases legado */
+    --cor-dominante: var(--cor-50);
+    --cor-secundaria-marca: var(--cor-sidebar);
+    --cor-destaque: var(--cor-20);
+    --cor-fundo: var(--cor-50);
+    --cor-primaria: var(--cor-sidebar);
+    --cor-secundaria: var(--cor-20);
+
+    --sombra: 0 1px 4px rgba(74, 91, 108, 0.08);
+    --sombra-forte: 0 6px 20px rgba(74, 91, 108, 0.12);
+
+    --rel-azul: var(--cor-sidebar);
+    --rel-azul-escuro: var(--cor-30-hover);
+    --rel-azul-claro: var(--cor-20);
+    --rel-borda: var(--cor-borda);
+    --rel-fundo: var(--cor-50);
+}

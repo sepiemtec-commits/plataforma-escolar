@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+    <title>Diário de Classe — Minha Frequência</title>
+    <link rel="stylesheet" href="/styles/relatorios.css">
+    <link rel="stylesheet" href="/styles/painel.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
+</head>
+<body class="relatorio-page" data-pagina="diario-aluno">
+    <div class="rel-topbar no-print">
+        <div class="rel-topbar-nav">
+            <a href="#" class="rel-btn-voltar" id="linkVoltar">← Voltar</a>
+        </div>
+        <span id="nomeUsuario"></span>
+    </div>
+
+    <div class="rel-container">
+        <h1 class="rel-titulo">📖 Diário de Classe</h1>
+        <p class="rel-verificacao-dica no-print" id="dicaDiarioAluno">
+            Sua frequência individual (presenças e faltas). Escolha bimestre e disciplina e clique em
+            <strong>Ver frequência</strong>.
+        </p>
+
+        <div class="grid-paineis no-print" style="margin-bottom: 20px;">
+            <div class="card">
+                <h3>Frequência</h3>
+                <div class="card-valor" id="resumoFrequencia">—</div>
+            </div>
+            <div class="card">
+                <h3>Presentes</h3>
+                <div class="card-valor" id="resumoPresentes">0</div>
+            </div>
+            <div class="card">
+                <h3>Faltas</h3>
+                <div class="card-valor" id="resumoFaltas">0</div>
+            </div>
+        </div>
+
+        <div class="rel-filtros no-print">
+            <div>
+                <label for="filtroBimestreAluno">Bimestre</label>
+                <select id="filtroBimestreAluno">
+                    <option value="">Todos os bimestres</option>
+                    <option value="1">1º Bimestre</option>
+                    <option value="2">2º Bimestre</option>
+                    <option value="3">3º Bimestre</option>
+                    <option value="4">4º Bimestre</option>
+                </select>
+            </div>
+            <div>
+                <label for="filtroDisciplinaAluno">Disciplina</label>
+                <select id="filtroDisciplinaAluno">
+                    <option value="">Todas as disciplinas</option>
+                </select>
+            </div>
+            <div>
+                <label>&nbsp;</label>
+                <button type="button" class="rel-btn rel-btn-primario" id="btnFiltrarDiarioAluno">Ver frequência</button>
+            </div>
+        </div>
+
+        <div id="conteudoDiarioAluno">
+            <p class="alerta alerta-info">Carregando...</p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/academico.js"></script>
+    <script src="js/diario-aluno.js?v=5"></script>
+    <script src="/js/pwa-register.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# Produção local / VPS: app + MongoDB
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
+#
+# Antes: copie .env.production.example → .env.production e preencha.
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - veho_mongo_data:/data/db
+    networks:
+      - veho
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongo:27017/veho_edu
+      PORT: "3000"
+    volumes:
+      - veho_uploads:/app/uploads
+    depends_on:
+      - mongo
+    networks:
+      - veho
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  veho_mongo_data:
+  veho_uploads:
+
+networks:
+  veho:

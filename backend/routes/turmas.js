@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const { Turma, Usuario, Presenca, Log } = require('../database/schema');
 const { montarBoletimCompleto } = require('../services/boletim');
 const { disciplinasDoProfessor } = require('../utils/professorDisciplinas');
-const { autenticacao, verificarRole } = require('../middleware/autenticacao');
+const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
 const {
   NIVEIS_LISTA,
   ANOS_POR_NIVEL,
@@ -16,12 +16,11 @@ const {
   validarTurno,
   TURNOS_LISTA
 } = require('../constants/ensino');
+const { filtroEscola, assertAlunoEscola, responderErroTenant } = require('../utils/tenant');
+const { matricularAlunoUmaTurma } = require('../utils/conflitosAgenda');
+const { obterSenhaCadastro } = require('../utils/senhaPadrao');
 
 const rolesGestao = ['secretaria', 'admin', 'diretor'];
-
-function filtroEscola(req) {
-  return req.usuario.escola_id ? { escola_id: req.usuario.escola_id } : {};
-}
 
 function enriquecerTurma(turma) {
   const obj = turma.toObject ? turma.toObject() : { ...turma };
@@ -51,14 +50,20 @@ async function gerarEmailAluno(nome) {
   return `aluno.${crypto.randomBytes(4).toString('hex')}@aluno.plataforma.local`;
 }
 
-async function matricularAlunoNaTurma(alunoId, turmaId) {
-  if (!turmaId) return;
+async function matricularAlunoNaTurma(alunoId, turmaId, escolaId) {
+  if (!turmaId || !alunoId) return;
+  // Um aluno só pode estar em uma turma da escola
+  if (escolaId) {
+    const r = await matricularAlunoUmaTurma({ escolaId, alunoId, turmaId });
+    if (!r.ok) throw new Error(r.mensagem);
+    return;
+  }
   await Turma.findByIdAndUpdate(turmaId, { $addToSet: { alunos: alunoId } });
 }
 
 async function criarAlunoMatricula(dados, escolaId) {
   const {
-    nome, email, whatsapp, turma_id, senha,
+    nome, email, whatsapp, turma_id, senha, cpf,
     dataNascimento, certidao_nascimento,
     filiacao_pai, filiacao_mae, nome_responsavel,
     cpf_responsavel, rg_responsavel, whatsapp_responsavel,
@@ -93,13 +98,22 @@ async function criarAlunoMatricula(dados, escolaId) {
     throw new Error(`Email já cadastrado: ${emailFinal}`);
   }
 
-  const cpfInterno = `ALU-${crypto.randomBytes(6).toString('hex')}`;
+  let cpfFinal = cpf?.trim();
+  if (cpfFinal) {
+    const cpfExistente = await Usuario.findOne({ cpf: cpfFinal });
+    if (cpfExistente) {
+      throw new Error(`CPF já cadastrado: ${cpfFinal}`);
+    }
+  } else {
+    cpfFinal = `ALU-${crypto.randomBytes(6).toString('hex')}`;
+  }
+  const { senha: senhaFinal, gerada: senhaGerada } = obterSenhaCadastro(senha);
 
   const aluno = await Usuario.create({
     nome: nomeFinal,
     email: emailFinal,
-    senha: senha || 'senha123',
-    cpf: cpfInterno,
+    senha: senhaFinal,
+    cpf: cpfFinal,
     whatsapp: whatsapp?.trim() || undefined,
     whatsapp_responsavel: whatsapp_responsavel.trim(),
     certidao_nascimento: certidaoFinal,
@@ -120,9 +134,9 @@ async function criarAlunoMatricula(dados, escolaId) {
     ativo: true
   });
 
-  await matricularAlunoNaTurma(aluno._id, turma_id);
+  await matricularAlunoNaTurma(aluno._id, turma_id, escolaId);
 
-  return aluno;
+  return { aluno, senhaInicial: senhaFinal, senhaGerada };
 }
 
 // ==================== NÍVEIS DE ENSINO ====================
@@ -221,7 +235,7 @@ router.get('/professores/lista', autenticacao, verificarRole(...rolesGestao), as
 // ==================== CRIAR ALUNO E MATRICULAR ====================
 router.post('/alunos', autenticacao, verificarRole(...rolesGestao), async (req, res) => {
   try {
-    const aluno = await criarAlunoMatricula(req.body, req.usuario.escola_id);
+    const { aluno, senhaInicial, senhaGerada } = await criarAlunoMatricula(req.body, req.usuario.escola_id);
 
     await Log.create({
       usuario_id: req.usuario._id,
@@ -233,12 +247,24 @@ router.post('/alunos', autenticacao, verificarRole(...rolesGestao), async (req, 
 
     res.json({
       sucesso: true,
-      mensagem: 'Aluno cadastrado e matriculado',
-      aluno: { id: aluno._id, nome: aluno.nome, email: aluno.email, certidao_nascimento: aluno.certidao_nascimento }
+      mensagem: senhaGerada
+        ? 'Aluno cadastrado e matriculado. Guarde a senha temporária gerada.'
+        : 'Aluno cadastrado e matriculado',
+      aluno: {
+        id: aluno._id,
+        nome: aluno.nome,
+        email: aluno.email,
+        certidao_nascimento: aluno.certidao_nascimento
+      },
+      senhaInicial,
+      senhaGerada
     });
   } catch (error) {
-    const status = error.message.includes('obrigatório') || error.message.includes('Informe') || error.message.includes('cadastrado')
-      ? 400 : 500;
+    const status = error.status
+      || (error.message.includes('obrigatório') || error.message.includes('Informe')
+        || error.message.includes('cadastrado') || error.message.includes('Senha')
+        ? 400
+        : 500);
     res.status(status).json({ sucesso: false, mensagem: error.message || 'Erro ao cadastrar aluno' });
   }
 });
@@ -491,22 +517,31 @@ router.delete('/:turmaId', autenticacao, verificarRole(...rolesGestao), async (r
 });
 
 // ==================== MATRICULAR ALUNO EXISTENTE ====================
-router.post('/:turmaId/alunos/:alunoId', autenticacao, verificarRole(...rolesGestao), async (req, res) => {
+router.post('/:turmaId/alunos/:alunoId', autenticacao, verificarRole(...rolesGestao), requerEscola, async (req, res) => {
   try {
     const { turmaId, alunoId } = req.params;
 
-    const turma = await Turma.findByIdAndUpdate(
-      turmaId,
-      { $addToSet: { alunos: alunoId } },
-      { new: true }
-    ).populate('alunos', 'nome email cpf');
+    await assertAlunoEscola(req, alunoId);
 
-    if (!turma) {
-      return res.status(404).json({ sucesso: false, mensagem: 'Turma não encontrada' });
+    const resultado = await matricularAlunoUmaTurma({
+      escolaId: req.usuario.escola_id,
+      alunoId,
+      turmaId
+    });
+
+    if (!resultado.ok) {
+      return res.status(400).json({ sucesso: false, mensagem: resultado.mensagem });
     }
 
-    res.json({ sucesso: true, mensagem: 'Aluno matriculado na turma', turma: enriquecerTurma(turma) });
+    const turma = await Turma.findById(turmaId).populate('alunos', 'nome email cpf');
+
+    res.json({
+      sucesso: true,
+      mensagem: 'Aluno matriculado na turma (removido de outras turmas, se houver)',
+      turma: enriquecerTurma(turma)
+    });
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao matricular aluno:', error);
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao matricular aluno' });
   }

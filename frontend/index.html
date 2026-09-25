@@ -3,15 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Educacional - Login</title>
-    <link rel="stylesheet" href="styles/login.css">
-    <link rel="stylesheet" href="styles/fonts.css">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+    <title>VEHO - Login</title>
+    <link rel="stylesheet" href="/styles/login.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
 </head>
 <body>
     <div class="container-login">
         <div class="login-box">
-            <h1>🎓 Plataforma Educacional</h1>
-            <p class="subtitle">Gestão Escolar Completa</p>
+            <h1>VEHO</h1>
+            <p class="subtitle">Gestão escolar</p>
 
             <form id="loginForm" class="form-login">
                 <div class="form-group">
@@ -20,7 +29,7 @@
                         type="email" 
                         id="email" 
                         name="email" 
-                        placeholder="seu.email@escola.com"
+                        placeholder="professor@escola.com"
                         required
                     >
                 </div>
@@ -34,13 +43,21 @@
                         placeholder="••••••••"
                         required
                     >
-                    <button type="button" class="btn-show-password" id="togglePassword">👁️</button>
                 </div>
 
                 <button type="submit" class="btn-login">Entrar</button>
             </form>
 
-            <p class="subtitle-login">Matrículas e cadastros são realizados pela secretaria escolar.</p>
+            <p class="subtitle-login">
+                <a href="recuperar-senha.html">Esqueci minha senha</a>
+            </p>
+
+            <p class="subtitle-login">
+                Matrículas e cadastros são realizados pela secretaria escolar.<br>
+                <a href="assinar.html">Assinar VEHO para sua escola</a>
+                · <a href="termos.html">Termos</a>
+                · <a href="privacidade.html">Privacidade</a>
+            </p>
 
             <div id="mensagemErro" class="erro" style="display: none;"></div>
             <div id="mensagemSucesso" class="sucesso" style="display: none;"></div>
@@ -50,17 +67,18 @@
             <h2>Bem-vindo!</h2>
             <p>Acesse como:</p>
             <ul>
-                <li>👨‍🏫 <strong>Professor:</strong> Registre presença, notas e conteúdo</li>
-                <li>👨‍💼 <strong>Coordenador:</strong> Monitore desempenho dos alunos</li>
-                <li>👔 <strong>Diretor:</strong> Visualize estatísticas gerais</li>
-                <li>📋 <strong>Secretaria:</strong> Cadastre alunos, funcionários e turmas</li>
-                <li>👨‍🎓 <strong>Aluno:</strong> Acompanhe seu desempenho</li>
-                <li>👨‍👩‍👧 <strong>Responsável:</strong> Receba alertas e boletim</li>
+                <li><strong>Professor:</strong> Registre presença, notas e conteúdo</li>
+                <li><strong>Coordenador:</strong> Monitore desempenho dos alunos</li>
+                <li><strong>Diretor:</strong> Visualize estatísticas gerais</li>
+                <li><strong>Secretaria:</strong> Cadastre alunos, funcionários e turmas</li>
+                <li><strong>Aluno:</strong> Acompanhe seu desempenho</li>
+                <li><strong>Responsável:</strong> Receba alertas e boletim</li>
             </ul>
         </div>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/login.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/login.js"></script>
+    <script src="/js/pwa-register.js"></script>
 </body>
 </html>

@@ -3,22 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
     <title>Painel do Diretor</title>
-    <link rel="stylesheet" href="styles/painel.css">
-    <link rel="stylesheet" href="styles/fonts.css">
+    <link rel="stylesheet" href="/styles/painel.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
 </head>
 <body>
     <div class="container-principal">
         <aside class="sidebar">
-            <div class="logo">🎓 EdPlus</div>
+            <div class="logo">VEHO</div>
             <ul class="menu">
-                <li><a href="#" class="ativo" data-secao="dashboard">📊 Dashboard</a></li>
-                <li><a href="#" data-secao="relatorios">📈 Relatórios</a></li>
-                <li><a href="declaracao-curso.html?modo=verificar">🔐 Verificar Declaração</a></li>
-                <li><a href="academico.html">📚 Acadêmico</a></li>
-                <li><a href="#" data-secao="usuarios">👥 Usuários</a></li>
-                <li><a href="#" data-secao="configuracoes">⚙️ Configurações</a></li>
-                <li><a href="#" id="btnLogoutMenu">🚪 Sair</a></li>
+                <li><a href="#" class="ativo" data-secao="dashboard">Dashboard</a></li>
+                <li><a href="#" data-secao="relatorios">Relatórios</a></li>
+                <li><a href="declaracao-curso.html?modo=verificar">Verificar Declaração</a></li>
+                <li><a href="academico.html">Acadêmico</a></li>
+                <li><a href="#" data-secao="usuarios">Usuários</a></li>
+                <li><a href="#" data-secao="configuracoes">Configurações</a></li>
+                <li><a href="#" id="btnLogoutMenu">Sair</a></li>
             </ul>
         </aside>
 
@@ -51,23 +60,31 @@
                     </div>
                 </div>
 
-                <h2 style="margin: 30px 0 20px 0;">⚠️ Alunos em Recuperação</h2>
-                <table class="tabela">
-                    <thead>
-                        <tr>
-                            <th>Aluno</th>
-                            <th>Série</th>
-                            <th>Disciplina</th>
-                            <th>Média</th>
-                            <th>Situação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaRecuperacao">
-                        <tr>
-                            <td colspan="5" style="text-align: center;">Carregando...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="accordion-turma accordion-recuperacao" style="margin-top: 28px;">
+                    <button type="button" class="accordion-turma-header" id="btnRecuperacaoDash" aria-expanded="false">
+                        <span class="accordion-seta" id="setaRecuperacao">▶</span>
+                        <span class="accordion-turma-nome">Alunos em Recuperação</span>
+                        <span class="accordion-turma-info" id="infoRecuperacao">0 registro(s)</span>
+                    </button>
+                    <div class="accordion-turma-corpo" id="corpoRecuperacao" style="display: none;">
+                        <table class="tabela">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Série</th>
+                                    <th>Disciplina</th>
+                                    <th>Média</th>
+                                    <th>Situação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaRecuperacao">
+                                <tr>
+                                    <td colspan="5" style="text-align: center;">Carregando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
             <section id="relatorios" style="display: none;">
@@ -80,16 +97,80 @@
                             <option value="2º Bimestre">2º Bimestre</option>
                             <option value="3º Bimestre">3º Bimestre</option>
                             <option value="4º Bimestre">4º Bimestre</option>
+                            <option value="Anual">Anual</option>
                         </select>
                     </div>
                     <button class="btn btn-sucesso" id="btnGerarRelatorio" type="button">Gerar Relatório</button>
+                    <button class="btn btn-secundario" id="btnDownloadRelatorio" type="button" style="display:none;margin-left:8px;">Download</button>
                 </div>
-                <div id="conteudoRelatorio" style="margin-top: 20px;"></div>
+                <div id="conteudoRelatorio" class="area-relatorio-diretor" style="margin-top: 20px;"></div>
             </section>
 
             <section id="usuarios" style="display: none;">
                 <h2>👥 Gerenciar Usuários</h2>
-                <div id="listaUsuarios" class="formulario"></div>
+                <p class="texto-muted" style="margin-bottom: 16px;">
+                    Cadastre funcionários com acesso ao sistema. Matrícula de alunos continua na secretaria.
+                </p>
+
+                <div class="formulario" style="margin-bottom: 28px; max-width: 100%;">
+                    <h3 style="margin-bottom: 16px;">➕ Cadastrar usuário</h3>
+                    <form id="formCadastroUsuario">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cadTipo">Tipo</label>
+                                <select id="cadTipo" required>
+                                    <option value="professor">Professor</option>
+                                    <option value="coordenador">Coordenador</option>
+                                    <option value="secretaria">Secretaria</option>
+                                    <option value="diretor">Diretor</option>
+                                    <option value="servente">Servente</option>
+                                    <option value="porteiro">Porteiro</option>
+                                    <option value="estagiario">Estagiário(a)</option>
+                                    <option value="orientador_pedagogico">Orientador Pedagógico</option>
+                                    <option value="agente_inclusao">Agente de Inclusão</option>
+                                    <option value="bibliotecaria">Bibliotecária</option>
+                                    <option value="copeira">Copeira</option>
+                                    <option value="auxiliar_coordenacao">Auxiliar de Coordenação</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="cadNome">Nome completo</label>
+                                <input type="text" id="cadNome" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cadEmail">Email (login)</label>
+                                <input type="email" id="cadEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cadCpf">CPF</label>
+                                <input type="text" id="cadCpf" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cadWhatsapp">WhatsApp</label>
+                                <input type="tel" id="cadWhatsapp" placeholder="+5511999999999" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cadTelefone">Telefone (opcional)</label>
+                                <input type="tel" id="cadTelefone">
+                            </div>
+                            <div class="form-group">
+                                <label for="cadSenha">Senha inicial (opcional)</label>
+                                <input type="text" id="cadSenha" placeholder="Em branco: gera senha segura">
+                            </div>
+                        </div>
+
+                        <div id="grupoCadDisciplinas" class="secao-disciplina-professor" style="display:none;margin:12px 0 16px;">
+                            <label style="display:block;margin-bottom:8px;">Disciplinas do professor <span style="color:#c0392b;">*</span></label>
+                            <div id="cadDisciplinasLista" class="disciplinas-sanfona-lista" style="max-height:180px;overflow:auto;border:1px solid #dfe6e9;padding:10px;border-radius:4px;"></div>
+                        </div>
+
+                        <div id="msgCadastroUsuario" class="alerta" style="display:none;margin-bottom:12px;"></div>
+                        <button type="submit" class="btn btn-sucesso" id="btnSalvarUsuario">💾 Cadastrar usuário</button>
+                    </form>
+                </div>
+
+                <h3 style="margin-bottom: 12px;">Usuários cadastrados</h3>
+                <div id="listaUsuarios"></div>
             </section>
 
             <section id="configuracoes" style="display: none;">
@@ -105,17 +186,34 @@
                     <div class="form-group">
                         <label>
                             <input type="checkbox" id="alertasWhatsapp" checked>
-                            Ativar alertas via WhatsApp
+                            Ativar alertas via WhatsApp (falta automática)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="alertasSms">
+                            Ativar alertas via SMS (falta automática)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="alertasPush">
+                            Ativar alertas via Push (falta automática)
                         </label>
                     </div>
                     <button class="btn btn-sucesso" id="btnSalvarConfig" type="button">Salvar</button>
+                    <hr style="margin:20px 0;border:none;border-top:1px solid #e0e0e0;">
+                    <h3 style="margin-bottom:8px;">Assinatura VEHO</h3>
+                    <p class="texto-muted" style="margin-bottom:12px;">Gerencie pagamento, cartão e cancelamento no portal Stripe.</p>
+                    <button class="btn btn-secundario" id="btnPortalAssinatura" type="button">Abrir portal de assinatura</button>
                 </div>
             </section>
         </main>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/painel-diretor.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/painel-diretor.js"></script>
+    <script src="/js/pwa-register.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
     --fonte-base: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -36,7 +36,6 @@ h3,
 h4,
 .header h1,
 .header-portal h1,
-.logo,
 .secao-form,
 .portal-bloco-titulo,
 .card h3,
@@ -49,6 +48,14 @@ h4,
 .rel-subtitulo {
     font-family: var(--fonte-base);
     font-weight: 700;
+}
+
+.logo,
+.assinar-marca {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
 }
 
 .tabela,

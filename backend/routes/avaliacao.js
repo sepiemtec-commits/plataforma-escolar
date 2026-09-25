@@ -1,12 +1,19 @@
 // backend/routes/avaliacao.js - Rotas de Avaliação e Notas
 const express = require('express');
 const router = express.Router();
-const { Avaliacao, Desempenho, Usuario, Escola, Turma, Log } = require('../database/schema');
-const { autenticacao, verificarRole } = require('../middleware/autenticacao');
+const { Avaliacao, Desempenho, Escola, Log } = require('../database/schema');
+const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
 const notificadorWhatsApp = require('../services/whatsapp');
 const { disciplinasDoProfessor, professorTemDisciplina } = require('../utils/professorDisciplinas');
 const { disciplinaPermitidaParaTurma } = require('../constants/disciplinas');
 const { formatarNomeDisciplina } = require('../utils/formatarDisciplina');
+const {
+  assertTurmaEscola,
+  assertAlunoEscola,
+  assertAlunoNaTurma,
+  idsTurmasDaEscola,
+  responderErroTenant
+} = require('../utils/tenant');
 
 const BIMESTRES = ['1º Bimestre', '2º Bimestre', '3º Bimestre', '4º Bimestre'];
 const TIPOS_NOTA = ['prova_bimestral', 'teste_bimestral', 'comportamental'];
@@ -20,7 +27,7 @@ function chaveNota(alunoId, tipo, periodo) {
 }
 
 // ==================== GRADE DE NOTAS (lista de alunos) ====================
-router.get('/grade/:turmaId', autenticacao, verificarRole('professor'), async (req, res) => {
+router.get('/grade/:turmaId', autenticacao, verificarRole('professor'), requerEscola, async (req, res) => {
   try {
     const { turmaId } = req.params;
     const { disciplina } = req.query;
@@ -44,10 +51,7 @@ router.get('/grade/:turmaId', autenticacao, verificarRole('professor'), async (r
       }
     }
 
-    const turma = await Turma.findById(turmaId).populate('alunos', 'nome cpf');
-    if (!turma) {
-      return res.status(404).json({ sucesso: false, mensagem: 'Turma não encontrada' });
-    }
+    const turma = await assertTurmaEscola(req, turmaId, { populate: { path: 'alunos', select: 'nome cpf' } });
 
     if (!disciplinaPermitidaParaTurma(disciplinaFmt, turma)) {
       return res.status(400).json({
@@ -115,13 +119,14 @@ router.get('/grade/:turmaId', autenticacao, verificarRole('professor'), async (r
       alunos
     });
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao carregar grade:', error);
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao carregar notas' });
   }
 });
 
 // ==================== SALVAR CÉLULA DA GRADE (upsert) ====================
-router.put('/grade/celula', autenticacao, verificarRole('professor'), async (req, res) => {
+router.put('/grade/celula', autenticacao, verificarRole('professor'), requerEscola, async (req, res) => {
   try {
     const { aluno_id, turma_id, disciplina, tipo, periodo, nota } = req.body;
 
@@ -139,10 +144,7 @@ router.put('/grade/celula', autenticacao, verificarRole('professor'), async (req
       }
     }
 
-    const turmaCelula = await Turma.findById(turma_id);
-    if (!turmaCelula) {
-      return res.status(404).json({ sucesso: false, mensagem: 'Turma não encontrada' });
-    }
+    const turmaCelula = await assertAlunoNaTurma(req, turma_id, aluno_id);
     if (!disciplinaPermitidaParaTurma(disciplina.trim(), turmaCelula)) {
       return res.status(400).json({
         sucesso: false,
@@ -165,37 +167,66 @@ router.put('/grade/celula', autenticacao, verificarRole('professor'), async (req
       return res.status(400).json({ sucesso: false, mensagem: 'Nota deve estar entre 0 e 10' });
     }
 
-    let avaliacao = await Avaliacao.findOne({ aluno_id, turma_id, disciplina, tipo, periodo });
-
-    if (avaliacao) {
-      avaliacao.nota = notaNum;
-      avaliacao.professor_id = req.usuario._id;
-      await avaliacao.save();
-    } else {
-      avaliacao = await Avaliacao.create({
-        aluno_id,
-        turma_id,
-        disciplina,
-        tipo,
-        periodo,
-        nota: notaNum,
-        peso: pesoTipo(tipo),
-        professor_id: req.usuario._id,
-        dataAplicacao: new Date()
-      });
+    const disciplinaNome = disciplina.trim();
+    let avaliacao;
+    try {
+      avaliacao = await Avaliacao.findOneAndUpdate(
+        {
+          aluno_id,
+          turma_id,
+          disciplina: disciplinaNome,
+          tipo,
+          periodo
+        },
+        {
+          $set: {
+            nota: notaNum,
+            professor_id: req.usuario._id,
+            peso: pesoTipo(tipo),
+            dataAplicacao: new Date()
+          },
+          $setOnInsert: {
+            aluno_id,
+            turma_id,
+            disciplina: disciplinaNome,
+            tipo,
+            periodo
+          }
+        },
+        { upsert: true, new: true, runValidators: true }
+      );
+    } catch (err) {
+      // Corrida rara no upsert: re-aplica
+      if (err && err.code === 11000) {
+        avaliacao = await Avaliacao.findOneAndUpdate(
+          { aluno_id, turma_id, disciplina: disciplinaNome, tipo, periodo },
+          {
+            $set: {
+              nota: notaNum,
+              professor_id: req.usuario._id,
+              peso: pesoTipo(tipo),
+              dataAplicacao: new Date()
+            }
+          },
+          { new: true, runValidators: true }
+        );
+      } else {
+        throw err;
+      }
     }
 
-    await atualizarDesempenho(aluno_id, turma_id, disciplina, periodo);
+    await atualizarDesempenho(aluno_id, turma_id, disciplinaNome, periodo);
 
     res.json({ sucesso: true, mensagem: 'Nota salva', avaliacao });
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao salvar nota:', error);
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao salvar nota' });
   }
 });
 
 // ==================== LANÇAR AVALIAÇÃO ====================
-router.post('/lancar', autenticacao, verificarRole('professor'), async (req, res) => {
+router.post('/lancar', autenticacao, verificarRole('professor'), requerEscola, async (req, res) => {
   try {
     const { aluno_id, turma_id, disciplina, tipo, periodo, nota, peso, dataAplicacao, observacoes } = req.body;
 
@@ -206,6 +237,8 @@ router.post('/lancar', autenticacao, verificarRole('professor'), async (req, res
       });
     }
 
+    await assertAlunoNaTurma(req, turma_id, aluno_id);
+
     // Validar nota
     if (nota < 0 || nota > 10) {
       return res.status(400).json({
@@ -214,28 +247,59 @@ router.post('/lancar', autenticacao, verificarRole('professor'), async (req, res
       });
     }
 
-    const avaliacao = await Avaliacao.create({
-      aluno_id,
-      professor_id: req.usuario._id,
-      turma_id,
-      disciplina,
-      tipo,
-      periodo,
-      nota,
-      peso,
-      dataAplicacao: new Date(dataAplicacao),
-      observacoes
-    });
+    const disciplinaNome = String(disciplina || '').trim();
+    const pesoFinal = peso != null ? peso : pesoTipo(tipo);
+    let avaliacao;
+    try {
+      avaliacao = await Avaliacao.findOneAndUpdate(
+        { aluno_id, turma_id, disciplina: disciplinaNome, tipo, periodo },
+        {
+          $set: {
+            nota,
+            peso: pesoFinal,
+            professor_id: req.usuario._id,
+            dataAplicacao: new Date(dataAplicacao || Date.now()),
+            observacoes
+          },
+          $setOnInsert: {
+            aluno_id,
+            turma_id,
+            disciplina: disciplinaNome,
+            tipo,
+            periodo
+          }
+        },
+        { upsert: true, new: true, runValidators: true }
+      );
+    } catch (err) {
+      if (err && err.code === 11000) {
+        avaliacao = await Avaliacao.findOneAndUpdate(
+          { aluno_id, turma_id, disciplina: disciplinaNome, tipo, periodo },
+          {
+            $set: {
+              nota,
+              peso: pesoFinal,
+              professor_id: req.usuario._id,
+              dataAplicacao: new Date(dataAplicacao || Date.now()),
+              observacoes
+            }
+          },
+          { new: true, runValidators: true }
+        );
+      } else {
+        throw err;
+      }
+    }
 
     // Atualizar desempenho do aluno
-    await atualizarDesempenho(aluno_id, turma_id, disciplina, periodo);
+    await atualizarDesempenho(aluno_id, turma_id, disciplinaNome, periodo);
 
     // Registrar no log
     await Log.create({
       usuario_id: req.usuario._id,
       acao: 'LANÇOU_AVALIAÇÃO',
       modulo: 'avaliacao',
-      descricao: `${tipo} lançada - ${disciplina} - nota ${nota}`,
+      descricao: `${tipo} lançada - ${disciplinaNome} - nota ${nota}`,
       ipAddress: req.ip
     });
 
@@ -246,6 +310,7 @@ router.post('/lancar', autenticacao, verificarRole('professor'), async (req, res
     });
 
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao lançar avaliação:', error);
     res.status(500).json({
       sucesso: false,
@@ -258,6 +323,7 @@ router.post('/lancar', autenticacao, verificarRole('professor'), async (req, res
 router.get('/aluno/:alunoId', autenticacao, async (req, res) => {
   try {
     const { alunoId } = req.params;
+    await assertAlunoEscola(req, alunoId);
 
     const filtro = { aluno_id: alunoId };
     if (req.usuario.tipo === 'professor') {
@@ -280,6 +346,7 @@ router.get('/aluno/:alunoId', autenticacao, async (req, res) => {
     });
 
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao listar avaliacões:', error);
     res.status(500).json({
       sucesso: false,
@@ -292,6 +359,7 @@ router.get('/aluno/:alunoId', autenticacao, async (req, res) => {
 router.get('/boletim/:alunoId', autenticacao, async (req, res) => {
   try {
     const { alunoId } = req.params;
+    await assertAlunoEscola(req, alunoId);
 
     const filtro = { aluno_id: alunoId };
     if (req.usuario.tipo === 'professor') {
@@ -311,6 +379,7 @@ router.get('/boletim/:alunoId', autenticacao, async (req, res) => {
     });
 
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao gerar boletim:', error);
     res.status(500).json({
       sucesso: false,
@@ -320,7 +389,7 @@ router.get('/boletim/:alunoId', autenticacao, async (req, res) => {
 });
 
 // ==================== ATUALIZAR AVALIAÇÃO ====================
-router.put('/:avaliacaoId', autenticacao, verificarRole('professor'), async (req, res) => {
+router.put('/:avaliacaoId', autenticacao, verificarRole('professor'), requerEscola, async (req, res) => {
   try {
     const { avaliacaoId } = req.params;
     const { nota, observacoes } = req.body;
@@ -336,6 +405,8 @@ router.put('/:avaliacaoId', autenticacao, verificarRole('professor'), async (req
     if (!avaliacao) {
       return res.status(404).json({ sucesso: false, mensagem: 'Avaliação não encontrada' });
     }
+
+    await assertTurmaEscola(req, avaliacao.turma_id);
 
     if (req.usuario.tipo === 'professor' && !professorTemDisciplina(req.usuario, avaliacao.disciplina)) {
       return res.status(403).json({
@@ -365,6 +436,7 @@ router.put('/:avaliacaoId', autenticacao, verificarRole('professor'), async (req
     });
 
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao atualizar avaliação:', error);
     res.status(500).json({
       sucesso: false,
@@ -405,16 +477,23 @@ async function atualizarDesempenho(alunoId, turmaId, disciplina, periodo) {
       situacao = 'excelente';
     }
 
-    // Atualizar ou criar desempenho
-    await Desempenho.updateOne(
+    // Atualizar ou criar desempenho (upsert atômico + índice único)
+    await Desempenho.findOneAndUpdate(
       { aluno_id: alunoId, disciplina, periodo },
       {
-        turma_id: turmaId,
-        mediaGeral: mediaGeral.toFixed(2),
-        situacao,
-        dataAtualizacao: new Date()
+        $set: {
+          turma_id: turmaId,
+          mediaGeral: mediaGeral.toFixed(2),
+          situacao,
+          dataAtualizacao: new Date()
+        },
+        $setOnInsert: {
+          aluno_id: alunoId,
+          disciplina,
+          periodo
+        }
       },
-      { upsert: true }
+      { upsert: true, new: true }
     );
 
   } catch (error) {
@@ -423,12 +502,17 @@ async function atualizarDesempenho(alunoId, turmaId, disciplina, periodo) {
 }
 
 // ==================== DIAGNOSTICAR ALUNOS ====================
-router.post('/diagnosticar', autenticacao, verificarRole('professor', 'coordenador'), async (req, res) => {
+router.post('/diagnosticar', autenticacao, verificarRole('professor', 'coordenador'), requerEscola, async (req, res) => {
   try {
     const { turmaId, periodo } = req.body;
 
+    const turmaIds = turmaId
+      ? [(await assertTurmaEscola(req, turmaId))._id]
+      : await idsTurmasDaEscola(req);
+
     const desempenhos = await Desempenho.find({
       periodo,
+      turma_id: { $in: turmaIds },
       $or: [
         { situacao: 'recuperacao' },
         { situacao: 'reprovado' }
@@ -451,6 +535,7 @@ router.post('/diagnosticar', autenticacao, verificarRole('professor', 'coordenad
     });
 
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao diagnosticar:', error);
     res.status(500).json({
       sucesso: false,

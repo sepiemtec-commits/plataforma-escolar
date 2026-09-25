@@ -37,7 +37,7 @@ async function enviarMensagem(numeroResponsavel, mensagem) {
 const notificadorWhatsApp = {
   async enviarAlertaFalta(numeroResponsavel, nomeAluno, data) {
     try {
-      const mensagem = `🚨 *Alerta de Falta*\n\nOlá! Informamos que ${nomeAluno} teve *falta registrada* no dia ${data}.\n\nPor favor, entre em contato com a escola para maiores informações.\n\nPlataforma Educacional`;
+      const mensagem = `🚨 *Alerta de Falta*\n\nOlá! Informamos que ${nomeAluno} teve *falta registrada* no dia ${data}.\n\nPor favor, entre em contato com a escola para maiores informações.\n\nVEHO`;
       const sid = await enviarMensagem(numeroResponsavel, mensagem);
       if (sid) console.log('✓ Alerta de falta enviado:', sid);
       return Boolean(sid);
@@ -49,7 +49,7 @@ const notificadorWhatsApp = {
 
   async enviarBoletim(numeroResponsavel, nomeAluno, desempenho) {
     try {
-      const mensagem = `📊 *Boletim Escolar*\n\nAluno(a): ${nomeAluno}\n\nDisciplina: ${desempenho.disciplina}\nMédia: ${desempenho.mediaGeral}\nSituação: ${desempenho.situacao}\n\nFrequência: ${desempenho.frequenciaPercentual}%\n\nPlataforma Educacional`;
+      const mensagem = `📊 *Boletim Escolar*\n\nAluno(a): ${nomeAluno}\n\nDisciplina: ${desempenho.disciplina}\nMédia: ${desempenho.mediaGeral}\nSituação: ${desempenho.situacao}\n\nFrequência: ${desempenho.frequenciaPercentual}%\n\nVEHO`;
       const sid = await enviarMensagem(numeroResponsavel, mensagem);
       if (sid) console.log('✓ Boletim enviado:', sid);
       return Boolean(sid);
@@ -61,7 +61,7 @@ const notificadorWhatsApp = {
 
   async enviarNotificacao(numeroResponsavel, titulo, mensagem) {
     try {
-      const mensagemFormatada = `📢 *${titulo}*\n\n${mensagem}\n\nPlataforma Educacional`;
+      const mensagemFormatada = `📢 *${titulo}*\n\n${mensagem}\n\nVEHO`;
       const sid = await enviarMensagem(numeroResponsavel, mensagemFormatada);
       if (sid) console.log('✓ Notificação enviada:', sid);
       return Boolean(sid);
@@ -73,7 +73,7 @@ const notificadorWhatsApp = {
 
   async enviarAlertaDesempenho(numeroResponsavel, nomeAluno, disciplina, media) {
     try {
-      const mensagem = `⚠️ *Alerta de Desempenho*\n\nO aluno(a) ${nomeAluno} está com baixo desempenho em ${disciplina}.\n\nMédia Atual: ${media}\n\nRecomendamos entrar em contato com a escola.\n\nPlataforma Educacional`;
+      const mensagem = `⚠️ *Alerta de Desempenho*\n\nO aluno(a) ${nomeAluno} está com baixo desempenho em ${disciplina}.\n\nMédia Atual: ${media}\n\nRecomendamos entrar em contato com a escola.\n\nVEHO`;
       const sid = await enviarMensagem(numeroResponsavel, mensagem);
       if (sid) console.log('✓ Alerta de desempenho enviado:', sid);
       return Boolean(sid);

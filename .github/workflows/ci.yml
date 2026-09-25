@@ -1,0 +1,16 @@
+# Legado → redireciona responsabilidade para pr.yml + deploy-gate.yml (TOKEN 16).
+# Mantido mínimo para não quebrar links antigos; jobs reais estão nos outros workflows.
+name: CI (legacy pointer)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  info:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Use: PR — Quick + Normal (.github/workflows/pr.yml)"
+          echo "Use: Deploy Gate — Full (.github/workflows/deploy-gate.yml)"
+          echo "Use: Scheduled — Performance + Security (.github/workflows/scheduled.yml)"
+          echo "Docs: docs/CI-CD-TESTES.md"

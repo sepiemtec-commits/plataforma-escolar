@@ -1,0 +1,41 @@
+# Render Blueprint — https://dashboard.render.com/blueprints
+# 1. Conecte o repositório GitHub
+# 2. New → Blueprint → selecione este arquivo
+# 3. Preencha as env vars no painel (Stripe, JWT, FRONTEND_URL)
+
+services:
+  - type: web
+    name: veho-edu
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm ci --omit=dev || npm install --omit=dev
+    startCommand: node backend/server.js
+    healthCheckPath: /health/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: ASSINATURA_MODO_DEV
+        value: "false"
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_ESSENCIAL
+        sync: false
+      - key: STRIPE_PRICE_PROFISSIONAL
+        sync: false
+      - key: STRIPE_PRICE_COMPLETO
+        sync: false
+      - key: ENCRYPTION_KEY
+        generateValue: true

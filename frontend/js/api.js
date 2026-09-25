@@ -1,5 +1,16 @@
 // frontend/js/api.js - Cliente API centralizado
 
+/** Escapa texto para HTML (proteção XSS). Disponível globalmente. */
+function escaparHtml(texto) {
+    if (texto == null) return '';
+    return String(texto)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 class API {
     constructor() {
         this.baseURL = `${window.location.origin}/api`;
@@ -54,10 +65,11 @@ class API {
         });
     }
 
-    async registrar(dados) {
+    async registrar() {
+        // Registro público desativado — matrícula só pela secretaria
         return this.requisicao('/auth/registrar', {
             method: 'POST',
-            body: JSON.stringify(dados)
+            body: JSON.stringify({})
         });
     }
 
@@ -89,8 +101,15 @@ class API {
         });
     }
 
-    async obterVisaoGeralPresenca(data, turmaId, disciplina) {
-        const params = new URLSearchParams({ data });
+    async obterVisaoGeralPresenca({ data, turmaId, disciplina, modo, periodo, ano } = {}) {
+        const params = new URLSearchParams();
+        if (modo) params.set('modo', modo);
+        if (modo === 'periodo') {
+            if (periodo) params.set('periodo', periodo);
+            if (ano) params.set('ano', ano);
+        } else if (data) {
+            params.set('data', data);
+        }
         if (turmaId) params.set('turma_id', turmaId);
         if (disciplina) params.set('disciplina', disciplina);
         return this.requisicao(`/presenca/visao-geral?${params}`);
@@ -214,10 +233,35 @@ class API {
         return this.requisicao('/painel/diretor');
     }
 
+    async gerarRelatorioDiretor(periodo) {
+        const params = new URLSearchParams();
+        if (periodo) params.set('periodo', periodo);
+        const qs = params.toString();
+        return this.requisicao(`/painel/diretor/relatorio${qs ? `?${qs}` : ''}`);
+    }
+
     async salvarConfiguracaoEscola(dados) {
         return this.requisicao('/painel/configuracao', {
             method: 'PUT',
             body: JSON.stringify(dados)
+        });
+    }
+
+    async vapidPublicKey() {
+        return this.requisicao('/push/vapid-public-key');
+    }
+
+    async subscribePush(subscription) {
+        return this.requisicao('/push/subscribe', {
+            method: 'POST',
+            body: JSON.stringify({ subscription })
+        });
+    }
+
+    async unsubscribePush(endpoint) {
+        return this.requisicao('/push/subscribe', {
+            method: 'DELETE',
+            body: JSON.stringify({ endpoint })
         });
     }
 
@@ -231,6 +275,10 @@ class API {
 
     async carregarPainelAluno() {
         return this.requisicao('/painel/aluno');
+    }
+
+    async carregarPainelResponsavel() {
+        return this.requisicao('/painel/responsavel');
     }
 
     async carregarPainelSecretaria() {
@@ -253,6 +301,17 @@ class API {
     async listarHorariosProfessor(turno) {
         const params = turno ? `?turno=${encodeURIComponent(turno)}` : '';
         return this.requisicao(`/horarios/professor${params}`);
+    }
+
+    async listarLotacaoProfessor(professorId) {
+        return this.requisicao(`/horarios/professor/${professorId}`);
+    }
+
+    async atualizarProfessorLotacao(usuarioId, dados) {
+        return this.requisicao(`/usuarios/${usuarioId}/professor`, {
+            method: 'PUT',
+            body: JSON.stringify(dados)
+        });
     }
 
     async listarSlotsHorario() {
@@ -378,6 +437,31 @@ class API {
 
     async listarGestaoBoletins() {
         return this.requisicao('/relatorios/gestao-boletins');
+    }
+
+    async obterOpcoesDiarioAula() {
+        return this.requisicao('/relatorios/diario-aula/opcoes');
+    }
+
+    async obterDiarioAula({ turmaId, disciplina, modo, data, periodo, ano, professorId } = {}) {
+        const params = new URLSearchParams();
+        if (turmaId) params.set('turma_id', turmaId);
+        if (disciplina) params.set('disciplina', disciplina);
+        if (modo) params.set('modo', modo);
+        if (data) params.set('data', data);
+        if (periodo) params.set('periodo', periodo);
+        if (ano) params.set('ano', ano);
+        if (professorId) params.set('professor_id', professorId);
+        const qs = params.toString();
+        return this.requisicao(`/relatorios/diario-aula${qs ? `?${qs}` : ''}`);
+    }
+
+    async obterDiarioAulaDia({ turmaId, disciplina, data } = {}) {
+        const params = new URLSearchParams();
+        if (turmaId) params.set('turma_id', turmaId);
+        if (disciplina) params.set('disciplina', disciplina);
+        if (data) params.set('data', data);
+        return this.requisicao(`/relatorios/diario-aula/dia?${params}`);
     }
 
     async _baixarArquivo(url, nomePadrao) {
@@ -529,6 +613,148 @@ class API {
         link.download = nomeArquivo || 'documento';
         link.click();
         URL.revokeObjectURL(link.href);
+    }
+
+    // IA PEDAGÓGICA
+    async gerarParecerIA(dados) {
+        return this.requisicao('/ia/parecer/gerar', {
+            method: 'POST',
+            body: JSON.stringify(dados)
+        });
+    }
+
+    async salvarParecerIA(dados) {
+        return this.requisicao('/ia/parecer/salvar', {
+            method: 'POST',
+            body: JSON.stringify(dados)
+        });
+    }
+
+    async listarPareceresIA(alunoId) {
+        return this.requisicao(`/ia/parecer/aluno/${alunoId}`);
+    }
+
+    // HTPC
+    async listarHtpc() {
+        return this.requisicao('/htpc');
+    }
+    async criarHtpc(dados) {
+        return this.requisicao('/htpc', { method: 'POST', body: JSON.stringify(dados) });
+    }
+    async atualizarHtpc(id, dados) {
+        return this.requisicao(`/htpc/${id}`, { method: 'PUT', body: JSON.stringify(dados) });
+    }
+    async excluirHtpc(id) {
+        return this.requisicao(`/htpc/${id}`, { method: 'DELETE' });
+    }
+    async presencaHtpc(id, dados) {
+        return this.requisicao(`/htpc/${id}/presenca`, { method: 'POST', body: JSON.stringify(dados) });
+    }
+
+    // PEI
+    async listarPeis(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.requisicao(`/pei${qs ? `?${qs}` : ''}`);
+    }
+    async obterPei(id) {
+        return this.requisicao(`/pei/${id}`);
+    }
+    async criarPei(dados) {
+        return this.requisicao('/pei', { method: 'POST', body: JSON.stringify(dados) });
+    }
+    async atualizarPei(id, dados) {
+        return this.requisicao(`/pei/${id}`, { method: 'PUT', body: JSON.stringify(dados) });
+    }
+    async acompanhamentoPei(id, texto) {
+        return this.requisicao(`/pei/${id}/acompanhamento`, {
+            method: 'POST',
+            body: JSON.stringify({ texto })
+        });
+    }
+
+    // BNCC
+    async buscarBncc(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.requisicao(`/bncc${qs ? `?${qs}` : ''}`);
+    }
+    async obterBncc(codigo) {
+        return this.requisicao(`/bncc/${encodeURIComponent(codigo)}`);
+    }
+
+    // Simulados SAEB/SARESP
+    async listarItensSimulado(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.requisicao(`/simulados/itens${qs ? `?${qs}` : ''}`);
+    }
+    async criarItemSimulado(dados) {
+        return this.requisicao('/simulados/itens', { method: 'POST', body: JSON.stringify(dados) });
+    }
+    async excluirItemSimulado(id) {
+        return this.requisicao(`/simulados/itens/${id}`, { method: 'DELETE' });
+    }
+    async uploadImagemItem(arquivo) {
+        const formData = new FormData();
+        formData.append('imagem', arquivo);
+        const url = `${this.baseURL}/simulados/itens/imagem`;
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const resposta = await fetch(url, { method: 'POST', headers, body: formData });
+        let dados = {};
+        try {
+            dados = await resposta.json();
+        } catch {
+            if (!resposta.ok) throw new Error('Erro ao enviar imagem');
+        }
+        if (!resposta.ok) {
+            if (resposta.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('usuario');
+                window.location.href = 'index.html';
+            }
+            throw new Error(dados.mensagem || 'Erro ao enviar imagem');
+        }
+        return dados;
+    }
+    async listarSimulados(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.requisicao(`/simulados${qs ? `?${qs}` : ''}`);
+    }
+    async historicoSimulados() {
+        return this.requisicao('/simulados/historico');
+    }
+    async obterSimulado(id) {
+        return this.requisicao(`/simulados/${id}`);
+    }
+    async criarSimulado(dados) {
+        return this.requisicao('/simulados', { method: 'POST', body: JSON.stringify(dados) });
+    }
+    async atualizarSimulado(id, dados) {
+        return this.requisicao(`/simulados/${id}`, { method: 'PUT', body: JSON.stringify(dados) });
+    }
+    async responderSimulado(id, dados) {
+        return this.requisicao(`/simulados/${id}/respostas`, { method: 'POST', body: JSON.stringify(dados) });
+    }
+    async corrigirSimulado(id, dados = {}) {
+        return this.requisicao(`/simulados/${id}/corrigir`, { method: 'POST', body: JSON.stringify(dados) });
+    }
+    async resultadosSimulado(id) {
+        return this.requisicao(`/simulados/${id}/resultados`);
+    }
+    async minhasProvasOnline() {
+        return this.requisicao('/simulados/meus');
+    }
+    async iniciarProvaOnline(id) {
+        return this.requisicao(`/simulados/${id}/iniciar`, { method: 'POST', body: '{}' });
+    }
+    async enviarProvaOnline(id, respostas) {
+        return this.requisicao(`/simulados/${id}/enviar`, {
+            method: 'POST',
+            body: JSON.stringify({ respostas })
+        });
+    }
+    async meuResultadoProva(id) {
+        return this.requisicao(`/simulados/${id}/meu-resultado`);
     }
 }
 

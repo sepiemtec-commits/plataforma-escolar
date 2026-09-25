@@ -1,8 +1,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
-const { HistoricoEscolar, Escola, Usuario, Log } = require('../database/schema');
-const { autenticacao, verificarRole } = require('../middleware/autenticacao');
+const { HistoricoEscolar, Escola, Log } = require('../database/schema');
+const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
+const {
+  filtroEscola,
+  assertAlunoEscola,
+  responderErroTenant
+} = require('../utils/tenant');
 
 const rolesGestao = ['admin', 'diretor', 'coordenador', 'secretaria'];
 
@@ -14,18 +19,22 @@ const DISCIPLINAS_PADRAO = [
 
 router.get('/aluno/:alunoId', autenticacao, async (req, res) => {
   try {
-    const historicos = await HistoricoEscolar.find({ aluno_id: req.params.alunoId })
-      .sort({ anoLetivo: -1 });
-    const aluno = await Usuario.findById(req.params.alunoId).select('nome cpf');
+    const aluno = await assertAlunoEscola(req, req.params.alunoId, { select: 'nome cpf' });
+    const historicos = await HistoricoEscolar.find({
+      aluno_id: req.params.alunoId,
+      ...filtroEscola(req)
+    }).sort({ anoLetivo: -1 });
     res.json({ sucesso: true, aluno, historicos });
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao listar histórico' });
   }
 });
 
-router.post('/', autenticacao, verificarRole(...rolesGestao), async (req, res) => {
+router.post('/', autenticacao, verificarRole(...rolesGestao), requerEscola, async (req, res) => {
   try {
     const { aluno_id, anoLetivo, serie, turma, turno, resultado, instituicao } = req.body;
+    await assertAlunoEscola(req, aluno_id);
     const escola = await Escola.findById(req.usuario.escola_id);
 
     const historico = await HistoricoEscolar.create({
@@ -50,15 +59,16 @@ router.post('/', autenticacao, verificarRole(...rolesGestao), async (req, res) =
 
     res.json({ sucesso: true, historico });
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao criar histórico' });
   }
 });
 
-router.put('/:historicoId/notas', autenticacao, verificarRole(...rolesGestao, 'professor'), async (req, res) => {
+router.put('/:historicoId/notas', autenticacao, verificarRole(...rolesGestao, 'professor'), requerEscola, async (req, res) => {
   try {
     const { notas } = req.body;
-    const historico = await HistoricoEscolar.findByIdAndUpdate(
-      req.params.historicoId,
+    const historico = await HistoricoEscolar.findOneAndUpdate(
+      { _id: req.params.historicoId, ...filtroEscola(req) },
       { notas },
       { new: true }
     );
@@ -69,9 +79,13 @@ router.put('/:historicoId/notas', autenticacao, verificarRole(...rolesGestao, 'p
   }
 });
 
-router.delete('/:historicoId', autenticacao, verificarRole(...rolesGestao), async (req, res) => {
+router.delete('/:historicoId', autenticacao, verificarRole(...rolesGestao), requerEscola, async (req, res) => {
   try {
-    await HistoricoEscolar.findByIdAndDelete(req.params.historicoId);
+    const removido = await HistoricoEscolar.findOneAndDelete({
+      _id: req.params.historicoId,
+      ...filtroEscola(req)
+    });
+    if (!removido) return res.status(404).json({ sucesso: false, mensagem: 'Histórico não encontrado' });
     res.json({ sucesso: true, mensagem: 'Histórico removido' });
   } catch (error) {
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao remover histórico' });
@@ -83,8 +97,10 @@ router.get('/:historicoId', autenticacao, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.historicoId)) {
       return res.status(404).json({ sucesso: false, mensagem: 'Histórico não encontrado' });
     }
-    const historico = await HistoricoEscolar.findById(req.params.historicoId)
-      .populate('aluno_id', 'nome cpf');
+    const historico = await HistoricoEscolar.findOne({
+      _id: req.params.historicoId,
+      ...filtroEscola(req)
+    }).populate('aluno_id', 'nome cpf');
     if (!historico) return res.status(404).json({ sucesso: false, mensagem: 'Não encontrado' });
     res.json({ sucesso: true, historico });
   } catch (error) {

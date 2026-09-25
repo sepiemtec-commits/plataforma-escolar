@@ -27,6 +27,9 @@ const LABEL_TIPO = {
     estagiario: 'Estagiário(a)',
     orientador_pedagogico: 'Orientador Pedagógico',
     agente_inclusao: 'Agente de Inclusão',
+    bibliotecaria: 'Bibliotecária',
+    copeira: 'Copeira',
+    auxiliar_coordenacao: 'Auxiliar de Coordenação',
     aluno: 'Aluno'
 };
 
@@ -79,11 +82,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnListarAlunos').addEventListener('click', listarAlunosTurmas);
     document.getElementById('btnImprimirAlunos').addEventListener('click', () => window.print());
     document.getElementById('btnVoltarTurmas').addEventListener('click', fecharDetalheTurma);
+    document.querySelectorAll('[data-voltar-portal]').forEach(btn => {
+        btn.addEventListener('click', voltarAoPortal);
+    });
     document.getElementById('toggleOrdemTurmasPorNivel').addEventListener('change', alternarOrdemTurmas);
 
     document.getElementById('horarioTurmaSelect')?.addEventListener('change', carregarQuadroHorariosSecretaria);
     document.getElementById('horarioTurnoSelect')?.addEventListener('change', carregarQuadroHorariosSecretaria);
     document.getElementById('btnSalvarHorarios')?.addEventListener('click', salvarQuadroHorariosSecretaria);
+
+    document.getElementById('formEditarProfessor')?.addEventListener('submit', salvarEdicaoProfessor);
+    document.getElementById('btnFecharModalEditProf')?.addEventListener('click', fecharModalEditarProfessor);
+    document.getElementById('btnCancelarEditProf')?.addEventListener('click', fecharModalEditarProfessor);
+    document.getElementById('btnEditProfIrHorarios')?.addEventListener('click', () => {
+        fecharModalEditarProfessor();
+        const menuLink = document.querySelector('.menu a[data-secao="horarios"]');
+        carregarSecao('horarios', menuLink);
+    });
+    document.getElementById('modalEditarProfessor')?.addEventListener('click', (e) => {
+        if (e.target.id === 'modalEditarProfessor') fecharModalEditarProfessor();
+    });
 
     const toggleOrdem = document.getElementById('toggleOrdemTurmasPorNivel');
     toggleOrdem.checked = ordenacaoTurmas === 'nivel';
@@ -157,7 +175,7 @@ function opcoesProfessoresHtml(selecionado) {
     const opts = ['<option value="">—</option>'];
     professores.forEach(p => {
         const sel = String(p._id) === String(selecionado) ? ' selected' : '';
-        opts.push(`<option value="${p._id}"${sel}>${p.nome}</option>`);
+        opts.push(`<option value="${escaparHtml(p._id)}"${sel}>${escaparHtml(p.nome)}</option>`);
     });
     return opts.join('');
 }
@@ -170,7 +188,7 @@ function opcoesDisciplinasHtml(selecionada, turma) {
     lista.forEach(d => {
         const nome = d.nome || d;
         const sel = nome === selecionada ? ' selected' : '';
-        opts.push(`<option value="${nome}"${sel}>${nome}</option>`);
+        opts.push(`<option value="${escaparHtml(nome)}"${sel}>${escaparHtml(nome)}</option>`);
     });
     return opts.join('');
 }
@@ -221,7 +239,7 @@ function renderizarQuadroHorariosSecretaria(slots, dias) {
     const corpo = document.getElementById('corpoHorariosSecretaria');
     if (!cabecalho || !corpo) return;
 
-    cabecalho.innerHTML = `<tr><th>Horário</th>${dias.map(d => `<th>${d}</th>`).join('')}</tr>`;
+    cabecalho.innerHTML = `<tr><th>Horário</th>${dias.map(d => `<th>${escaparHtml(d)}</th>`).join('')}</tr>`;
 
     corpo.innerHTML = slots.map(hora => {
         const celulas = dias.map((_, dia) => {
@@ -230,15 +248,15 @@ function renderizarQuadroHorariosSecretaria(slots, dias) {
             const profId = atual.professor_id?._id || atual.professor_id || '';
             const disc = atual.disciplina || '';
             return `<td class="celula-horario-edit">
-                <select class="horario-prof-select" data-hora="${hora}" data-dia="${dia}" aria-label="Professor">
+                <select class="horario-prof-select" data-hora="${escaparHtml(hora)}" data-dia="${dia}" aria-label="Professor">
                     ${opcoesProfessoresHtml(profId)}
                 </select>
-                <select class="horario-disc-select" data-hora="${hora}" data-dia="${dia}" aria-label="Disciplina">
+                <select class="horario-disc-select" data-hora="${escaparHtml(hora)}" data-dia="${dia}" aria-label="Disciplina">
                     ${opcoesDisciplinasHtml(disc, horariosTurmaAtual)}
                 </select>
             </td>`;
         }).join('');
-        return `<tr><td>${hora}</td>${celulas}</tr>`;
+        return `<tr><td>${escaparHtml(hora)}</td>${celulas}</tr>`;
     }).join('');
 }
 
@@ -345,10 +363,10 @@ function renderizarTurmasResumoPortal() {
     }
 
     corpo.innerHTML = lista.slice(0, 12).map(t => `
-        <tr data-turma-id="${t._id}">
-            <td><strong>${t.nome}</strong></td>
-            <td>${t.nivel || '—'}</td>
-            <td>${t.turno || '—'}</td>
+        <tr data-turma-id="${escaparHtml(t._id)}">
+            <td><strong>${escaparHtml(t.nome)}</strong></td>
+            <td>${escaparHtml(t.nivel || '—')}</td>
+            <td>${escaparHtml(t.turno || '—')}</td>
             <td>${(t.alunos || []).length}</td>
         </tr>
     `).join('');
@@ -460,8 +478,8 @@ function preencherChecklistDisciplinaFuncionario() {
         const nome = formatarNomeDisciplina(d.nome || d);
         return `
         <label class="disciplina-sanfona-item">
-            <input type="checkbox" name="funcDisciplinas" value="${nome}">
-            <span class="disciplina-sanfona-nome">${nome}</span>
+            <input type="checkbox" name="funcDisciplinas" value="${escaparHtml(nome)}">
+            <span class="disciplina-sanfona-nome">${escaparHtml(nome)}</span>
         </label>`;
     }).join('');
 
@@ -592,19 +610,19 @@ function renderizarDisciplinas() {
                     const nome = formatarNomeDisciplina(d.nome);
                     const restricao = labelRestricaoDisciplina(nome);
                     return `
-                    <tr data-id="${d._id}">
+                    <tr data-id="${escaparHtml(d._id)}">
                         <td>
-                            <strong>${nome}</strong>
-                            ${restricao ? `<br><small style="color:#7f8c8d;">${restricao}</small>` : ''}
+                            <strong>${escaparHtml(nome)}</strong>
+                            ${restricao ? `<br><small style="color:#7f8c8d;">${escaparHtml(restricao)}</small>` : ''}
                         </td>
                         <td>
                             <input type="number" class="input-tempos-disciplina" min="1" max="12"
-                                value="${d.quantidadeTempos}" data-id="${d._id}" style="width:80px;">
+                                value="${escaparHtml(d.quantidadeTempos)}" data-id="${escaparHtml(d._id)}" style="width:80px;">
                             tempo(s)
                         </td>
                         <td style="text-align:right;">
-                            <button type="button" class="btn btn-pequeno btn-sucesso btn-salvar-disciplina" data-id="${d._id}">Salvar</button>
-                            <button type="button" class="btn btn-pequeno btn-perigo btn-excluir-disciplina" data-id="${d._id}">Excluir</button>
+                            <button type="button" class="btn btn-pequeno btn-sucesso btn-salvar-disciplina" data-id="${escaparHtml(d._id)}">Salvar</button>
+                            <button type="button" class="btn btn-pequeno btn-perigo btn-excluir-disciplina" data-id="${escaparHtml(d._id)}">Excluir</button>
                         </td>
                     </tr>`;
                 }).join('')}
@@ -924,16 +942,16 @@ function renderizarTurmas() {
             : 'Não se aplica (sem professor da turma)';
 
         return `
-        <div class="card card-turma card-turma-clicavel" style="margin-bottom: 15px;" data-turma-id="${t._id}" role="button" tabindex="0" title="Clique para ver alunos, presença e notas">
-            <h3>${t.nome}</h3>
-            <p><strong>${nivel}</strong> · ${labelAnoEnsino(nivel, t.ano)} · Turma ${t.serie || 'A'} · Turno ${t.turno || 'Manhã'}</p>
-            <p>Professor da turma: ${professorInfo}</p>
+        <div class="card card-turma card-turma-clicavel" style="margin-bottom: 15px;" data-turma-id="${escaparHtml(t._id)}" role="button" tabindex="0" title="Clique para ver alunos, presença e notas">
+            <h3>${escaparHtml(t.nome)}</h3>
+            <p><strong>${escaparHtml(nivel)}</strong> · ${escaparHtml(labelAnoEnsino(nivel, t.ano))} · Turma ${escaparHtml(t.serie || 'A')} · Turno ${escaparHtml(t.turno || 'Manhã')}</p>
+            <p>Professor da turma: ${escaparHtml(professorInfo)}</p>
             <p><strong>${(t.alunos || []).length}</strong> aluno(s) matriculado(s)</p>
             <p class="card-turma-dica">Toque para ver lista completa →</p>
             <div class="card-acoes-turma">
-                <button type="button" class="btn btn-pequeno btn-sucesso btn-horarios-turma" data-id="${t._id}">📅 Horários</button>
-                <button type="button" class="btn btn-pequeno btn-info btn-editar-turma" data-id="${t._id}">✏️ Editar</button>
-                <button type="button" class="btn btn-pequeno btn-erro btn-excluir-turma" data-id="${t._id}" data-nome="${t.nome}" data-alunos="${(t.alunos || []).length}">🗑️ Excluir</button>
+                <button type="button" class="btn btn-pequeno btn-sucesso btn-horarios-turma" data-id="${escaparHtml(t._id)}">📅 Horários</button>
+                <button type="button" class="btn btn-pequeno btn-info btn-editar-turma" data-id="${escaparHtml(t._id)}">✏️ Editar</button>
+                <button type="button" class="btn btn-pequeno btn-erro btn-excluir-turma" data-id="${escaparHtml(t._id)}" data-nome="${escaparHtml(t.nome)}" data-alunos="${(t.alunos || []).length}">🗑️ Excluir</button>
             </div>
         </div>`;
     }).join('');
@@ -977,6 +995,10 @@ function renderizarTurmas() {
 
 function fecharDetalheTurma() {
     document.getElementById('detalheTurmaPanel').style.display = 'none';
+    const conteudo = document.getElementById('detalheTurmaConteudo');
+    if (conteudo) {
+        conteudo.innerHTML = '<p style="color:#7f8c8d;">Selecione uma turma para ver os alunos.</p>';
+    }
     document.querySelector('.turmas-lista-cabecalho')?.style.setProperty('display', '');
     document.querySelector('#turmas > .formulario')?.style.setProperty('display', '');
     document.querySelector('#turmas > .grid-paineis')?.style.setProperty('display', '');
@@ -999,6 +1021,8 @@ async function abrirDetalheTurma(turmaId) {
     });
 
     document.getElementById('detalheTurmaTitulo').textContent = turma?.nome || 'Turma';
+    const tituloBarra = document.getElementById('detalheTurmaTituloBarra');
+    if (tituloBarra) tituloBarra.textContent = turma?.nome || 'Turma';
     document.getElementById('detalheTurmaSubtitulo').textContent = turma
         ? `${turma.nivel || 'Fundamental I'} · ${turma.turno || 'Manhã'} · ${(turma.alunos || []).length} aluno(s)`
         : '';
@@ -1011,7 +1035,7 @@ async function abrirDetalheTurma(turmaId) {
         const resposta = await api.obterResumoAlunosTurma(turmaId);
         conteudo.innerHTML = renderizarTabelaResumoTurma(resposta.alunos || []);
     } catch (erro) {
-        conteudo.innerHTML = `<p class="alerta alerta-erro">${erro.message}</p>`;
+        conteudo.innerHTML = `<p class="alerta alerta-erro">${escaparHtml(erro.message)}</p>`;
     }
 }
 
@@ -1025,18 +1049,18 @@ function renderizarTabelaResumoTurma(alunos) {
     )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
     const colunasNotas = disciplinasUnicas.map(d =>
-        `<th style="text-align:center;">${d}</th>`
+        `<th style="text-align:center;">${escaparHtml(d)}</th>`
     ).join('');
 
     const linhas = alunos.map(aluno => {
         const pres = aluno.presenca || {};
         const freq = pres.frequenciaPercentual != null ? `${pres.frequenciaPercentual}%` : '—';
         const resumoPresenca = pres.total
-            ? `<strong>${pres.presente || 0}P</strong> / ${pres.falta || 0}F · ${freq}`
+            ? `<strong>${pres.presente || 0}P</strong> / ${pres.falta || 0}F · ${escaparHtml(freq)}`
             : '—';
 
         const media = aluno.mediaGeral != null
-            ? `<strong>${aluno.mediaGeral.toFixed(1).replace('.', ',')}</strong>`
+            ? `<strong>${escaparHtml(aluno.mediaGeral.toFixed(1).replace('.', ','))}</strong>`
             : '—';
 
         const celulasNotas = disciplinasUnicas.map(disc => {
@@ -1044,13 +1068,13 @@ function renderizarTabelaResumoTurma(alunos) {
             if (nota?.mediaFinal == null) return '<td style="text-align:center;color:#95a5a6;">—</td>';
             const valor = nota.mediaFinal.toFixed(1).replace('.', ',');
             const cor = nota.mediaFinal >= 6 ? '#27ae60' : '#e74c3c';
-            return `<td style="text-align:center;color:${cor};font-weight:600;">${valor}</td>`;
+            return `<td style="text-align:center;color:${cor};font-weight:600;">${escaparHtml(valor)}</td>`;
         }).join('');
 
         return `
             <tr>
-                <td><strong>${aluno.nome}</strong></td>
-                <td>${aluno.cpf || '—'}</td>
+                <td><strong>${escaparHtml(aluno.nome)}</strong></td>
+                <td>${escaparHtml(aluno.cpf || '—')}</td>
                 <td>${resumoPresenca}</td>
                 <td style="text-align:center;">${media}</td>
                 ${celulasNotas}
@@ -1165,27 +1189,27 @@ function renderizarAlunosPorTurma() {
             ? t.alunos.map(a => {
                 const alunoId = a._id || a.id;
                 return `<tr>
-                    <td>${a.nome}</td>
-                    <td>${a.cpf}</td>
-                    <td>${a.email}</td>
-                    <td>${a.whatsapp || '—'}</td>
+                    <td>${escaparHtml(a.nome)}</td>
+                    <td>${escaparHtml(a.cpf)}</td>
+                    <td>${escaparHtml(a.email)}</td>
+                    <td>${escaparHtml(a.whatsapp || '—')}</td>
                     <td class="acoes-aluno-turma">
                         <button type="button" class="btn btn-pequeno btn-sucesso btn-transferir-aluno"
-                            data-id="${alunoId}" data-nome="${a.nome}"
-                            data-turma-id="${t._id}" data-turma-nome="${t.nome}">↔ Transferir</button>
+                            data-id="${escaparHtml(alunoId)}" data-nome="${escaparHtml(a.nome)}"
+                            data-turma-id="${escaparHtml(t._id)}" data-turma-nome="${escaparHtml(t.nome)}">↔ Transferir</button>
                         <button type="button" class="btn btn-pequeno btn-info btn-docs-aluno"
-                            data-id="${alunoId}" data-nome="${a.nome}">📎 Docs</button>
+                            data-id="${escaparHtml(alunoId)}" data-nome="${escaparHtml(a.nome)}">📎 Docs</button>
                     </td>
                 </tr>`;
             }).join('')
             : '<tr><td colspan="5" style="text-align:center;color:#7f8c8d;">Nenhum aluno matriculado</td></tr>';
 
         return `
-        <div class="accordion-turma${aberto}" data-turma-id="${t._id}">
+        <div class="accordion-turma${aberto}" data-turma-id="${escaparHtml(t._id)}">
             <button type="button" class="accordion-turma-header" aria-expanded="${idx === 0}">
                 <span class="accordion-seta">${idx === 0 ? '▼' : '▶'}</span>
-                <span class="accordion-turma-nome">${t.nome}</span>
-                <span class="accordion-turma-info">${qtd} aluno(s) · Ano ${t.ano} · Série ${t.serie || '—'} · ${t.turno || 'Manhã'}</span>
+                <span class="accordion-turma-nome">${escaparHtml(t.nome)}</span>
+                <span class="accordion-turma-info">${qtd} aluno(s) · Ano ${escaparHtml(t.ano)} · Série ${escaparHtml(t.serie || '—')} · ${escaparHtml(t.turno || 'Manhã')}</span>
             </button>
             <div class="accordion-turma-corpo" style="${idx === 0 ? '' : 'display:none;'}">
                 <table class="tabela">
@@ -1234,6 +1258,160 @@ function renderizarAlunosPorTurma() {
     });
 }
 
+function obterDisciplinasSelecionadasEditProf() {
+    return [...document.querySelectorAll('#editProfDisciplinasLista input[name="editProfDisciplinas"]:checked')]
+        .map(cb => formatarNomeDisciplina(cb.value));
+}
+
+function preencherChecklistDisciplinaEditProf(professor) {
+    const container = document.getElementById('editProfDisciplinasLista');
+    if (!container) return;
+
+    const selecionadas = new Set(
+        (Array.isArray(professor?.disciplinas) && professor.disciplinas.length
+            ? professor.disciplinas
+            : (professor?.disciplina ? [professor.disciplina] : []))
+            .map(formatarNomeDisciplina)
+    );
+
+    if (!disciplinas.length) {
+        container.innerHTML = '<p style="color:#7f8c8d;margin:0;">Nenhuma disciplina cadastrada.</p>';
+        return;
+    }
+
+    const ordenadas = [...disciplinas].sort((a, b) =>
+        String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR')
+    );
+
+    container.innerHTML = ordenadas.map(d => {
+        const nome = formatarNomeDisciplina(d.nome || d);
+        const checked = selecionadas.has(nome) ? 'checked' : '';
+        return `
+        <label class="disciplina-sanfona-item">
+            <input type="checkbox" name="editProfDisciplinas" value="${escaparHtml(nome)}" ${checked}>
+            <span class="disciplina-sanfona-nome">${escaparHtml(nome)}</span>
+        </label>`;
+    }).join('');
+}
+
+function renderResumoLotacaoProfessor(horarios, diasSemana, totalTempos) {
+    const container = document.getElementById('editProfLotacaoResumo');
+    if (!container) return;
+
+    if (!horarios?.length) {
+        container.innerHTML = '<p style="color:#7f8c8d;margin:0;">Nenhum tempo alocado no quadro de horários.</p>';
+        return;
+    }
+
+    const dias = diasSemana || ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    container.innerHTML = `
+        <p class="lotacao-professor-total"><strong>${escaparHtml(totalTempos)}</strong> tempo(s) de aula alocado(s)</p>
+        <table class="tabela tabela-compacta">
+            <thead>
+                <tr>
+                    <th>Turma</th>
+                    <th>Disciplina</th>
+                    <th>Dia</th>
+                    <th>Horário</th>
+                    <th>Turno</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${horarios.map(h => `
+                    <tr>
+                        <td>${escaparHtml(h.turma_id?.nome || '—')}</td>
+                        <td>${escaparHtml(h.disciplina || '—')}</td>
+                        <td>${escaparHtml(dias[h.diaSemana] || '—')}</td>
+                        <td>${escaparHtml(h.horaInicio || '—')}</td>
+                        <td>${escaparHtml(h.turno || '—')}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>`;
+}
+
+function fecharModalEditarProfessor() {
+    const modal = document.getElementById('modalEditarProfessor');
+    if (modal) modal.style.display = 'none';
+}
+
+async function abrirModalEditarProfessor(professorId, nome) {
+    const modal = document.getElementById('modalEditarProfessor');
+    if (!modal) return;
+
+    document.getElementById('editProfId').value = professorId;
+    document.getElementById('modalEditProfTitulo').textContent = `Editar Professor — ${nome}`;
+    document.getElementById('editProfCargaHoraria').value = '';
+    document.getElementById('editProfLotacaoResumo').innerHTML = '<p style="color:#7f8c8d;margin:0;">Carregando...</p>';
+    modal.style.display = 'flex';
+
+    if (!disciplinas.length) {
+        await carregarDisciplinas();
+    }
+
+    try {
+        const professorLocal = funcionarios.find(f => String(f._id) === String(professorId)) || {};
+
+        await renderPainelDocumentos(
+            document.getElementById('editProfDocumentos'),
+            professorId,
+            nome,
+            'funcionario'
+        ).catch((erro) => {
+            const docsEl = document.getElementById('editProfDocumentos');
+            if (docsEl) {
+                docsEl.innerHTML = `<p class="doc-erro-texto">Erro ao carregar documentos: ${escaparHtml(erro.message)}</p>`;
+            }
+        });
+
+        let lotacao = null;
+        try {
+            lotacao = await api.listarLotacaoProfessor(professorId);
+        } catch (erro) {
+            document.getElementById('editProfLotacaoResumo').innerHTML =
+                `<p style="color:#c0392b;">Erro ao carregar lotação: ${escaparHtml(erro.message)}</p>`;
+        }
+
+        const professor = lotacao?.professor || professorLocal;
+        preencherChecklistDisciplinaEditProf(professor);
+        document.getElementById('editProfCargaHoraria').value =
+            professor.cargaHorariaSemanal != null ? professor.cargaHorariaSemanal : '';
+
+        if (lotacao) {
+            renderResumoLotacaoProfessor(lotacao.horarios, lotacao.diasSemana, lotacao.totalTempos);
+        }
+    } catch (erro) {
+        mostrarErro(erro.message);
+        preencherChecklistDisciplinaEditProf(funcionarios.find(f => String(f._id) === String(professorId)));
+    }
+}
+
+async function salvarEdicaoProfessor(e) {
+    e.preventDefault();
+    const professorId = document.getElementById('editProfId').value;
+    const disciplinasSel = obterDisciplinasSelecionadasEditProf();
+
+    if (!disciplinasSel.length) {
+        mostrarErro('Selecione ao menos uma disciplina');
+        return;
+    }
+
+    const cargaRaw = document.getElementById('editProfCargaHoraria').value.trim();
+    const dados = { disciplinas: disciplinasSel };
+    if (cargaRaw !== '') {
+        dados.cargaHorariaSemanal = parseInt(cargaRaw, 10);
+    }
+
+    try {
+        await api.atualizarProfessorLotacao(professorId, dados);
+        fecharModalEditarProfessor();
+        mostrarSucesso('Disciplinas e carga horária do professor atualizadas!');
+        await carregarDados();
+    } catch (erro) {
+        mostrarErro(erro.message || 'Erro ao salvar dados do professor');
+    }
+}
+
 function renderizarFuncionarios() {
     const container = document.getElementById('listaFuncionarios');
     const filtro = document.getElementById('filtroTipoFunc')?.value || '';
@@ -1256,26 +1434,37 @@ function renderizarFuncionarios() {
                     <th>CPF</th>
                     <th>Email</th>
                     <th>WhatsApp</th>
-                    <th>Documentos</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
                 ${lista.map(f => `
                     <tr>
-                        <td>${f.nome}</td>
-                        <td>${LABEL_TIPO[f.tipo] || f.tipo}</td>
-                        <td>${f.tipo === 'professor' ? formatarDisciplinasFuncionario(f) : '—'}</td>
-                        <td>${f.cpf}</td>
-                        <td>${f.email}</td>
-                        <td>${f.whatsapp || '—'}</td>
+                        <td>${escaparHtml(f.nome)}</td>
+                        <td>${escaparHtml(LABEL_TIPO[f.tipo] || f.tipo)}</td>
+                        <td>${escaparHtml(f.tipo === 'professor' ? formatarDisciplinasFuncionario(f) : '—')}</td>
+                        <td>${escaparHtml(f.cpf)}</td>
+                        <td>${escaparHtml(f.email)}</td>
+                        <td>${escaparHtml(f.whatsapp || '—')}</td>
                         <td>
-                            <button type="button" class="btn btn-pequeno btn-info btn-docs-func"
-                                data-id="${f._id}" data-nome="${f.nome}">📎 Docs</button>
+                            ${f.tipo === 'professor' ? `
+                                <button type="button" class="btn btn-pequeno btn-sucesso btn-editar-prof"
+                                    data-id="${escaparHtml(f._id)}" data-nome="${escaparHtml(f.nome)}">✏️ Editar</button>
+                            ` : `
+                                <button type="button" class="btn btn-pequeno btn-info btn-docs-func"
+                                    data-id="${escaparHtml(f._id)}" data-nome="${escaparHtml(f.nome)}">📎 Docs</button>
+                            `}
                         </td>
                     </tr>
                 `).join('')}
             </tbody>
         </table>`;
+
+    container.querySelectorAll('.btn-editar-prof').forEach(btn => {
+        btn.addEventListener('click', () => {
+            abrirModalEditarProfessor(btn.dataset.id, btn.dataset.nome);
+        });
+    });
 
     container.querySelectorAll('.btn-docs-func').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1321,6 +1510,7 @@ async function cadastrarAluno(e) {
         const res = await api.cadastrarAluno({
             nome: document.getElementById('alunoNome').value,
             email: document.getElementById('alunoEmail').value,
+            cpf: document.getElementById('alunoCpf').value.trim() || undefined,
             dataNascimento: document.getElementById('alunoNascimento').value || undefined,
             whatsapp: document.getElementById('alunoWhatsapp').value || undefined,
             whatsapp_responsavel: document.getElementById('alunoWhatsappResponsavel').value,
@@ -1351,7 +1541,9 @@ async function cadastrarAluno(e) {
 
         document.getElementById('formAluno').reset();
         montarGridUpload(docsContainer, 'aluno', 'aluno');
-        mostrarSucesso(`Aluno salvo com sucesso! Senha inicial: senha123${msgDocs}`);
+        const senhaIni = res.senhaInicial || '—';
+        const avisoGerada = res.senhaGerada ? ' (temporária gerada — anote agora)' : '';
+        mostrarSucesso(`Aluno salvo com sucesso! Senha inicial: ${senhaIni}${avisoGerada}${msgDocs}`);
         await carregarDados();
     } catch (erro) {
         mostrarErro(erro.message);
@@ -1415,7 +1607,9 @@ async function cadastrarFuncionario(e) {
         montarGridUpload(docsContainer, 'funcionario', 'func');
         preencherChecklistDisciplinaFuncionario();
         atualizarCampoDisciplinaFuncionario();
-        mostrarSucesso(`Funcionário salvo! Senha: ${senha || 'senha123'}${msgDocs}`);
+        const senhaIni = res.senhaInicial || senha || '—';
+        const avisoGerada = res.senhaGerada ? ' (temporária gerada — anote agora)' : '';
+        mostrarSucesso(`Funcionário salvo! Senha: ${senhaIni}${avisoGerada}${msgDocs}`);
         await carregarDados();
     } catch (erro) {
         mostrarErro(erro.message);
@@ -1434,6 +1628,12 @@ async function exportarFuncionariosXls() {
     } catch (erro) {
         mostrarErro(erro.message);
     }
+}
+
+function voltarAoPortal() {
+    fecharDetalheTurma();
+    const menuLink = document.querySelector('.menu a[data-secao="portal"]');
+    carregarSecao('portal', menuLink);
 }
 
 function carregarSecao(secao, linkAtivo) {

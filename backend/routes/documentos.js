@@ -10,9 +10,16 @@ const {
   tiposPorCategoria,
   categoriaPorTipoUsuario
 } = require('../constants/documentos');
+const {
+  sanitizeFilename,
+  assertPathInsideRoot,
+  extensaoPermitida,
+  EXT_DOCUMENTO_OK
+} = require('../utils/safePath');
 
 const rolesGestao = ['secretaria', 'diretor', 'admin'];
-const UPLOAD_ROOT = path.join(__dirname, '../../uploads/documentos');
+// Fora de /uploads público — download só via rota autenticada
+const UPLOAD_ROOT = path.join(__dirname, '../../private/documentos');
 const MAX_SIZE = 5 * 1024 * 1024;
 const TIPOS_MIME = [
   'application/pdf',
@@ -33,9 +40,13 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename(req, file, cb) {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const base = `${req.body.tipo}_${Date.now()}${ext}`;
-    cb(null, base);
+    const ext = extensaoPermitida(file.originalname, EXT_DOCUMENTO_OK) ||
+      (file.mimetype === 'application/pdf' ? '.pdf' : '.bin');
+    if (!EXT_DOCUMENTO_OK.has(ext)) {
+      return cb(new Error('Extensão de arquivo não permitida'));
+    }
+    const tipo = sanitizeFilename(req.body?.tipo || 'doc', { fallback: 'doc', maxLen: 40 });
+    cb(null, `${tipo}_${Date.now()}${ext}`);
   }
 });
 
@@ -43,18 +54,21 @@ const upload = multer({
   storage,
   limits: { fileSize: MAX_SIZE },
   fileFilter(req, file, cb) {
-    if (TIPOS_MIME.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Formato não permitido. Use PDF, JPG ou PNG.'));
+    if (!TIPOS_MIME.includes(file.mimetype)) {
+      return cb(new Error('Formato não permitido. Use PDF, JPG ou PNG.'));
     }
+    if (!extensaoPermitida(file.originalname, EXT_DOCUMENTO_OK)) {
+      return cb(new Error('Extensão de arquivo não permitida'));
+    }
+    cb(null, true);
   }
 });
 
 async function obterUsuarioEscola(usuarioId, escolaId) {
   const usuario = await Usuario.findById(usuarioId);
   if (!usuario) return null;
-  if (escolaId && usuario.escola_id && String(usuario.escola_id) !== String(escolaId)) {
+  if (!escolaId) return null;
+  if (!usuario.escola_id || String(usuario.escola_id) !== String(escolaId)) {
     return null;
   }
   return usuario;
@@ -126,8 +140,13 @@ router.post('/usuario/:usuarioId', autenticacao, verificarRole(...rolesGestao), 
     }
 
     const anterior = await DocumentoArquivo.findOne({ usuario_id: usuario._id, tipo });
-    if (anterior && fs.existsSync(anterior.caminho)) {
-      fs.unlinkSync(anterior.caminho);
+    if (anterior) {
+      try {
+        const antigo = assertPathInsideRoot(UPLOAD_ROOT, anterior.caminho);
+        if (fs.existsSync(antigo)) fs.unlinkSync(antigo);
+      } catch {
+        /* caminho fora do root — não apaga */
+      }
       await DocumentoArquivo.findByIdAndDelete(anterior._id);
     }
 
@@ -136,7 +155,7 @@ router.post('/usuario/:usuarioId', autenticacao, verificarRole(...rolesGestao), 
       escola_id: req.usuario.escola_id,
       categoria,
       tipo,
-      nomeOriginal: req.file.originalname,
+      nomeOriginal: sanitizeFilename(req.file.originalname, { fallback: 'documento' }),
       nomeArquivo: req.file.filename,
       mimeType: req.file.mimetype,
       tamanho: req.file.size,
@@ -176,16 +195,24 @@ router.get('/:documentoId/download', autenticacao, verificarRole(...rolesGestao)
       return res.status(404).json({ sucesso: false, mensagem: 'Documento não encontrado' });
     }
 
-    if (req.usuario.escola_id && documento.escola_id &&
+    if (!req.usuario.escola_id || !documento.escola_id ||
         String(documento.escola_id) !== String(req.usuario.escola_id)) {
       return res.status(403).json({ sucesso: false, mensagem: 'Acesso negado' });
     }
 
-    if (!fs.existsSync(documento.caminho)) {
+    let caminhoSeguro;
+    try {
+      caminhoSeguro = assertPathInsideRoot(UPLOAD_ROOT, documento.caminho);
+    } catch {
+      return res.status(400).json({ sucesso: false, mensagem: 'Caminho de arquivo inválido' });
+    }
+
+    if (!fs.existsSync(caminhoSeguro)) {
       return res.status(404).json({ sucesso: false, mensagem: 'Arquivo não encontrado no servidor' });
     }
 
-    res.download(documento.caminho, documento.nomeOriginal);
+    const nomeDownload = sanitizeFilename(documento.nomeOriginal, { fallback: 'documento' });
+    res.download(caminhoSeguro, nomeDownload);
   } catch (error) {
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao baixar documento' });
   }
@@ -198,12 +225,17 @@ router.delete('/:documentoId', autenticacao, verificarRole(...rolesGestao), asyn
       return res.status(404).json({ sucesso: false, mensagem: 'Documento não encontrado' });
     }
 
-    if (req.usuario.escola_id && documento.escola_id &&
+    if (!req.usuario.escola_id || !documento.escola_id ||
         String(documento.escola_id) !== String(req.usuario.escola_id)) {
       return res.status(403).json({ sucesso: false, mensagem: 'Acesso negado' });
     }
 
-    if (fs.existsSync(documento.caminho)) fs.unlinkSync(documento.caminho);
+    try {
+      const caminhoSeguro = assertPathInsideRoot(UPLOAD_ROOT, documento.caminho);
+      if (fs.existsSync(caminhoSeguro)) fs.unlinkSync(caminhoSeguro);
+    } catch {
+      /* caminho inválido — remove só o registro */
+    }
     await DocumentoArquivo.findByIdAndDelete(documento._id);
 
     res.json({ sucesso: true, mensagem: 'Documento removido' });

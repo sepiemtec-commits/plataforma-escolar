@@ -268,7 +268,7 @@ function gerarXls(dados) {
   xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
   <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
     <Title>Arquivo ${dados.anoLetivo} - ${escaparXml(dados.escola)}</Title>
-    <Author>EdPlus</Author>
+    <Author>VEHO</Author>
   </DocumentProperties>
   ${worksheets}
 </Workbook>`;
@@ -279,7 +279,7 @@ async function gerarArquivoXlsAnoLetivo(escolaId, anoLetivo) {
   const xml = gerarXls(dados);
   return {
     conteudo: xml,
-    nomeArquivo: `arquivo-ano-letivo-${anoLetivo}-${dados.escola.replace(/[^\w\-]+/g, '_')}.xls`,
+    nomeArquivo: `arquivo-ano-letivo-${anoLetivo}-${dados.escola.replace(/[^\w-]+/g, '_')}.xls`,
     escola: dados.escola,
     anoLetivo
   };

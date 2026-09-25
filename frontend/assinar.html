@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+    <title>Assinar VEHO</title>
+    <link rel="stylesheet" href="/styles/login.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
+    <link rel="stylesheet" href="/styles/assinar.css">
+</head>
+<body>
+    <div class="assinar-wrap">
+        <header class="assinar-topo">
+            <a href="index.html" class="assinar-marca">VEHO</a>
+            <a href="index.html" class="assinar-link">Já tenho conta</a>
+        </header>
+
+        <h1>Elimine o caos de dados de uma vez.</h1>
+        <p class="assinar-lead">Com a VEHO, toda a comunidade escolar fica em um só lugar: uma pessoa, um registro, uma fonte única de informação confiável.</p>
+        <p class="assinar-lead assinar-lead-secundario">Escolha o plano da sua escola. Onboarding em minutos — presença, notas e boletins com isolamento por unidade.</p>
+
+        <div id="planosGrid" class="planos-grid"></div>
+
+        <section class="assinar-formulario" id="secaoForm" hidden>
+            <h2>Dados da escola e administrador</h2>
+            <p class="assinar-plano-sel">Plano: <strong id="planoSelecionadoLabel">—</strong></p>
+
+            <form id="formAssinar">
+                <input type="hidden" id="plano" name="plano" required>
+
+                <h3>Escola</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nomeEscola">Nome da escola</label>
+                        <input id="nomeEscola" required minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="cnpj">CNPJ</label>
+                        <input id="cnpj" required placeholder="00.000.000/0000-00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="emailEscola">Email institucional</label>
+                        <input type="email" id="emailEscola" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="telefone">Telefone</label>
+                        <input id="telefone" placeholder="+55...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="endereco">Endereço (opcional)</label>
+                    <input id="endereco">
+                </div>
+
+                <h3>Administrador (diretor)</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adminNome">Nome completo</label>
+                        <input id="adminNome" required minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminEmail">Email de login</label>
+                        <input type="email" id="adminEmail" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="adminSenha">Senha (mín. 8 caracteres)</label>
+                    <input type="password" id="adminSenha" required minlength="8">
+                </div>
+
+                <label class="assinar-check">
+                    <input type="checkbox" id="aceiteTermos" required>
+                    Li e aceito os <a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a>
+                    e a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade (LGPD)</a>.
+                </label>
+
+                <button type="submit" class="btn-login" id="btnAssinar">Continuar para pagamento</button>
+            </form>
+
+            <div id="mensagemErro" class="erro" style="display:none;"></div>
+            <div id="mensagemSucesso" class="sucesso" style="display:none;"></div>
+        </section>
+
+        <p class="assinar-rodape">
+            <a href="termos.html">Termos</a> ·
+            <a href="privacidade.html">Privacidade</a> ·
+            <a href="index.html">Login</a>
+        </p>
+    </div>
+    <script src="/js/assinar.js"></script>
+    <script src="/js/pwa-register.js"></script>
+</body>
+</html>

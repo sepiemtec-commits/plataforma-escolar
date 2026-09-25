@@ -1,0 +1,172 @@
+/* frontend/styles/assinar.css — paleta 50/30/20 */
+@import url('tokens.css');
+
+body {
+    background: var(--cor-50) !important;
+}
+
+.assinar-wrap {
+    max-width: 960px;
+    width: 100%;
+    margin: 0 auto;
+    color: var(--cor-texto);
+}
+
+.assinar-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    padding: 14px 18px;
+    background: var(--cor-sidebar);
+    border-radius: 12px;
+    color: #fff;
+}
+
+.assinar-marca,
+.assinar-link {
+    color: #fff;
+    text-decoration: none;
+}
+
+.assinar-marca {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
+    font-size: 1.15rem;
+}
+
+.assinar-link {
+    font-weight: 600;
+}
+
+.assinar-link:hover {
+    color: #d6e6ff;
+}
+
+.assinar-wrap > h1 {
+    font-size: 1.85rem;
+    margin-bottom: 8px;
+    color: var(--cor-texto);
+}
+
+.assinar-lead {
+    color: var(--cor-texto-suave);
+    margin-bottom: 28px;
+}
+
+.planos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.plano-card {
+    background: var(--cor-superficie);
+    color: var(--cor-texto);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: var(--sombra);
+    border: 1px solid var(--cor-borda);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.plano-card h2 {
+    font-size: 1.25rem;
+    color: var(--cor-texto);
+}
+
+.plano-card .preco {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--cor-20);
+}
+
+.plano-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex: 1;
+}
+
+.plano-card li {
+    font-size: 0.92rem;
+    padding: 4px 0;
+    color: var(--cor-texto-suave);
+}
+
+.plano-card button {
+    border: none;
+    background: var(--cor-20);
+    color: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.plano-card button:hover {
+    background: var(--cor-20-hover);
+}
+
+.plano-card.ativo {
+    outline: 3px solid var(--cor-20);
+    box-shadow: var(--sombra-forte);
+}
+
+.assinar-formulario {
+    background: var(--cor-superficie);
+    color: var(--cor-texto);
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: var(--sombra-forte);
+    border: 1px solid var(--cor-borda);
+}
+
+.assinar-formulario h2,
+.assinar-formulario h3 {
+    color: var(--cor-texto);
+}
+
+.assinar-formulario h3 {
+    margin: 18px 0 10px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.assinar-check {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 16px 0;
+    font-size: 0.92rem;
+}
+
+.assinar-check a {
+    color: var(--cor-20);
+}
+
+.assinar-rodape {
+    text-align: center;
+    margin-top: 24px;
+    color: var(--cor-texto-suave);
+}
+
+.assinar-rodape a {
+    color: var(--cor-20);
+    font-weight: 600;
+}
+
+@media (max-width: 700px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}

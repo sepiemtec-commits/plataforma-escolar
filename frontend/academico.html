@@ -3,15 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acadêmico — EdPlus</title>
-    <link rel="stylesheet" href="styles/relatorios.css">
-    <link rel="stylesheet" href="styles/fonts.css">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+    <title>Acadêmico — VEHO</title>
+    <link rel="stylesheet" href="/styles/relatorios.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
 </head>
 <body class="relatorio-page" data-pagina="academico-hub">
-    <div class="rel-topbar">
-        <div>
-            <a href="#" id="linkVoltar">← Voltar</a>
-            <a href="academico.html">Acadêmico</a>
+    <div class="rel-topbar no-print">
+        <div class="rel-topbar-nav">
+            <a href="#" class="rel-btn-voltar" id="linkVoltar">← Voltar</a>
         </div>
         <span id="nomeUsuario"></span>
     </div>
@@ -37,6 +45,10 @@
                 <h3>📊 Boletim Acadêmico</h3>
                 <p>Notas por bimestre (AV1, AV2, Média) e resultados finais.</p>
             </a>
+            <a class="rel-hub-card" href="diario-aula.html">
+                <h3>📖 Diário de Classe</h3>
+                <p>Visualização completa do diário preenchido: presença, falta e conteúdo programático — imprimir em PDF.</p>
+            </a>
             <a class="rel-hub-card" href="gestao-boletins.html">
                 <h3>📁 Gestão de Boletins</h3>
                 <p>Visão geral de todos os alunos, médias e situação acadêmica.</p>
@@ -60,8 +72,9 @@
         </div>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/academico.js"></script>
-    <script src="js/relatorio-pages.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/academico.js"></script>
+    <script src="/js/relatorio-pages.js"></script>
+    <script src="/js/pwa-register.js"></script>
 </body>
 </html>

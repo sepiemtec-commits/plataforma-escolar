@@ -1,0 +1,37 @@
+{
+  "scale": 100000,
+  "counts": {
+    "alunos": 100000,
+    "usuarios": 152500,
+    "turmas": 2500,
+    "matriculas": 100000,
+    "notas": 200000,
+    "frequencias": 175000,
+    "boletins": 100000,
+    "responsaveis": 50000,
+    "relacionados": 625000
+  },
+  "benchmarks": {
+    "baseline": [
+      { "label": "Q1_lista_alunos_filtro_paginacao_ordenacao", "executionMs": 11.72, "seqScans": 1, "indexAccess": 0 },
+      { "label": "Q2_join_turma_matriculas_alunos", "executionMs": 32.421, "seqScans": 1, "indexAccess": 2 },
+      { "label": "Q3_grade_notas_turma_disciplina", "executionMs": 24.152, "seqScans": 1, "indexAccess": 1 },
+      { "label": "Q4_frequencia_turma_periodo", "executionMs": 11.249, "seqScans": 1, "indexAccess": 0 },
+      { "label": "Q5_boletim_aluno", "executionMs": 23.96, "seqScans": 2, "indexAccess": 0 },
+      { "label": "Q6_dashboard_recuperacao", "executionMs": 13.776, "seqScans": 2, "indexAccess": 1 },
+      { "label": "Q7_relatorio_agregado_escola", "executionMs": 230.701, "seqScans": 2, "indexAccess": 1 },
+      { "label": "Q8_join_unico_vs_nplus1_pattern", "executionMs": 17.49, "seqScans": 2, "indexAccess": 2 }
+    ],
+    "optimized": [
+      { "label": "Q1_lista_alunos_filtro_paginacao_ordenacao", "executionMs": 0.216, "seqScans": 0, "indexAccess": 1 },
+      { "label": "Q2_join_turma_matriculas_alunos", "executionMs": 2.555, "seqScans": 0, "indexAccess": 3 },
+      { "label": "Q3_grade_notas_turma_disciplina", "executionMs": 0.265, "seqScans": 0, "indexAccess": 2 },
+      { "label": "Q4_frequencia_turma_periodo", "executionMs": 0.588, "seqScans": 0, "indexAccess": 1 },
+      { "label": "Q5_boletim_aluno", "executionMs": 0.277, "seqScans": 0, "indexAccess": 2 },
+      { "label": "Q6_dashboard_recuperacao", "executionMs": 0.822, "seqScans": 0, "indexAccess": 3 },
+      { "label": "Q7_relatorio_agregado_escola", "executionMs": 199.485, "seqScans": 0, "indexAccess": 3 },
+      { "label": "Q8_join_unico_vs_nplus1_pattern", "executionMs": 15.838, "seqScans": 0, "indexAccess": 6 }
+    ]
+  },
+  "note": "Snapshot do run 100k. Seed 1M + benchmarks ainda em execução no veho-pg-scale."
+}

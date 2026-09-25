@@ -1,0 +1,54 @@
+# TOKEN 10 — PostgreSQL isolado (NÃO é produção).
+# Produção VEHO Edu usa MongoDB. Este compose espelha o domínio acadêmico
+# em SQL para EXPLAIN ANALYZE / índices / joins em escala.
+#
+# Uso:
+#   docker compose -f tests/database/docker-compose.pg-scale.yml up -d
+#   node tests/database/scripts/run-token10.js
+
+services:
+  veho-pg-scale:
+    image: postgres:16-alpine
+    container_name: veho-pg-scale
+    ports:
+      - "55432:5432"
+    environment:
+      POSTGRES_USER: veho_test
+      POSTGRES_PASSWORD: veho_test_only
+      POSTGRES_DB: veho_scale
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=256MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - max_connections=100
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - log_min_duration_statement=500
+      - -c
+      - log_lock_waits=on
+      - -c
+      - deadlock_timeout=1s
+    volumes:
+      - veho_pg_scale_data:/var/lib/postgresql/data
+      - ./schema:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veho_test -d veho_scale"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+    mem_limit: 3g
+
+volumes:
+  veho_pg_scale_data:

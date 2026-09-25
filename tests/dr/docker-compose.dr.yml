@@ -1,0 +1,18 @@
+# TOKEN 12 — MongoDB isolado para Disaster Recovery (NÃO é produção)
+services:
+  veho-mongo-dr:
+    image: mongo:7
+    container_name: veho-mongo-dr
+    ports:
+      - "27018:27017"
+    volumes:
+      - veho_mongo_dr_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+    mem_limit: 1g
+
+volumes:
+  veho_mongo_dr_data:

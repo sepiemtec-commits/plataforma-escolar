@@ -72,17 +72,30 @@ function formatarNomeDisciplina(nome) {
 
   let texto = String(nome).trim().replace(/\s+/g, ' ');
 
+  // Nome conhecido completo (evita "Espanhol" → "Espanho I" por causa do "l" final)
+  const chaveDireta = texto.toLowerCase();
+  if (MAPA_NOMES[chaveDireta]) return MAPA_NOMES[chaveDireta];
+  const chaveSemAcento = removerAcentos(texto).toLowerCase();
+  if (MAPA_NOMES[chaveSemAcento]) return MAPA_NOMES[chaveSemAcento];
+
+  // Correção de corrupção antiga do formatador
+  if (/^espanho\s*i$/i.test(texto) || /^espanhol$/i.test(removerAcentos(texto))) {
+    return 'Espanhol';
+  }
+
   if (/^biologial$/i.test(texto)) return 'Biologia I';
 
   let sufixo = null;
   let base = texto;
 
+  // Sufixo romano só com espaço: "Física l", "Química ll", "Biologia I"
   const comEspaco = texto.match(/^(.+?)\s+([1-4]|I{1,3}|IV|i{1,3}|iv|l{1,3}|L{1,3})$/i);
   if (comEspaco) {
     base = comEspaco[1];
     sufixo = normalizarSufixo(comEspaco[2]);
   } else {
-    const colado = texto.match(/^(.+?)([1-4]|I{1,3}|IV|i{1,3}|iv|l{1,3}|L{1,3})$/i);
+    // Colado: apenas dígitos/romanos explícitos — NÃO usar "l" solto (quebra Espanhol, etc.)
+    const colado = texto.match(/^(.+?)([1-4]|II|III|IV|ii|iii|iv|I)$/i);
     if (colado && colado[1].length >= 4) {
       base = colado[1];
       sufixo = normalizarSufixo(colado[2]);

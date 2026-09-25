@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+    <title>Painel do Responsável</title>
+    <link rel="stylesheet" href="/styles/painel.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
+</head>
+<body>
+    <div class="container-principal">
+        <aside class="sidebar">
+            <div class="logo">VEHO</div>
+            <ul class="menu">
+                <li><a href="#" class="ativo" data-secao="filhos">Meus Alunos</a></li>
+                <li><a href="#" data-secao="reunioes">Reuniões pedagógicas</a></li>
+                <li><a href="academico.html">Acadêmico</a></li>
+                <li><a href="#" id="btnLogoutMenu">Sair</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h1>Painel do Responsável</h1>
+                <div class="user-info">
+                    <p id="nomeUsuario">Carregando...</p>
+                    <button class="btn-logout" id="btnLogoutHeader" type="button">Logout</button>
+                </div>
+            </div>
+
+            <section id="filhos">
+                <div id="vehoPushContainer"></div>
+                <div class="grid-paineis">
+                    <div class="card">
+                        <h3>Alunos vinculados</h3>
+                        <div class="card-valor" id="totalFilhos">0</div>
+                    </div>
+                </div>
+
+                <h2 style="margin: 24px 0 12px;">Acompanhe o desempenho</h2>
+                <div id="listaFilhos">
+                    <p class="alerta alerta-info">Carregando...</p>
+                </div>
+            </section>
+
+            <section id="reunioes" style="display:none;">
+                <h2 style="margin-bottom:12px;">Reuniões pedagógicas</h2>
+                <p style="color:#566573;font-size:14px;margin:0 0 16px;">Reuniões em que você foi convidado (pais ou todos).</p>
+                <div id="listaReunioesResp"><p style="color:#7f8c8d;">Carregando...</p></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/push.js"></script>
+    <script src="/js/painel-responsavel.js"></script>
+    <script src="/js/pwa-register.js"></script>
+</body>
+</html>

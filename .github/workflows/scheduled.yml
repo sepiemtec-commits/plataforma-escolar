@@ -1,0 +1,96 @@
+# TOKEN 16 — Periodicamente: PERFORMANCE + SECURITY
+# Carga pesada / endurance NÃO rodam em PR.
+name: Scheduled — Performance + Security
+
+on:
+  schedule:
+    # Segundas 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      run_endurance:
+        description: 'Rodar endurance E1 (2h) — caro'
+        type: boolean
+        default: false
+      run_spike:
+        description: 'Rodar spike boletim SPIKE_MAX=100'
+        type: boolean
+        default: true
+
+concurrency:
+  group: scheduled-perf-sec
+  cancel-in-progress: true
+
+jobs:
+  security:
+    name: SECURITY TESTS
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Suíte segurança
+        run: npm run test:security
+      - name: Isolamento multi-tenant
+        run: npm run test:isolamento
+
+  performance-smoke:
+    name: PERFORMANCE TESTS (smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Subir alvo de carga
+        run: |
+          PORT=3099 LOAD_USER_POOL=80 MONGO_MAX_POOL=200 LOAD_DIAGNOSTICS=1 \
+            node tests/performance/scripts/start-load-target.js > /tmp/load-target.log 2>&1 &
+          echo $! > /tmp/load-target.pid
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:3099/health/ready && break
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:3099/health/ready
+      - name: k6 smoke
+        run: |
+          PATH="$PWD/tools/bin:$PATH" k6 run -e BASE_URL=http://127.0.0.1:3099 \
+            tests/performance/k6/scenarios/smoke.js
+      - name: Spike boletim (opcional, SPIKE_MAX=100)
+        if: ${{ github.event_name == 'schedule' || inputs.run_spike == true || inputs.run_spike == 'true' }}
+        run: |
+          PATH="$PWD/tools/bin:$PATH" k6 run -e BASE_URL=http://127.0.0.1:3099 -e SPIKE_MAX=100 \
+            tests/performance/k6/scenarios/boletim-spike.js
+      - name: Parar alvo
+        if: always()
+        run: |
+          if [ -f /tmp/load-target.pid ]; then kill "$(cat /tmp/load-target.pid)" 2>/dev/null || true; fi
+
+  endurance:
+    name: PERFORMANCE — Endurance E1 (manual/flag)
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_endurance == true || inputs.run_endurance == 'true') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Alvo + endurance E1
+        run: |
+          PORT=3099 LOAD_USER_POOL=120 MONGO_MAX_POOL=300 LOAD_DIAGNOSTICS=1 \
+            node tests/performance/scripts/start-load-target.js > /tmp/load-target.log 2>&1 &
+          echo $! > /tmp/load-target.pid
+          for i in $(seq 1 90); do curl -sf http://127.0.0.1:3099/health/ready && break; sleep 2; done
+          PATH="$PWD/tools/bin:$PATH" k6 run -e BASE_URL=http://127.0.0.1:3099 \
+            tests/performance/k6/scenarios/endurance-E1-500-2h.js
+          kill "$(cat /tmp/load-target.pid)" 2>/dev/null || true

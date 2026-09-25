@@ -16,9 +16,12 @@ const {
 } = require('../backend/database/schema');
 
 require('dotenv').config();
+const { obterSenhaSeed } = require('../backend/utils/senhaPadrao');
 
 async function popularBancoDados() {
     try {
+        const SENHA_SEED = obterSenhaSeed();
+
         // Conectar ao MongoDB
         await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/plataforma_escolar', {
             useNewUrlParser: true,
@@ -87,7 +90,7 @@ async function popularBancoDados() {
             await Usuario.create({
                 nome: 'Dr. Carlos Silva',
                 email: 'diretor@escola.com',
-                senha: 'senha123',
+                senha: SENHA_SEED,
                 cpf: '111.111.111-11',
                 whatsapp: '+5511999999999',
                 tipo: 'diretor',
@@ -106,7 +109,7 @@ async function popularBancoDados() {
             await Usuario.create({
                 nome: 'Dra. Maria Santos',
                 email: 'coord@escola.com',
-                senha: 'senha123',
+                senha: SENHA_SEED,
                 cpf: '222.222.222-22',
                 whatsapp: '+5511988888888',
                 tipo: 'coordenador',
@@ -121,7 +124,7 @@ async function popularBancoDados() {
             await Usuario.create({
                 nome: 'Sra. Paula Mendes',
                 email: 'secretaria@escola.com',
-                senha: 'senha123',
+                senha: SENHA_SEED,
                 cpf: '666.666.666-66',
                 whatsapp: '+5511977777777',
                 tipo: 'secretaria',
@@ -136,7 +139,7 @@ async function popularBancoDados() {
             await Usuario.create({
                 nome: 'Prof. João Oliveira',
                 email: 'professor@escola.com',
-                senha: 'senha123',
+                senha: SENHA_SEED,
                 cpf: '333.333.333-33',
                 whatsapp: '+5511987654321',
                 tipo: 'professor',
@@ -149,7 +152,7 @@ async function popularBancoDados() {
             await Usuario.create({
                 nome: 'Profa. Ana Costa',
                 email: 'prof2@escola.com',
-                senha: 'senha123',
+                senha: SENHA_SEED,
                 cpf: '444.444.444-44',
                 whatsapp: '+5511987654322',
                 tipo: 'professor',
@@ -186,7 +189,7 @@ async function popularBancoDados() {
                 aluno = await Usuario.create({
                     nome: info.nome,
                     email: `aluno${i}@escola.com`,
-                    senha: 'senha123',
+                    senha: SENHA_SEED,
                     cpf: `555.555.555-${String(i).padStart(2, '0')}`,
                     whatsapp: `+551199999999${i}`,
                     tipo: 'aluno',
@@ -224,17 +227,50 @@ async function popularBancoDados() {
 
         console.log(`✓ ${alunos.length} Alunos criados`);
 
-        // Criar Responsáveis
-        for (const aluno of alunos) {
-            const responsavelExistente = await Responsavel.findOne({ aluno_id: aluno._id });
-            if (!responsavelExistente) {
-                await Responsavel.create({
-                    usuario_id: aluno._id,
-                    aluno_id: aluno._id,
-                    grau_parentesco: 'pai',
-                    whatsapp: `+5511998888888`,
-                    recebeNotificacoes: true
+        // Criar usuários Responsáveis (login) e vincular aos alunos
+        for (let i = 0; i < alunos.length; i++) {
+            const aluno = alunos[i];
+            const emailResp = i === 0 ? 'responsavel@escola.com' : `responsavel${i + 1}@escola.com`;
+            let responsavelUser = await Usuario.findOne({ email: emailResp });
+            if (!responsavelUser) {
+                responsavelUser = await Usuario.create({
+                    nome: `Responsável de ${aluno.nome}`,
+                    email: emailResp,
+                    senha: SENHA_SEED,
+                    cpf: `666.666.666-${String(i + 1).padStart(2, '0')}`,
+                    whatsapp: `+551198888888${i}`,
+                    tipo: 'responsavel',
+                    escola_id: escola._id,
+                    ativo: true
                 });
+            } else {
+                await Usuario.updateOne(
+                    { _id: responsavelUser._id },
+                    {
+                        tipo: 'responsavel',
+                        escola_id: escola._id,
+                        ativo: true,
+                        nome: `Responsável de ${aluno.nome}`
+                    }
+                );
+            }
+
+            const vinculo = await Responsavel.findOne({
+                usuario_id: responsavelUser._id,
+                aluno_id: aluno._id
+            });
+            if (!vinculo) {
+                await Responsavel.findOneAndUpdate(
+                    { aluno_id: aluno._id },
+                    {
+                        usuario_id: responsavelUser._id,
+                        aluno_id: aluno._id,
+                        grau_parentesco: 'pai',
+                        whatsapp: responsavelUser.whatsapp || '+5511988888888',
+                        recebeNotificacoes: true
+                    },
+                    { upsert: true, new: true }
+                );
             }
         }
 
@@ -266,6 +302,11 @@ async function popularBancoDados() {
             { $set: { turno: 'Manhã' } }
         );
 
+        // Alunos só em UMA turma (sem matrícula duplicada)
+        const metade = Math.ceil(alunos.length / 2);
+        const alunosTurmaA = alunos.slice(0, metade).map(a => a._id);
+        const alunosTurmaB = alunos.slice(metade).map(a => a._id);
+
         const turma1 = await Turma.findOne({ nome: '5º Ano A' }) ||
             await Turma.create({
                 nome: '5º Ano A',
@@ -275,7 +316,7 @@ async function popularBancoDados() {
                 turno: 'Manhã',
                 professor_id: professor1._id,
                 escola_id: escola._id,
-                alunos: alunos.map(a => a._id)
+                alunos: alunosTurmaA
             });
 
         const turma2 = await Turma.findOne({ nome: '5º Ano B' }) ||
@@ -287,7 +328,7 @@ async function popularBancoDados() {
                 turno: 'Tarde',
                 professor_id: professor2._id,
                 escola_id: escola._id,
-                alunos: alunos.map(a => a._id)
+                alunos: alunosTurmaB
             });
 
         const turmaFund2 = await Turma.findOne({ nome: '8º Ano A' }) ||
@@ -412,12 +453,16 @@ async function popularBancoDados() {
         console.log('✓ Histórico escolar criado');
 
         console.log('\n✅ Banco de dados populado com sucesso!');
-        console.log('\n🔐 Usuários de teste:');
-        console.log('  Diretor: diretor@escola.com / senha123');
-        console.log('  Coordenador: coord@escola.com / senha123');
-        console.log('  Secretaria: secretaria@escola.com / senha123');
-        console.log('  Professor: professor@escola.com / senha123');
-        console.log('  Aluno: aluno1@escola.com / senha123');
+        console.log('\n🔐 Usuários de teste (senha do seed):');
+        console.log(`  Diretor: diretor@escola.com / ${SENHA_SEED}`);
+        console.log(`  Coordenador: coord@escola.com / ${SENHA_SEED}`);
+        console.log(`  Secretaria: secretaria@escola.com / ${SENHA_SEED}`);
+        console.log(`  Professor: professor@escola.com / ${SENHA_SEED}`);
+        console.log(`  Aluno: aluno1@escola.com / ${SENHA_SEED}`);
+        console.log(`  Responsável: responsavel@escola.com / ${SENHA_SEED}`);
+        if (process.env.NODE_ENV === 'production') {
+            console.log('\n⚠️  PRODUÇÃO: altere essas senhas após o primeiro login.');
+        }
 
         process.exit(0);
 

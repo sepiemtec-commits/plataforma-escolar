@@ -1,0 +1,50 @@
+# TOKEN 16 — Pull Request: QUICK + NORMAL
+# Lint, typecheck, unit, integration, API. Sem carga pesada / E2E.
+name: PR — Quick + Normal
+
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+
+concurrency:
+  group: pr-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quick:
+    name: QUICK TESTS
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck (node --check)
+        run: npm run typecheck
+      - name: Unitários
+        run: npm run test:unit
+
+  normal:
+    name: NORMAL TESTS
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: quick
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: API
+        run: npm run test:api
+      - name: Integração
+        run: npm run test:integration
+      - name: Concorrência (crítico)
+        run: npm run test:concurrency

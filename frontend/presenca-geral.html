@@ -3,52 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quadro de Presença</title>
-    <link rel="stylesheet" href="styles/painel.css">
-    <link rel="stylesheet" href="styles/fonts.css">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+    <title>Quadro de Presença — VEHO</title>
+    <link rel="stylesheet" href="/styles/painel.css">
+    <link rel="stylesheet" href="/styles/relatorios.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
 </head>
-<body>
-    <div class="container-principal">
-        <main class="main-content presenca-geral-content">
-            <div class="header">
-                <h1>📋 Quadro de Presença</h1>
-                <div class="user-info">
-                    <button type="button" class="btn btn-pequeno" id="btnVoltar">← Voltar</button>
-                    <button class="btn-logout" id="btnLogout">Sair</button>
-                </div>
-            </div>
-
-            <div class="formulario" style="max-width: 100%; margin-bottom: 30px;">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="filtroData">Data</label>
-                        <input type="date" id="filtroData" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="filtroTurma">Turma</label>
-                        <select id="filtroTurma">
-                            <option value="">Todas as turmas</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="filtroDisciplina">Disciplina</label>
-                        <select id="filtroDisciplina">
-                            <option value="">Todas</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="display:flex;align-items:flex-end;">
-                        <button type="button" class="btn btn-sucesso" id="btnFiltrar">Atualizar</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="quadroPresenca">
-                <p style="color:#7f8c8d;">Carregando...</p>
-            </div>
-        </main>
+<body class="relatorio-page" data-pagina="presenca-geral">
+    <div class="rel-topbar no-print">
+        <div class="rel-topbar-nav">
+            <a href="#" class="rel-btn-voltar" id="linkVoltar">← Voltar</a>
+        </div>
+        <span id="nomeUsuario"></span>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/presenca-geral.js"></script>
+    <div class="rel-container">
+        <h1 class="rel-titulo">📋 Quadro de Presença</h1>
+        <p class="rel-verificacao-dica" id="dicaModoPresenca">
+            Escolha se deseja ver a chamada de um dia específico ou o acumulado de um período (bimestre/ano).
+        </p>
+
+        <div class="rel-filtros no-print">
+            <div>
+                <label for="filtroModo">Visualizar por</label>
+                <select id="filtroModo">
+                    <option value="dia">Dia</option>
+                    <option value="periodo">Período</option>
+                </select>
+            </div>
+            <div id="grupoFiltroData">
+                <label for="filtroData">Data</label>
+                <input type="date" id="filtroData" required>
+            </div>
+            <div id="grupoFiltroPeriodo" style="display:none;">
+                <label for="filtroPeriodo">Período</label>
+                <select id="filtroPeriodo">
+                    <option value="1º Bimestre">1º Bimestre</option>
+                    <option value="2º Bimestre">2º Bimestre</option>
+                    <option value="3º Bimestre">3º Bimestre</option>
+                    <option value="4º Bimestre">4º Bimestre</option>
+                    <option value="Anual">Ano letivo completo</option>
+                </select>
+            </div>
+            <div>
+                <label for="filtroTurma">Turma</label>
+                <select id="filtroTurma">
+                    <option value="">Todas as turmas</option>
+                </select>
+            </div>
+            <div>
+                <label for="filtroDisciplina">Disciplina</label>
+                <select id="filtroDisciplina">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <button type="button" class="rel-btn rel-btn-primario" id="btnFiltrar">Atualizar</button>
+        </div>
+
+        <div id="resumoTaxasQuadro" class="presenca-taxas" style="display:none; margin-bottom: 20px;" aria-live="polite">
+            <div class="presenca-taxa-item presenca-taxa-presente">
+                <span class="presenca-taxa-label">Presença</span>
+                <strong id="quadroTaxaPresenca">0%</strong>
+                <small id="quadroQtdPresenca">0</small>
+            </div>
+            <div class="presenca-taxa-item presenca-taxa-falta">
+                <span class="presenca-taxa-label">Faltas</span>
+                <strong id="quadroTaxaFalta">0%</strong>
+                <small id="quadroQtdFalta">0</small>
+            </div>
+            <div class="presenca-taxa-item">
+                <span class="presenca-taxa-label">Lançados</span>
+                <strong id="quadroTaxaLancados">0</strong>
+                <small id="quadroQtdLancados">0</small>
+            </div>
+        </div>
+
+        <div id="quadroPresenca">
+            <p class="rel-carregando">Carregando...</p>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/academico.js"></script>
+    <script src="/js/presenca-geral.js"></script>
+    <script src="/js/pwa-register.js"></script>
 </body>
 </html>

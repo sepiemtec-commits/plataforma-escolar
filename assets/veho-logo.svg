@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="VEHO">
+  <!-- Moeda: fundo branco, borda cinza-azul, texto preto -->
+  <circle cx="256" cy="256" r="248" fill="#FFFFFF" stroke="#4A5B6C" stroke-width="8"/>
+  <circle cx="256" cy="256" r="228" fill="none" stroke="#D0D7DE" stroke-width="3"/>
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#E4E9EF" stroke-width="2"/>
+  <text
+    x="256"
+    y="278"
+    text-anchor="middle"
+    font-family="Arial Black, Helvetica Neue, Arial, sans-serif"
+    font-size="72"
+    font-weight="900"
+    letter-spacing="6"
+    fill="#000000"
+  >V.E.H.O.</text>
+</svg>

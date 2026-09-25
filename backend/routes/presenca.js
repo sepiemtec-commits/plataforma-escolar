@@ -1,38 +1,121 @@
 // backend/routes/presenca.js - Rotas de Presença e Faltas
 const express = require('express');
 const router = express.Router();
-const { Presenca, Usuario, Turma, DisciplinaConfig, Responsavel, Log } = require('../database/schema');
-const { autenticacao, verificarRole } = require('../middleware/autenticacao');
-const notificadorWhatsApp = require('../services/whatsapp');
+const { Presenca, Usuario, Turma, DisciplinaConfig, Responsavel, Escola, Log } = require('../database/schema');
+const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
+const { despachar } = require('../services/notificacaoDispatcher');
 const { disciplinasDoProfessor, professorTemDisciplina } = require('../utils/professorDisciplinas');
 const { disciplinaPermitidaParaTurma } = require('../constants/disciplinas');
 const { formatarNomeDisciplina } = require('../utils/formatarDisciplina');
+const {
+  filtroEscola,
+  assertTurmaEscola,
+  assertAlunoEscola,
+  responderErroTenant
+} = require('../utils/tenant');
+const { validarConflitoPresencaTempo } = require('../utils/conflitosAgenda');
+
+function parseDataLocal(data) {
+  if (data instanceof Date) {
+    const d = new Date(data);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  const texto = String(data || '').trim();
+  const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 0, 0, 0, 0);
+  }
+
+  const d = new Date(texto);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
 function intervaloDia(data) {
-  const inicio = new Date(data);
-  inicio.setHours(0, 0, 0, 0);
+  const inicio = parseDataLocal(data);
   const fim = new Date(inicio);
   fim.setDate(fim.getDate() + 1);
   return { inicio, fim };
+}
+
+function intervaloPeriodo(anoLetivo, periodo) {
+  const ano = Number(anoLetivo) || new Date().getFullYear();
+  const ranges = {
+    '1º Bimestre': { inicio: new Date(ano, 1, 1), fim: new Date(ano, 4, 1) },
+    '2º Bimestre': { inicio: new Date(ano, 4, 1), fim: new Date(ano, 7, 1) },
+    '3º Bimestre': { inicio: new Date(ano, 7, 1), fim: new Date(ano, 9, 1) },
+    '4º Bimestre': { inicio: new Date(ano, 9, 1), fim: new Date(ano + 1, 0, 1) },
+    Anual: { inicio: new Date(ano, 1, 1), fim: new Date(ano + 1, 0, 1) }
+  };
+  return ranges[periodo] || ranges.Anual;
+}
+
+function montarResumoAluno(aluno, statuses) {
+  const presentes = statuses.filter(s => s === 'presente').length;
+  const faltas = statuses.filter(s => s === 'falta').length;
+  const justificadas = statuses.filter(s => s === 'justificada').length;
+  const atrasos = statuses.filter(s => s === 'atraso').length;
+  const lancados = presentes + faltas + justificadas + atrasos;
+
+  return {
+    _id: aluno._id,
+    nome: aluno.nome,
+    cpf: aluno.cpf,
+    presentes,
+    faltas,
+    justificadas,
+    atrasos,
+    lancados,
+    taxaPresenca: lancados > 0 ? Number(((presentes / lancados) * 100).toFixed(1)) : null,
+    taxaFalta: lancados > 0 ? Number(((faltas / lancados) * 100).toFixed(1)) : null
+  };
 }
 
 async function notificarFaltaSeNecessario(presenca, data, statusAnterior) {
   if (statusAnterior === 'falta' || statusAnterior === presenca.status) return;
   if (presenca.status !== 'falta') return;
 
-  const responsaveis = await Responsavel.find({ aluno_id: presenca.aluno_id });
   const aluno = await Usuario.findById(presenca.aluno_id);
+  if (!aluno) return;
+
+  const escola = await Escola.findById(aluno.escola_id).select('configuracao');
+  const cfg = escola?.configuracao || {};
+  const canais = {
+    whatsapp: cfg.alertasWhatsapp !== false,
+    sms: Boolean(cfg.alertasSms),
+    push: Boolean(cfg.alertasPush)
+  };
+  if (!canais.whatsapp && !canais.sms && !canais.push) return;
+
+  const responsaveis = await Responsavel.find({ aluno_id: presenca.aluno_id });
+  const numeros = new Set();
+  const userIds = new Set();
 
   for (const responsavel of responsaveis) {
-    if (responsavel.recebeNotificacoes) {
-      await notificadorWhatsApp.enviarAlertaFalta(
-        responsavel.whatsapp,
-        aluno.nome,
-        new Date(data).toLocaleDateString('pt-BR')
-      );
-      presenca.notificadoWhatsapp = true;
-      await presenca.save();
-    }
+    if (responsavel.recebeNotificacoes === false) continue;
+    if (responsavel.whatsapp) numeros.add(responsavel.whatsapp);
+    if (responsavel.usuario_id) userIds.add(String(responsavel.usuario_id));
+  }
+  if (aluno.whatsapp_responsavel) numeros.add(aluno.whatsapp_responsavel);
+
+  const dataFmt = new Date(data).toLocaleDateString('pt-BR');
+  const resultado = await despachar({
+    canais,
+    numeros: [...numeros],
+    userIds: [...userIds],
+    escolaId: aluno.escola_id,
+    titulo: 'Alerta de Falta',
+    corpo: `${aluno.nome} teve falta registrada em ${dataFmt}.`,
+    tipo: 'falta',
+    meta: { nomeAluno: aluno.nome, data: dataFmt },
+    url: '/painel-responsavel.html'
+  });
+
+  if (resultado.total > 0) {
+    presenca.notificadoWhatsapp = true;
+    await presenca.save();
   }
 }
 
@@ -108,10 +191,24 @@ async function upsertPresenca(usuario, { aluno_id, turma_id, status, data, obser
   const { disciplinaNome, tempoNum } = validacao;
   const { inicio, fim } = intervaloDia(data);
 
+  // Mesmo aluno / mesma turma: um tempo do dia = uma disciplina
+  const conflito = await validarConflitoPresencaTempo({
+    alunoId: aluno_id,
+    turmaId: turma_id,
+    dataInicio: inicio,
+    dataFim: fim,
+    tempo: tempoNum,
+    disciplinaNome
+  });
+  if (!conflito.ok) {
+    const err = new Error(conflito.mensagem);
+    err.status = 409;
+    throw err;
+  }
+
+  // Chave: aluno + dia + tempo (disciplina só pode ser a mesma ou inexistente)
   let presenca = await Presenca.findOne({
     aluno_id,
-    turma_id,
-    disciplina: disciplinaNome,
     tempo: tempoNum,
     data: { $gte: inicio, $lt: fim }
   });
@@ -119,21 +216,55 @@ async function upsertPresenca(usuario, { aluno_id, turma_id, status, data, obser
   const statusAnterior = presenca?.status;
 
   if (presenca) {
+    if (presenca.disciplina !== disciplinaNome) {
+      const err = new Error(
+        `Conflito: o ${tempoNum}º tempo já está com ${presenca.disciplina}`
+      );
+      err.status = 409;
+      throw err;
+    }
     presenca.status = status;
     presenca.observacoes = observacoes || presenca.observacoes;
     presenca.professor_id = usuario._id;
+    presenca.turma_id = turma_id;
     await presenca.save();
   } else {
-    presenca = await Presenca.create({
-      aluno_id,
-      turma_id,
-      professor_id: usuario._id,
-      disciplina: disciplinaNome,
-      tempo: tempoNum,
-      status,
-      data: inicio,
-      observacoes
-    });
+    try {
+      presenca = await Presenca.create({
+        aluno_id,
+        turma_id,
+        professor_id: usuario._id,
+        disciplina: disciplinaNome,
+        tempo: tempoNum,
+        status,
+        data: inicio,
+        observacoes
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        // Corrida: outro request criou no meio — atualiza o existente se for a mesma disciplina
+        presenca = await Presenca.findOne({
+          aluno_id,
+          tempo: tempoNum,
+          data: { $gte: inicio, $lt: fim }
+        });
+        if (!presenca) throw err;
+        if (presenca.disciplina !== disciplinaNome) {
+          const e = new Error(
+            `Conflito de horário: o aluno já tem aula no ${tempoNum}º tempo deste dia`
+          );
+          e.status = 409;
+          throw e;
+        }
+        presenca.status = status;
+        presenca.observacoes = observacoes || presenca.observacoes;
+        presenca.professor_id = usuario._id;
+        presenca.turma_id = turma_id;
+        await presenca.save();
+      } else {
+        throw err;
+      }
+    }
   }
 
   await notificarFaltaSeNecessario(presenca, data, statusAnterior);
@@ -234,15 +365,26 @@ router.post('/registrar-lote', autenticacao, verificarRole('professor'), async (
 });
 
 // ==================== VISÃO GERAL ====================
-router.get('/visao-geral', autenticacao, async (req, res) => {
+router.get('/visao-geral', autenticacao, requerEscola, async (req, res) => {
   try {
-    const { data, turma_id, disciplina } = req.query;
-    const dataConsulta = data || new Date().toISOString().split('T')[0];
-    const { inicio, fim } = intervaloDia(dataConsulta);
+    const { data, turma_id, disciplina, modo, periodo, ano } = req.query;
+    const modoVisao = modo === 'periodo' ? 'periodo' : 'dia';
 
-    const filtroTurma = req.usuario.escola_id
-      ? { escola_id: req.usuario.escola_id }
-      : {};
+    let inicio;
+    let fim;
+    let rotuloPeriodo = null;
+    let anoLetivo = Number(ano) || new Date().getFullYear();
+
+    if (modoVisao === 'periodo') {
+      rotuloPeriodo = periodo || 'Anual';
+      ({ inicio, fim } = intervaloPeriodo(anoLetivo, rotuloPeriodo));
+    } else {
+      const dataConsulta = data || new Date().toISOString().split('T')[0];
+      ({ inicio, fim } = intervaloDia(dataConsulta));
+      rotuloPeriodo = dataConsulta;
+    }
+
+    const filtroTurma = { ...filtroEscola(req) };
     if (turma_id) filtroTurma._id = turma_id;
 
     const turmas = await Turma.find(filtroTurma)
@@ -258,10 +400,13 @@ router.get('/visao-geral', autenticacao, async (req, res) => {
 
     const presencas = await Presenca.find(filtroPresenca);
 
-    const mapaPresenca = {};
+    const statusesPorAlunoTurma = {};
     presencas.forEach(p => {
-      const key = `${p.aluno_id}_${p.turma_id}_${p.disciplina || 'Geral'}_${p.tempo || 1}`;
-      mapaPresenca[key] = p.status;
+      const key = `${p.aluno_id}_${p.turma_id}`;
+      if (!statusesPorAlunoTurma[key]) statusesPorAlunoTurma[key] = [];
+      if (['presente', 'falta', 'justificada', 'atraso'].includes(p.status)) {
+        statusesPorAlunoTurma[key].push(p.status);
+      }
     });
 
     let disciplinasConfig = [];
@@ -272,45 +417,21 @@ router.get('/visao-geral', autenticacao, async (req, res) => {
       }).sort({ nome: 1 });
     }
 
-    const disciplinasVisao = disciplina
-      ? disciplinasConfig.filter(d => d.nome === disciplina)
-      : disciplinasConfig;
-
     const quadro = turmas.map(turma => ({
       turma: { _id: turma._id, nome: turma.nome },
       alunos: (turma.alunos || []).map(aluno => {
-        const tempos = [];
-
-        if (disciplinasVisao.length) {
-          disciplinasVisao.forEach(disc => {
-            for (let t = 1; t <= disc.quantidadeTempos; t++) {
-              tempos.push({
-                disciplina: disc.nome,
-                tempo: t,
-                status: mapaPresenca[`${aluno._id}_${turma._id}_${disc.nome}_${t}`] || null
-              });
-            }
-          });
-        } else {
-          tempos.push({
-            disciplina: 'Geral',
-            tempo: 1,
-            status: mapaPresenca[`${aluno._id}_${turma._id}_Geral_1`] || null
-          });
-        }
-
-        return {
-          _id: aluno._id,
-          nome: aluno.nome,
-          cpf: aluno.cpf,
-          tempos
-        };
+        const key = `${aluno._id}_${turma._id}`;
+        return montarResumoAluno(aluno, statusesPorAlunoTurma[key] || []);
       })
     }));
 
     res.json({
       sucesso: true,
-      data: dataConsulta,
+      modo: modoVisao,
+      periodo: rotuloPeriodo,
+      anoLetivo,
+      inicio,
+      fim,
       disciplinas: disciplinasConfig.map(d => ({ nome: d.nome, quantidadeTempos: d.quantidadeTempos })),
       quadro
     });
@@ -324,7 +445,10 @@ router.get('/visao-geral', autenticacao, async (req, res) => {
 router.get('/turma/:turmaId', autenticacao, async (req, res) => {
   try {
     const { turmaId } = req.params;
-    const { data, disciplina } = req.query;
+    const data = typeof req.query.data === 'string' ? req.query.data : undefined;
+    const disciplina = typeof req.query.disciplina === 'string' ? req.query.disciplina : undefined;
+
+    await assertTurmaEscola(req, turmaId);
 
     if (req.usuario.tipo === 'professor') {
       const minhas = disciplinasDoProfessor(req.usuario);
@@ -336,10 +460,6 @@ router.get('/turma/:turmaId', autenticacao, async (req, res) => {
           sucesso: false,
           mensagem: `Você só pode consultar presença de: ${minhas.join(', ')}`
         });
-      }
-      const turma = await Turma.findOne({ _id: turmaId, escola_id: req.usuario.escola_id });
-      if (!turma) {
-        return res.status(403).json({ sucesso: false, mensagem: 'Turma não disponível' });
       }
     }
 
@@ -362,6 +482,7 @@ router.get('/turma/:turmaId', autenticacao, async (req, res) => {
     });
 
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao listar presença:', error);
     res.status(500).json({
       sucesso: false,
@@ -374,8 +495,36 @@ router.get('/turma/:turmaId', autenticacao, async (req, res) => {
 router.get('/aluno/:alunoId', autenticacao, async (req, res) => {
   try {
     const { alunoId } = req.params;
+    await assertAlunoEscola(req, alunoId);
 
-    const presencas = await Presenca.find({ aluno_id: alunoId })
+    // Só a turma atual do aluno (evita misturar turmas antigas / duplicadas no seed)
+    const turmasDoAluno = await Turma.find({ alunos: alunoId }).select('_id nome').lean();
+    let turmaPrincipal = turmasDoAluno[0] || null;
+
+    if (turmasDoAluno.length > 1) {
+      const [top] = await Presenca.aggregate([
+        { $match: { aluno_id: alunoId } },
+        {
+          $group: {
+            _id: '$turma_id',
+            n: { $sum: 1 },
+            ultima: { $max: '$data' }
+          }
+        },
+        { $sort: { ultima: -1, n: -1 } },
+        { $limit: 1 }
+      ]);
+      if (top?._id) {
+        turmaPrincipal = turmasDoAluno.find(t => String(t._id) === String(top._id)) || turmaPrincipal;
+      }
+    }
+
+    const filtro = { aluno_id: alunoId };
+    if (turmaPrincipal) {
+      filtro.turma_id = turmaPrincipal._id;
+    }
+
+    const presencas = await Presenca.find(filtro)
       .populate('professor_id', 'nome')
       .populate('turma_id', 'nome')
       .sort({ data: -1, disciplina: 1, tempo: 1 });
@@ -390,6 +539,8 @@ router.get('/aluno/:alunoId', autenticacao, async (req, res) => {
 
     res.json({
       sucesso: true,
+      aluno_id: alunoId,
+      turma: turmaPrincipal ? { _id: turmaPrincipal._id, nome: turmaPrincipal.nome } : null,
       presencas,
       estatisticas: {
         totalAulas,
@@ -402,6 +553,7 @@ router.get('/aluno/:alunoId', autenticacao, async (req, res) => {
     });
 
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao listar presença do aluno:', error);
     res.status(500).json({
       sucesso: false,
@@ -411,10 +563,16 @@ router.get('/aluno/:alunoId', autenticacao, async (req, res) => {
 });
 
 // ==================== ATUALIZAR PRESENÇA ====================
-router.put('/:presencaId', autenticacao, verificarRole('professor'), async (req, res) => {
+router.put('/:presencaId', autenticacao, verificarRole('professor'), requerEscola, async (req, res) => {
   try {
     const { presencaId } = req.params;
     const { status, observacoes } = req.body;
+
+    const existente = await Presenca.findById(presencaId);
+    if (!existente) {
+      return res.status(404).json({ sucesso: false, mensagem: 'Presença não encontrada' });
+    }
+    await assertTurmaEscola(req, existente.turma_id);
 
     const presenca = await Presenca.findByIdAndUpdate(
       presencaId,
@@ -437,6 +595,7 @@ router.put('/:presencaId', autenticacao, verificarRole('professor'), async (req,
     });
 
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao atualizar presença:', error);
     res.status(500).json({
       sucesso: false,
@@ -449,6 +608,7 @@ router.put('/:presencaId', autenticacao, verificarRole('professor'), async (req,
 router.get('/estatisticas/:turmaId', autenticacao, async (req, res) => {
   try {
     const { turmaId } = req.params;
+    await assertTurmaEscola(req, turmaId);
 
     const presencas = await Presenca.find({ turma_id: turmaId });
     
@@ -480,6 +640,7 @@ router.get('/estatisticas/:turmaId', autenticacao, async (req, res) => {
     });
 
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao gerar estatísticas:', error);
     res.status(500).json({
       sucesso: false,

@@ -182,5 +182,8 @@ module.exports = {
   montarBoletimCompleto,
   montarFichaIndividual,
   montarFichaMatricula,
-  calcularMedia
+  calcularMedia,
+  mapaAvaliacoes,
+  contarFaltasDisciplina,
+  pesoTipo
 };

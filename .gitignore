@@ -11,6 +11,9 @@ yarn.lock
 .env
 .env.local
 .env.*.local
+.env.production
+!.env.example
+!.env.production.example
 
 # IDE
 .vscode/
@@ -46,6 +49,9 @@ data/
 .eslintcache
 .prettier-ignore
 
+# Cobertura de testes
+coverage/
+
 # OS
 Thumbs.db
 .DS_Store
@@ -53,4 +59,22 @@ Thumbs.db
 
 # Arquivos enviados
 uploads/
+private/
 private-key.pem
+tools/bin/k6
+tests/performance/results/load-users.json
+tests/performance/results/*.json
+tests/performance/results/*.txt
+tests/performance/results/RELATORIO-*.md
+!tests/performance/results/.gitkeep
+!tests/performance/results/.gitignore
+
+tests/performance/results/load-users-responsaveis.json
+tests/dr/backups/
+tests/dr/results/
+tests/dr/fixtures/
+tests/recovery/results/
+tests/e2e/.auth/
+tests/e2e/playwright-report/
+tests/e2e/test-results/
+tests/e2e/results/

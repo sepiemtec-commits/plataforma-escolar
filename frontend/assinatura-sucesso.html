@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
+    <title>Assinatura confirmada — VEHO</title>
+    <link rel="stylesheet" href="/styles/login.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
+</head>
+<body>
+    <div class="login-box" style="max-width:480px;margin:40px auto;">
+        <h1>VEHO</h1>
+        <p class="subtitle" id="titulo">Confirmando assinatura…</p>
+        <p id="detalhe" style="margin:16px 0;color:#555;"></p>
+        <a class="btn-login" href="index.html" style="display:inline-block;text-align:center;text-decoration:none;">Ir para o login</a>
+        <p class="subtitle-login" style="margin-top:16px;">
+            <a href="termos.html">Termos</a> · <a href="privacidade.html">Privacidade</a>
+        </p>
+    </div>
+    <script>
+    (async function () {
+        const params = new URLSearchParams(location.search);
+        const titulo = document.getElementById('titulo');
+        const detalhe = document.getElementById('detalhe');
+        if (params.get('dev') === '1') {
+            titulo.textContent = 'Escola ativada (modo desenvolvimento)';
+            detalhe.textContent = 'Faça login com o email e a senha do administrador cadastrados.';
+            return;
+        }
+        const sessionId = params.get('session_id');
+        if (!sessionId) {
+            titulo.textContent = 'Sessão não encontrada';
+            detalhe.textContent = 'Volte à página de planos e tente novamente.';
+            return;
+        }
+        try {
+            const res = await fetch(`/api/assinatura/confirmar?session_id=${encodeURIComponent(sessionId)}`);
+            const data = await res.json();
+            if (!res.ok || !data.sucesso) throw new Error(data.mensagem || 'Falha na confirmação');
+            titulo.textContent = data.jaAtivada ? 'Tudo certo!' : 'Bem-vindo à VEHO!';
+            detalhe.textContent = (data.escola ? data.escola.nome + ' — ' : '') + (data.mensagem || '');
+        } catch (e) {
+            titulo.textContent = 'Não foi possível confirmar';
+            detalhe.textContent = e.message + ' Se o pagamento foi aprovado, aguarde alguns segundos e atualize, ou contate o suporte.';
+        }
+    })();
+    </script>
+    <script src="/js/pwa-register.js"></script>
+</body>
+</html>

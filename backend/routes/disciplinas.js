@@ -1,34 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const { DisciplinaConfig, Log, Turma } = require('../database/schema');
-const { autenticacao, verificarRole } = require('../middleware/autenticacao');
+const { DisciplinaConfig, Log } = require('../database/schema');
+const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
 const { disciplinasDoProfessor } = require('../utils/professorDisciplinas');
 const { disciplinaPermitidaParaTurma, filtrarDisciplinasParaTurma } = require('../constants/disciplinas');
 const { formatarNomeDisciplina } = require('../utils/formatarDisciplina');
+const { filtroEscola, assertTurmaEscola, responderErroTenant } = require('../utils/tenant');
 
 function serializarDisciplina(doc) {
   const obj = doc?.toObject ? doc.toObject() : { ...doc };
   return { ...obj, nome: formatarNomeDisciplina(obj.nome) };
 }
 
-router.get('/', autenticacao, async (req, res) => {
+router.get('/', autenticacao, requerEscola, async (req, res) => {
   try {
-    const filtro = { ativo: true };
-    if (req.usuario.escola_id) {
-      filtro.escola_id = req.usuario.escola_id;
-    }
+    const filtro = { ativo: true, ...filtroEscola(req) };
 
     const disciplinas = (await DisciplinaConfig.find(filtro).sort({ nome: 1 })).map(serializarDisciplina);
 
     if (req.query.turmaId) {
-      const turma = await Turma.findOne({
-        _id: req.query.turmaId,
-        escola_id: req.usuario.escola_id
-      });
-      if (turma) {
-        const permitidas = filtrarDisciplinasParaTurma(disciplinas, turma);
-        return res.json({ sucesso: true, disciplinas: permitidas, turma: { _id: turma._id, nome: turma.nome } });
-      }
+      const turma = await assertTurmaEscola(req, req.query.turmaId);
+      const permitidas = filtrarDisciplinasParaTurma(disciplinas, turma);
+      return res.json({ sucesso: true, disciplinas: permitidas, turma: { _id: turma._id, nome: turma.nome } });
     }
 
     if (req.usuario.tipo === 'professor') {
@@ -42,12 +35,13 @@ router.get('/', autenticacao, async (req, res) => {
 
     res.json({ sucesso: true, disciplinas });
   } catch (error) {
+    if (responderErroTenant(res, error)) return;
     console.error('Erro ao listar disciplinas:', error);
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao listar disciplinas' });
   }
 });
 
-router.post('/', autenticacao, verificarRole('secretaria', 'diretor'), async (req, res) => {
+router.post('/', autenticacao, verificarRole('secretaria', 'diretor'), requerEscola, async (req, res) => {
   try {
     const { nome, quantidadeTempos } = req.body;
 

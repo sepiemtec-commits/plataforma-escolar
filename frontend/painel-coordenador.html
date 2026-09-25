@@ -3,23 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
     <title>Painel do Coordenador</title>
-    <link rel="stylesheet" href="styles/painel.css">
-    <link rel="stylesheet" href="styles/fonts.css">
+    <link rel="stylesheet" href="/styles/painel.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
 </head>
 <body>
     <div class="container-principal">
         <aside class="sidebar">
-            <div class="logo">🎓 EdPlus</div>
+            <div class="logo">VEHO</div>
             <ul class="menu">
-                <li><a href="#" class="ativo" onclick="carregarSecao('dashboard')">📊 Dashboard</a></li>
-                <li><a href="#" onclick="carregarSecao('turmas')">👥 Turmas</a></li>
-                <li><a href="#" onclick="carregarSecao('desempenho')">📈 Desempenho</a></li>
-                <li><a href="#" onclick="carregarSecao('diagnostico')">🔍 Diagnóstico</a></li>
-                <li><a href="declaracao-curso.html?modo=verificar">🔐 Verificar Declaração</a></li>
-                <li><a href="academico.html">📚 Acadêmico</a></li>
-                <li><a href="#" onclick="carregarSecao('notificacoes')">📬 Notificações</a></li>
-                <li><a href="#" onclick="fazerLogout()">🚪 Sair</a></li>
+                <li><a href="#" class="ativo" data-secao="dashboard">Dashboard</a></li>
+                <li><a href="#" data-secao="turmas">Turmas</a></li>
+                <li><a href="#" data-secao="desempenho">Desempenho</a></li>
+                <li><a href="#" data-secao="diagnostico">Diagnóstico</a></li>
+                <li><a href="presenca-geral.html">Quadro de Presença</a></li>
+                <li><a href="diario-aula.html">Diário de Classe</a></li>
+                <li><a href="declaracao-curso.html?modo=verificar">Verificar Declaração</a></li>
+                <li><a href="academico.html">Acadêmico</a></li>
+                <li><a href="#" data-secao="notificacoes">Notificações</a></li>
+                <li><a href="#" data-secao="htpc">Agendamento de reunião pedagógica</a></li>
+                <li><a href="#" data-secao="pei">PEI</a></li>
+                <li><a href="#" data-secao="simulados-hist">Simulados — série histórica</a></li>
+                <li><a href="#" id="btnLogoutMenu">Sair</a></li>
             </ul>
         </aside>
 
@@ -28,7 +42,7 @@
                 <h1>Painel do Coordenador Pedagógico</h1>
                 <div class="user-info">
                     <p id="nomeUsuario">Carregando...</p>
-                    <button class="btn-logout" onclick="fazerLogout()">Logout</button>
+                    <button class="btn-logout" id="btnLogoutHeader" type="button">Logout</button>
                 </div>
             </div>
 
@@ -73,22 +87,22 @@
             <!-- TURMAS -->
             <section id="turmas" style="display: none;">
                 <h2>👥 Turmas da Escola</h2>
-                <table class="tabela">
-                    <thead>
-                        <tr>
-                            <th>Turma</th>
-                            <th>Professor</th>
-                            <th>Alunos</th>
-                            <th>Frequência</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaTurmas">
-                        <tr>
-                            <td colspan="5" style="text-align: center;">Carregando...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="formulario" style="margin-bottom: 20px; max-width: 520px;">
+                    <div class="form-group">
+                        <label for="filtroTurmaCoordenador">Qual turma deseja ver?</label>
+                        <select id="filtroTurmaCoordenador">
+                            <option value="">Selecione...</option>
+                            <option value="__todas__">Todas as turmas</option>
+                        </select>
+                    </div>
+                    <p style="color:#566573;margin:8px 0 0;font-size:14px;">
+                        Escolha uma turma para ver a frequência dos alunos, ou “Todas as turmas” para o resumo geral.
+                    </p>
+                </div>
+
+                <div id="painelTurmasCoordenador">
+                    <p style="color:#7f8c8d;">Selecione uma turma acima para começar.</p>
+                </div>
             </section>
 
             <!-- DESEMPENHO -->
@@ -97,7 +111,7 @@
                 <div class="formulario" style="margin-bottom: 30px;">
                     <div class="form-group">
                         <label for="periodoDesempenho">Período</label>
-                        <select id="periodoDesempenho" onchange="carregarDesempenho()">
+                        <select id="periodoDesempenho">
                             <option value="1º Bimestre">1º Bimestre</option>
                             <option value="2º Bimestre">2º Bimestre</option>
                             <option value="3º Bimestre">3º Bimestre</option>
@@ -122,7 +136,7 @@
                             <option value="4º Bimestre">4º Bimestre</option>
                         </select>
                     </div>
-                    <button class="btn btn-sucesso" onclick="gerarDiagnostico()">🔍 Gerar Diagnóstico</button>
+                    <button type="button" class="btn btn-sucesso" id="btnGerarDiagnostico">🔍 Gerar Diagnóstico</button>
                 </div>
 
                 <div id="conteudoDiagnostico" style="margin-top: 20px;"></div>
@@ -131,15 +145,41 @@
             <!-- NOTIFICAÇÕES -->
             <section id="notificacoes" style="display: none;">
                 <h2>📬 Enviar Notificações</h2>
-                <div class="formulario" style="max-width: 600px;">
+                <div class="formulario" style="max-width: 640px;">
                     <form id="formularioNotificacao">
                         <div class="form-group">
                             <label for="notificacaoTipo">Tipo de Notificação</label>
                             <select id="notificacaoTipo" required>
-                                <option value="desempenho">Alerta de Desempenho</option>
                                 <option value="geral">Notificação Geral</option>
+                                <option value="desempenho">Alerta de Desempenho</option>
                                 <option value="boletim">Enviar Boletim</option>
                             </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notificacaoDestino">Enviar para</label>
+                            <select id="notificacaoDestino" required>
+                                <option value="todos">Todos os responsáveis da escola</option>
+                                <option value="turma">Responsáveis de uma turma</option>
+                                <option value="aluno">Responsável de um aluno específico</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="grupoNotifTurma" style="display:none;">
+                            <label for="notificacaoTurma">Turma</label>
+                            <select id="notificacaoTurma">
+                                <option value="">Selecione a turma</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="grupoNotifAluno" style="display:none;">
+                            <label for="notificacaoAluno">Aluno</label>
+                            <select id="notificacaoAluno">
+                                <option value="">Selecione o aluno</option>
+                            </select>
+                            <small id="dicaNotifAluno" style="color:#666;display:block;margin-top:4px;">
+                                O WhatsApp do responsável cadastrado no aluno receberá a mensagem.
+                            </small>
                         </div>
 
                         <div class="form-group">
@@ -152,15 +192,138 @@
                             <textarea id="notificacaoMensagem" rows="5" placeholder="Digite a mensagem" required></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-sucesso">✓ Enviar</button>
+                        <div class="form-group">
+                            <label>Canais de envio</label>
+                            <label style="display:block;font-weight:normal;margin:6px 0;">
+                                <input type="checkbox" id="canalWhatsapp" checked>
+                                WhatsApp
+                            </label>
+                            <label style="display:block;font-weight:normal;margin:6px 0;">
+                                <input type="checkbox" id="canalSms">
+                                SMS
+                            </label>
+                            <label style="display:block;font-weight:normal;margin:6px 0;">
+                                <input type="checkbox" id="canalPush">
+                                Push (aparelho com notificações ativadas)
+                            </label>
+                        </div>
+
+                        <p id="resumoDestinoNotif" style="color:#566573;margin:0 0 16px;font-size:14px;"></p>
+
+                        <button type="submit" class="btn btn-sucesso" id="btnEnviarNotificacao">✓ Enviar</button>
                     </form>
                 </div>
+            </section>
+
+            <!-- Reunião pedagógica -->
+            <section id="htpc" style="display:none;">
+                <h2 style="margin-bottom:12px;">Agendamento de reunião pedagógica</h2>
+                <div class="formulario" style="max-width:720px;margin-bottom:24px;">
+                    <form id="formHtpc">
+                        <div class="form-group">
+                            <label for="htpcTitulo">Título</label>
+                            <input type="text" id="htpcTitulo" required placeholder="Ex: Reunião de pais — 1º bimestre">
+                        </div>
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div class="form-group">
+                                <label for="htpcData">Data</label>
+                                <input type="date" id="htpcData" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="htpcTurno">Turno</label>
+                                <select id="htpcTurno">
+                                    <option>Manhã</option>
+                                    <option selected>Tarde</option>
+                                    <option>Noite</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="htpcPauta">Pauta</label>
+                            <textarea id="htpcPauta" rows="3" placeholder="Pontos da reunião"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Público convidado</label>
+                            <label style="display:block;font-weight:normal;margin:6px 0;">
+                                <input type="radio" name="htpcPublico" value="pais">
+                                Pais / responsáveis
+                            </label>
+                            <label style="display:block;font-weight:normal;margin:6px 0;">
+                                <input type="radio" name="htpcPublico" value="professores" checked>
+                                Professores
+                            </label>
+                            <label style="display:block;font-weight:normal;margin:6px 0;">
+                                <input type="radio" name="htpcPublico" value="todos">
+                                Todos (pais e professores)
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-sucesso">Agendar reunião</button>
+                    </form>
+                </div>
+                <div id="listaHtpc"><p style="color:#7f8c8d;">Carregando...</p></div>
+            </section>
+
+            <!-- PEI -->
+            <section id="pei" style="display:none;">
+                <h2 style="margin-bottom:12px;">PEI — Plano Educacional Individualizado</h2>
+                <div class="formulario" style="max-width:720px;margin-bottom:24px;">
+                    <form id="formPei">
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div class="form-group">
+                                <label for="peiTurma">Turma</label>
+                                <select id="peiTurma"><option value="">Selecione</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="peiAluno">Aluno</label>
+                                <select id="peiAluno" disabled><option value="">Selecione a turma</option></select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiDiagnostico">Diagnóstico / contexto</label>
+                            <textarea id="peiDiagnostico" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiNecessidades">Necessidades educacionais</label>
+                            <textarea id="peiNecessidades" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiMetas">Metas (uma por linha)</label>
+                            <textarea id="peiMetas" rows="3" placeholder="Meta 1&#10;Meta 2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiEstrategias">Estratégias</label>
+                            <textarea id="peiEstrategias" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiRecursos">Recursos / adaptações</label>
+                            <textarea id="peiRecursos" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="peiStatus">Status</label>
+                            <select id="peiStatus">
+                                <option value="rascunho">Rascunho</option>
+                                <option value="ativo">Ativo</option>
+                                <option value="revisao">Em revisão</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sucesso">Salvar PEI</button>
+                    </form>
+                </div>
+                <div id="listaPei"><p style="color:#7f8c8d;">Carregando...</p></div>
+            </section>
+
+            <section id="simulados-hist" style="display:none;">
+                <h2 style="margin-bottom:8px;">Simulados — série histórica da escola</h2>
+                <p style="color:#566573;font-size:14px;margin:0 0 16px;">Médias dos simulados SAEB/SARESP ao longo do tempo.</p>
+                <div id="resumoHistoricoSim" style="margin-bottom:16px;"></div>
+                <div id="listaHistoricoSim"><p style="color:#7f8c8d;">Carregando...</p></div>
             </section>
         </main>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/painel-coordenador.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/painel-coordenador.js"></script>
+    <script src="/js/pwa-register.js"></script>
 </body>
 </html>

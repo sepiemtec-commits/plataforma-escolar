@@ -13,7 +13,7 @@ function formatarDataISO(d) {
 function exibirErroRelatorio(mensagem) {
     const el = document.getElementById('conteudo');
     if (el) {
-        el.innerHTML = `<p class="rel-erro" style="color:#c0392b;padding:20px;text-align:center;">❌ ${mensagem}</p>`;
+        el.innerHTML = `<p class="rel-erro" style="color:#c0392b;padding:20px;text-align:center;">❌ ${escaparHtml(mensagem)}</p>`;
     } else {
         alert(mensagem);
     }
@@ -33,17 +33,17 @@ async function initFichaIndividual() {
             const f = res.ficha;
 
             document.getElementById('conteudo').innerHTML = `
-                <p class="rel-escola-nome">${f.escola?.nome || 'Escola'}</p>
+                <p class="rel-escola-nome">${escaparHtml(f.escola?.nome || 'Escola')}</p>
                 <div class="rel-ficha-dados">
-                    <p><strong>SÉRIE:</strong> ${f.turma?.nome || '—'}</p>
-                    <p><strong>TURMA:</strong> ${f.turma?.serie || 'A'}</p>
-                    <p><strong>TURNO:</strong> ${f.aluno.turno || 'Manhã'}</p>
-                    <p><strong>ANO:</strong> ${f.anoLetivo}</p>
-                    <p><strong>ALUNO(A):</strong> ${f.aluno.nome}</p>
-                    <p><strong>RESPONSÁVEL:</strong> ${f.aluno.nome_responsavel || f.aluno.filiacao_mae || f.aluno.filiacao_pai || '—'}</p>
-                    <p><strong>DATA DE NASCIMENTO:</strong> ${formatarDataBR(f.aluno.dataNascimento)}</p>
-                    <p><strong>ENDEREÇO:</strong> ${f.aluno.endereco || '—'}</p>
-                    <p><strong>CIDADE:</strong> ${f.aluno.cidade || '—'} · <strong>UF:</strong> ${f.aluno.uf || '—'}</p>
+                    <p><strong>SÉRIE:</strong> ${escaparHtml(f.turma?.nome || '—')}</p>
+                    <p><strong>TURMA:</strong> ${escaparHtml(f.turma?.serie || 'A')}</p>
+                    <p><strong>TURNO:</strong> ${escaparHtml(f.aluno.turno || 'Manhã')}</p>
+                    <p><strong>ANO:</strong> ${escaparHtml(f.anoLetivo)}</p>
+                    <p><strong>ALUNO(A):</strong> ${escaparHtml(f.aluno.nome)}</p>
+                    <p><strong>RESPONSÁVEL:</strong> ${escaparHtml(f.aluno.nome_responsavel || f.aluno.filiacao_mae || f.aluno.filiacao_pai || '—')}</p>
+                    <p><strong>DATA DE NASCIMENTO:</strong> ${escaparHtml(formatarDataBR(f.aluno.dataNascimento))}</p>
+                    <p><strong>ENDEREÇO:</strong> ${escaparHtml(f.aluno.endereco || '—')}</p>
+                    <p><strong>CIDADE:</strong> ${escaparHtml(f.aluno.cidade || '—')} · <strong>UF:</strong> ${escaparHtml(f.aluno.uf || '—')}</p>
                 </div>
                 <table class="rel-tabela">
                     <thead>
@@ -57,10 +57,10 @@ async function initFichaIndividual() {
                     <tbody>
                         ${f.componentes.map(c => `
                             <tr>
-                                <td>${c.disciplina}</td>
-                                <td>${c.cargaHoraria} Hrs</td>
-                                <td>${formatarNotaBR(c.resultadoFinal)}</td>
-                                <td>${c.faltas}</td>
+                                <td>${escaparHtml(c.disciplina)}</td>
+                                <td>${escaparHtml(c.cargaHoraria)} Hrs</td>
+                                <td>${escaparHtml(formatarNotaBR(c.resultadoFinal))}</td>
+                                <td>${escaparHtml(c.faltas)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -79,29 +79,29 @@ async function initFichaMatricula() {
             const f = res.ficha;
 
             document.getElementById('conteudo').innerHTML = `
-                <p class="rel-escola-nome">${f.escola}</p>
+                <p class="rel-escola-nome">${escaparHtml(f.escola)}</p>
                 <h2 style="color:var(--rel-azul);margin:20px 0 10px;">Dados Acadêmicos</h2>
                 <div class="rel-ficha-dados">
-                    <p><strong>Matrícula:</strong> ${f.matricula}</p>
-                    <p><strong>Ano Letivo:</strong> ${f.dadosAcademicos.anoLetivo}</p>
-                    <p><strong>Turno:</strong> ${f.dadosAcademicos.turno}</p>
-                    <p><strong>Série:</strong> ${f.dadosAcademicos.serie}</p>
-                    <p><strong>Turma:</strong> ${f.dadosAcademicos.turma}</p>
-                    <p><strong>Tipo de Ensino:</strong> ${f.dadosAcademicos.tipoEnsino}</p>
+                    <p><strong>Matrícula:</strong> ${escaparHtml(f.matricula)}</p>
+                    <p><strong>Ano Letivo:</strong> ${escaparHtml(f.dadosAcademicos.anoLetivo)}</p>
+                    <p><strong>Turno:</strong> ${escaparHtml(f.dadosAcademicos.turno)}</p>
+                    <p><strong>Série:</strong> ${escaparHtml(f.dadosAcademicos.serie)}</p>
+                    <p><strong>Turma:</strong> ${escaparHtml(f.dadosAcademicos.turma)}</p>
+                    <p><strong>Tipo de Ensino:</strong> ${escaparHtml(f.dadosAcademicos.tipoEnsino)}</p>
                 </div>
                 <h2 style="color:var(--rel-azul);margin:20px 0 10px;">Dados do Aluno</h2>
                 <div class="rel-ficha-dados">
-                    <p><strong>Nome:</strong> ${f.dadosAluno.nome}</p>
-                    <p><strong>Sexo:</strong> ${f.dadosAluno.sexo}</p>
-                    <p><strong>Data de Nasc.:</strong> ${formatarDataISO(f.dadosAluno.dataNascimento)}</p>
-                    <p><strong>Nacionalidade:</strong> ${f.dadosAluno.nacionalidade}</p>
-                    <p><strong>Natural de:</strong> ${f.dadosAluno.naturalidade}</p>
-                    <p><strong>Religião:</strong> ${f.dadosAluno.religiao}</p>
-                    <p><strong>Endereço:</strong> ${f.dadosAluno.endereco}</p>
-                    <p><strong>Bairro:</strong> ${f.dadosAluno.bairro}</p>
-                    <p><strong>Telefone:</strong> ${f.dadosAluno.telefone}</p>
-                    <p><strong>Cidade:</strong> ${f.dadosAluno.cidade} · <strong>UF:</strong> ${f.dadosAluno.uf}</p>
-                    <p><strong>CEP:</strong> ${f.dadosAluno.cep}</p>
+                    <p><strong>Nome:</strong> ${escaparHtml(f.dadosAluno.nome)}</p>
+                    <p><strong>Sexo:</strong> ${escaparHtml(f.dadosAluno.sexo)}</p>
+                    <p><strong>Data de Nasc.:</strong> ${escaparHtml(formatarDataISO(f.dadosAluno.dataNascimento))}</p>
+                    <p><strong>Nacionalidade:</strong> ${escaparHtml(f.dadosAluno.nacionalidade)}</p>
+                    <p><strong>Natural de:</strong> ${escaparHtml(f.dadosAluno.naturalidade)}</p>
+                    <p><strong>Religião:</strong> ${escaparHtml(f.dadosAluno.religiao)}</p>
+                    <p><strong>Endereço:</strong> ${escaparHtml(f.dadosAluno.endereco)}</p>
+                    <p><strong>Bairro:</strong> ${escaparHtml(f.dadosAluno.bairro)}</p>
+                    <p><strong>Telefone:</strong> ${escaparHtml(f.dadosAluno.telefone)}</p>
+                    <p><strong>Cidade:</strong> ${escaparHtml(f.dadosAluno.cidade)} · <strong>UF:</strong> ${escaparHtml(f.dadosAluno.uf)}</p>
+                    <p><strong>CEP:</strong> ${escaparHtml(f.dadosAluno.cep)}</p>
                 </div>`;
         } catch (erro) {
             exibirErroRelatorio(erro.message);
@@ -148,7 +148,7 @@ async function initBoletimAcademico() {
     const selectDisc = document.getElementById('filtroDisciplinaBoletim');
     if (u.tipo === 'professor' && grupoDisc && selectDisc && disciplinasProf.length > 1) {
         grupoDisc.style.display = 'block';
-        selectDisc.innerHTML = disciplinasProf.map(d => `<option value="${d}">${d}</option>`).join('');
+        selectDisc.innerHTML = disciplinasProf.map(d => `<option value="${escaparHtml(d)}">${escaparHtml(d)}</option>`).join('');
         selectDisc.addEventListener('change', () => {
             document.getElementById('btnCarregar')?.click();
         });
@@ -189,16 +189,16 @@ function renderTabelaGestaoBoletins() {
     const filtrados = filtrarAlunosGestao(gestaoBoletinsCache);
     const linhas = filtrados.map(a => `
         <tr>
-            <td><a class="link-aluno" href="boletim-academico.html?alunoId=${a._id}">${a.nome}</a></td>
-            <td>${a.nivel || '—'}</td>
-            <td>${a.ano ? a.ano + 'º' : '—'}</td>
-            <td>${a.turma}</td>
-            <td>${a.disciplinas}</td>
-            <td>${formatarNotaBR(a.mediaGeral)}</td>
-            <td>${a.situacao}</td>
+            <td><a class="link-aluno" href="boletim-academico.html?alunoId=${escaparHtml(a._id)}">${escaparHtml(a.nome)}</a></td>
+            <td>${escaparHtml(a.nivel || '—')}</td>
+            <td>${a.ano ? escaparHtml(a.ano + 'º') : '—'}</td>
+            <td>${escaparHtml(a.turma)}</td>
+            <td>${escaparHtml(a.disciplinas)}</td>
+            <td>${escaparHtml(formatarNotaBR(a.mediaGeral))}</td>
+            <td>${escaparHtml(a.situacao)}</td>
             <td>
-                <a href="ficha-individual.html?alunoId=${a._id}" title="Ficha">📋</a>
-                <a href="boletim-academico.html?alunoId=${a._id}" title="Boletim">📊</a>
+                <a href="ficha-individual.html?alunoId=${escaparHtml(a._id)}" title="Ficha">📋</a>
+                <a href="boletim-academico.html?alunoId=${escaparHtml(a._id)}" title="Boletim">📊</a>
             </td>
         </tr>
     `).join('');
@@ -228,20 +228,28 @@ async function carregarHistorico(alunoId) {
     document.getElementById('tituloHistorico').textContent =
         'Histórico Escolar de ' + (res.aluno?.nome || 'Aluno');
 
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const soConsulta = usuario.tipo === 'aluno' || usuario.tipo === 'responsavel';
+
     const linhas = res.historicos.length ? res.historicos.map(h => `
         <tr>
-            <td>${h.anoLetivo}</td>
-            <td>${h.serie}</td>
-            <td>${h.resultado}</td>
-            <td>${h.instituicao}</td>
+            <td>${escaparHtml(h.anoLetivo)}</td>
+            <td>${escaparHtml(h.serie)}</td>
+            <td>${escaparHtml(h.resultado)}</td>
+            <td>${escaparHtml(h.instituicao)}</td>
+            ${soConsulta ? '' : `
             <td>
-                <a href="notas-historico.html?historicoId=${h._id}" title="Notas">✏️</a>
+                <a href="notas-historico.html?historicoId=${escaparHtml(h._id)}" title="Notas">✏️</a>
                 <button type="button" class="btn-excluir-historico no-print"
-                    data-id="${h._id}" title="Excluir"
+                    data-id="${escaparHtml(h._id)}" title="Excluir"
                     style="border:none;background:none;cursor:pointer;">🗑️</button>
-            </td>
+            </td>`}
         </tr>
-    `).join('') : '<tr><td colspan="5" style="text-align:center">Nenhum registro. Clique em "+ Novo Ano".</td></tr>';
+    `).join('') : `<tr><td colspan="${soConsulta ? 4 : 5}" style="text-align:center">${
+        soConsulta
+            ? 'Nenhum registro de histórico encontrado.'
+            : 'Nenhum registro. Clique em "+ Novo Ano".'
+    }</td></tr>`;
 
     document.getElementById('conteudo').innerHTML = `
         <table class="rel-tabela">
@@ -251,11 +259,13 @@ async function carregarHistorico(alunoId) {
                     <th>Ano / Série</th>
                     <th>Resultado</th>
                     <th>Instituição</th>
-                    <th>Ações</th>
+                    ${soConsulta ? '' : '<th>Ações</th>'}
                 </tr>
             </thead>
             <tbody>${linhas}</tbody>
         </table>`;
+
+    if (soConsulta) return;
 
     document.querySelectorAll('.btn-excluir-historico').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -267,6 +277,12 @@ async function carregarHistorico(alunoId) {
 }
 
 async function initHistoricoEscolar() {
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const soConsulta = usuario.tipo === 'aluno' || usuario.tipo === 'responsavel';
+    if (soConsulta) {
+        document.getElementById('btnNovoAno')?.remove();
+    }
+
     document.getElementById('btnNovoAno')?.addEventListener('click', async () => {
         const select = document.getElementById('selectAluno');
         const alunoId = select?.value || alunoHistoricoAtual;
@@ -371,10 +387,10 @@ async function initNotasHistorico() {
 
         const linhas = notasAtuais.map((n, i) => `
             <tr>
-                <td>${n.disciplina}</td>
-                <td><input class="rel-input-nota" type="number" data-idx="${i}" data-campo="cargaHoraria" value="${n.cargaHoraria ?? ''}"></td>
-                <td><input class="rel-input-nota" type="text" data-idx="${i}" data-campo="nota" value="${n.nota != null ? String(n.nota).replace('.', ',') : ''}"></td>
-                <td><input class="rel-input-nota" type="number" data-idx="${i}" data-campo="faltas" value="${n.faltas ?? 0}"></td>
+                <td>${escaparHtml(n.disciplina)}</td>
+                <td><input class="rel-input-nota" type="number" data-idx="${i}" data-campo="cargaHoraria" value="${escaparHtml(n.cargaHoraria ?? '')}"></td>
+                <td><input class="rel-input-nota" type="text" data-idx="${i}" data-campo="nota" value="${escaparHtml(n.nota != null ? String(n.nota).replace('.', ',') : '')}"></td>
+                <td><input class="rel-input-nota" type="number" data-idx="${i}" data-campo="faltas" value="${escaparHtml(n.faltas ?? 0)}"></td>
             </tr>
         `).join('');
 
@@ -453,22 +469,22 @@ function renderPreviewPromocao(dados, executado) {
     const resumo = document.getElementById('resumoPromocao');
     if (resumo) {
         resumo.innerHTML = `
-            <p><strong>Ano letivo ${dados.anoLetivo}</strong> · Total: ${dados.total}
-            · Promover: ${dados.promover ?? dados.promovidos ?? 0}
-            · Retidos: ${dados.retidos ?? 0}
-            · Concluintes: ${dados.concluintes ?? 0}
+            <p><strong>Ano letivo ${escaparHtml(dados.anoLetivo)}</strong> · Total: ${escaparHtml(dados.total)}
+            · Promover: ${escaparHtml(dados.promover ?? dados.promovidos ?? 0)}
+            · Retidos: ${escaparHtml(dados.retidos ?? 0)}
+            · Concluintes: ${escaparHtml(dados.concluintes ?? 0)}
             ${executado ? ' · <span style="color:#27ae60">Executado</span>' : ' · Simulação'}</p>`;
     }
 
     const linhas = (dados.alunos || []).map(a => `
         <tr>
-            <td>${a.alunoNome}</td>
-            <td>${a.turmaOrigem}</td>
-            <td>${formatarNotaBR(a.mediaGeral)}</td>
+            <td>${escaparHtml(a.alunoNome)}</td>
+            <td>${escaparHtml(a.turmaOrigem)}</td>
+            <td>${escaparHtml(formatarNotaBR(a.mediaGeral))}</td>
             <td>${a.aprovado ? 'Aprovado' : 'Retido'}</td>
-            <td>${a.acao === 'promover' ? (a.turmaDestino || a.seriePromovida || '—') : a.acao === 'concluinte' ? 'Concluiu EM' : 'Permanece'}</td>
-            <td>${a.motivo || '—'}</td>
-            <td>${a.declaracaoId ? `<a href="declaracao-curso.html?declaracaoId=${a.declaracaoId}">📄 Ver</a>` : '—'}</td>
+            <td>${escaparHtml(a.acao === 'promover' ? (a.turmaDestino || a.seriePromovida || '—') : a.acao === 'concluinte' ? 'Concluiu EM' : 'Permanece')}</td>
+            <td>${escaparHtml(a.motivo || '—')}</td>
+            <td>${a.declaracaoId ? `<a href="declaracao-curso.html?declaracaoId=${escaparHtml(a.declaracaoId)}">📄 Ver</a>` : '—'}</td>
         </tr>
     `).join('');
 
@@ -491,7 +507,7 @@ function renderPreviewPromocao(dados, executado) {
 
 function mostrarSucessoPromocao(msg) {
     const el = document.getElementById('resumoPromocao');
-    if (el) el.innerHTML += `<p style="color:#27ae60;margin-top:8px;">${msg}</p>`;
+    if (el) el.innerHTML += `<p style="color:#27ae60;margin-top:8px;">${escaparHtml(msg)}</p>`;
 }
 
 const ROLES_VERIFICAR_DECLARACAO = new Set(['secretaria', 'admin', 'diretor', 'coordenador']);
@@ -506,11 +522,11 @@ function renderResultadoVerificacao(res, container) {
     container.innerHTML = `
         <div class="rel-aviso rel-verificacao-ok">
             <p><strong>Documento autêntico</strong></p>
-            <p>Aluno: ${res.aluno}</p>
-            <p>Ano letivo: ${res.anoLetivo} · Resultado: ${res.resultado}</p>
-            <p>Instituição: ${res.instituicao}</p>
-            <p>Emitido em: ${new Date(res.dataEmissao).toLocaleString('pt-BR')}</p>
-            <p class="rel-hash">Hash: ${res.hashDocumento}</p>
+            <p>Aluno: ${escaparHtml(res.aluno)}</p>
+            <p>Ano letivo: ${escaparHtml(res.anoLetivo)} · Resultado: ${escaparHtml(res.resultado)}</p>
+            <p>Instituição: ${escaparHtml(res.instituicao)}</p>
+            <p>Emitido em: ${escaparHtml(new Date(res.dataEmissao).toLocaleString('pt-BR'))}</p>
+            <p class="rel-hash">Hash: ${escaparHtml(res.hashDocumento)}</p>
         </div>`;
 }
 
@@ -528,7 +544,7 @@ function configurarVerificacaoDeclaracao() {
             renderResultadoVerificacao(res, destino);
         } catch (erro) {
             if (destino) {
-                destino.innerHTML = `<p class="rel-erro" style="color:#c0392b;padding:12px 0;">❌ ${erro.message}</p>`;
+                destino.innerHTML = `<p class="rel-erro" style="color:#c0392b;padding:12px 0;">❌ ${escaparHtml(erro.message)}</p>`;
             } else {
                 exibirErroRelatorio(erro.message);
             }
@@ -552,6 +568,7 @@ async function initDeclaracaoCurso() {
     try {
         await api.verificarToken();
         definirNomeUsuario();
+        configurarBotaoVoltar('linkVoltar');
     } catch {
         window.location.href = 'index.html';
         return;
@@ -570,7 +587,7 @@ async function initDeclaracaoCurso() {
     if (modoVerificar) {
         document.getElementById('blocoFiltrosDeclaracao')?.remove();
         const titulo = document.getElementById('tituloDeclaracao');
-        if (titulo) titulo.textContent = 'Verificar autenticidade — Declaração de Curso';
+        if (titulo) titulo.textContent = '🔐 Verificar Declaração';
         return;
     }
 
@@ -607,9 +624,9 @@ async function initDeclaracaoCurso() {
                 <ul class="rel-lista-declaracoes">
                     ${decls.map(d => `
                         <li>
-                            <a href="declaracao-curso.html?declaracaoId=${d._id}">
-                                ${d.anoLetivo} — ${d.serieCursada} — ${d.resultado}
-                                (cód. ${d.codigoVerificacao})
+                            <a href="declaracao-curso.html?declaracaoId=${escaparHtml(d._id)}">
+                                ${escaparHtml(d.anoLetivo)} — ${escaparHtml(d.serieCursada)} — ${escaparHtml(d.resultado)}
+                                (cód. ${escaparHtml(d.codigoVerificacao)})
                             </a>
                         </li>
                     `).join('')}
@@ -625,25 +642,42 @@ async function initAcademicoHub() {
         await api.verificarToken();
         definirNomeUsuario();
         const u = JSON.parse(localStorage.getItem('usuario') || '{}');
-        const paineis = {
-            diretor: 'painel-diretor.html',
-            coordenador: 'painel-coordenador.html',
-            secretaria: 'painel-secretaria.html',
-            professor: 'painel-professor.html',
-            aluno: 'painel-aluno.html'
-        };
         const link = document.getElementById('linkVoltar');
-        if (link) link.href = paineis[u.tipo] || 'index.html';
+        if (link) link.classList.add('rel-btn-voltar');
+        configurarBotaoVoltar('linkVoltar');
 
         if (u.tipo === 'professor') {
-            const permitidos = new Set(['boletim-academico.html', 'ficha-individual.html']);
+            const permitidos = new Set([
+                'boletim-academico.html',
+                'ficha-individual.html',
+                'diario-aula.html'
+            ]);
             document.querySelectorAll('.rel-hub-card').forEach(card => {
                 const href = card.getAttribute('href') || '';
                 if (!permitidos.has(href)) card.style.display = 'none';
             });
             const subtitulo = document.querySelector('.rel-container > p');
             if (subtitulo) {
-                subtitulo.textContent = 'Consulte boletim e ficha apenas das disciplinas vinculadas ao seu cadastro.';
+                subtitulo.textContent = 'Consulte boletim, ficha e diário de aula das disciplinas vinculadas ao seu cadastro.';
+            }
+        }
+
+        if (u.tipo === 'aluno' || u.tipo === 'responsavel') {
+            const permitidos = new Set([
+                'boletim-academico.html',
+                'ficha-individual.html',
+                'historico-escolar.html',
+                'ficha-matricula.html'
+            ]);
+            document.querySelectorAll('.rel-hub-card').forEach(card => {
+                const href = (card.getAttribute('href') || '').split('?')[0];
+                if (!permitidos.has(href)) card.style.display = 'none';
+            });
+            const subtitulo = document.querySelector('.rel-container > p');
+            if (subtitulo) {
+                subtitulo.textContent = u.tipo === 'responsavel'
+                    ? 'Consulte boletim, ficha e histórico dos alunos vinculados a você.'
+                    : 'Consulte seu boletim, ficha individual e histórico escolar.';
             }
         }
 
@@ -653,6 +687,314 @@ async function initAcademicoHub() {
         }
     } catch {
         window.location.href = 'index.html';
+    }
+}
+
+function rotuloStatusDiario(status) {
+    const map = {
+        presente: 'P',
+        falta: 'F',
+        justificada: 'J',
+        atraso: 'A'
+    };
+    return map[status] || status || '—';
+}
+
+function formatarPctDiario(valor) {
+    if (valor == null) return '—';
+    return `${Number(valor).toFixed(1).replace('.', ',')}%`;
+}
+
+function renderDiarioAula(diario) {
+    const container = document.getElementById('conteudo');
+    if (!container || !diario) return;
+
+    const periodoLabel = diario.modo === 'dia'
+        ? (() => {
+            const rotulo = String(diario.periodo?.rotulo || '');
+            const m = rotulo.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            return m ? `${m[3]}/${m[2]}/${m[1]}` : formatarDataBR(rotulo);
+        })()
+        : diario.periodo?.rotulo;
+
+    const resumo = diario.resumoFrequencia || {};
+    const alunos = diario.alunos || [];
+    const conteudos = diario.conteudos || [];
+    const datasAula = diario.datasAula || [];
+
+    const tabelaFrequencia = alunos.length
+        ? `
+            <table class="rel-tabela diario-tabela-freq">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Aluno</th>
+                        <th>Matrícula</th>
+                        <th>Presenças</th>
+                        <th>Faltas</th>
+                        <th>Just.</th>
+                        <th>Atrasos</th>
+                        <th>% Presença</th>
+                        <th>% Falta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${alunos.map((a, i) => `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td class="diario-nome-aluno">${escaparHtml(a.nome)}</td>
+                            <td>${escaparHtml(a.matriculaNumero || '—')}</td>
+                            <td>${a.presentes}</td>
+                            <td>${a.faltas}</td>
+                            <td>${a.justificadas}</td>
+                            <td>${a.atrasos}</td>
+                            <td>${escaparHtml(formatarPctDiario(a.taxaPresenca))}</td>
+                            <td>${escaparHtml(formatarPctDiario(a.taxaFalta))}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>`
+        : '<p class="rel-aviso">Nenhum aluno na turma.</p>';
+
+    let detalheDia = '';
+    if (diario.modo === 'dia' && alunos.some(a => Object.keys(a.detalhes || {}).length)) {
+        const dataKey = datasAula[0] || formatarDataISO(diario.periodo?.rotulo);
+        detalheDia = `
+            <h3 class="diario-secao-titulo">Chamada do dia</h3>
+            <table class="rel-tabela diario-tabela-chamada">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Aluno</th>
+                        <th>Registros (tempo → status)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${alunos.map((a, i) => {
+                        const regs = (a.detalhes?.[dataKey] || [])
+                            .sort((x, y) => x.tempo - y.tempo)
+                            .map(r => `<span class="diario-chip diario-chip-${escaparHtml(r.status)}">${escaparHtml(r.tempo)}º ${escaparHtml(rotuloStatusDiario(r.status))}</span>`)
+                            .join(' ') || '<span class="diario-chip">—</span>';
+                        return `<tr><td>${i + 1}</td><td>${escaparHtml(a.nome)}</td><td>${regs}</td></tr>`;
+                    }).join('')}
+                </tbody>
+            </table>`;
+    }
+
+    const listaConteudos = conteudos.length
+        ? `
+            <ol class="diario-conteudos-lista">
+                ${conteudos.map(c => `
+                    <li class="diario-conteudo-item">
+                        <div class="diario-conteudo-cab">
+                            <strong>${escaparHtml(formatarDataBR(c.data))}</strong>
+                            <span>${escaparHtml(c.titulo)}</span>
+                            <small>Prof. ${escaparHtml(c.professor)}</small>
+                        </div>
+                        ${c.descricao ? `<p class="diario-conteudo-desc">${escaparHtml(c.descricao)}</p>` : ''}
+                        ${c.observacoes ? `<p class="diario-conteudo-obs"><em>Observações:</em> ${escaparHtml(c.observacoes)}</p>` : ''}
+                        ${(c.topicos || []).length
+                            ? `<p class="diario-conteudo-topicos"><em>Tópicos:</em> ${escaparHtml(c.topicos.join(', '))}</p>`
+                            : ''}
+                    </li>
+                `).join('')}
+            </ol>`
+        : '<p class="rel-aviso">Nenhum conteúdo programático registrado neste período.</p>';
+
+    container.innerHTML = `
+        <article class="diario-documento">
+            <header class="diario-cabecalho">
+                <p class="rel-escola-nome">${escaparHtml(diario.escola?.nome || 'Escola')}</p>
+                <h2 class="diario-doc-titulo">Diário de Classe</h2>
+                <div class="diario-meta">
+                    <p><strong>Ano letivo:</strong> ${escaparHtml(diario.escola?.anoLetivo || '—')}</p>
+                    <p><strong>Turma:</strong> ${escaparHtml(diario.turma?.nome || '—')} · ${escaparHtml(diario.turma?.turno || '')}</p>
+                    <p><strong>Disciplina:</strong> ${escaparHtml(diario.disciplina || '—')}</p>
+                    <p><strong>Professor(es):</strong> ${escaparHtml(diario.professor?.nome || '—')}</p>
+                    <p><strong>Período:</strong> ${escaparHtml(periodoLabel || '—')}</p>
+                    ${diario.quantidadeTempos
+                        ? `<p><strong>Tempos/aula:</strong> ${escaparHtml(diario.quantidadeTempos)}</p>`
+                        : ''}
+                </div>
+            </header>
+
+            <section class="diario-secao">
+                <h3 class="diario-secao-titulo">1. Conteúdo programático</h3>
+                ${listaConteudos}
+            </section>
+
+            <section class="diario-secao">
+                <h3 class="diario-secao-titulo">2. Frequência (presença e falta)</h3>
+                <div class="diario-resumo-freq">
+                    <div><span>Presenças</span><strong>${resumo.presentes || 0}</strong></div>
+                    <div><span>Faltas</span><strong>${resumo.faltas || 0}</strong></div>
+                    <div><span>% Presença</span><strong>${escaparHtml(formatarPctDiario(resumo.taxaPresenca))}</strong></div>
+                    <div><span>% Falta</span><strong>${escaparHtml(formatarPctDiario(resumo.taxaFalta))}</strong></div>
+                    <div><span>Lançamentos</span><strong>${resumo.lancados || 0}</strong></div>
+                </div>
+                ${tabelaFrequencia}
+                ${detalheDia}
+            </section>
+
+            <footer class="diario-rodape">
+                <p>Documento gerado em ${escaparHtml(formatarDataBR(diario.geradoEm))} às ${escaparHtml(new Date(diario.geradoEm).toLocaleTimeString('pt-BR'))}</p>
+                <div class="diario-assinatura">
+                    <div>
+                        <p>________________________________</p>
+                        <p>${escaparHtml(diario.professor?.nome || 'Professor(a)')}</p>
+                        <small>Professor(a) responsável</small>
+                    </div>
+                    <div>
+                        <p>________________________________</p>
+                        <p>${escaparHtml(diario.escola?.assinatura?.representante || 'Diretor(a)')}</p>
+                        <small>${escaparHtml(diario.escola?.assinatura?.cargo || 'Direção')}</small>
+                    </div>
+                </div>
+            </footer>
+        </article>`;
+}
+
+async function initDiarioAula() {
+    try {
+        await api.verificarToken();
+    } catch {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    definirNomeUsuario();
+    configurarBotaoVoltar('linkVoltar');
+    configurarBotaoImprimir();
+
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const modoEl = document.getElementById('filtroModoDiario');
+    const grupoData = document.getElementById('grupoDataDiario');
+    const grupoPeriodo = document.getElementById('grupoPeriodoDiario');
+    const dataEl = document.getElementById('filtroDataDiario');
+    const periodoEl = document.getElementById('filtroPeriodoDiario');
+    const turmaEl = document.getElementById('filtroTurmaDiario');
+    const discEl = document.getElementById('filtroDisciplinaDiario');
+    const grupoProf = document.getElementById('grupoProfessorDiario');
+    const profEl = document.getElementById('filtroProfessorDiario');
+    const btn = document.getElementById('btnCarregarDiario');
+
+    if (dataEl && !dataEl.value) {
+        dataEl.valueAsDate = new Date();
+    }
+
+    const atualizarModo = () => {
+        const modo = modoEl?.value || 'periodo';
+        if (grupoData) grupoData.style.display = modo === 'dia' ? '' : 'none';
+        if (grupoPeriodo) grupoPeriodo.style.display = modo === 'periodo' ? '' : 'none';
+    };
+    modoEl?.addEventListener('change', atualizarModo);
+    atualizarModo();
+
+    let opcoes = { turmas: [], disciplinas: [], professores: [], anoLetivo: new Date().getFullYear() };
+
+    try {
+        opcoes = await api.obterOpcoesDiarioAula();
+    } catch (erro) {
+        exibirErroRelatorio(erro.message);
+        return;
+    }
+
+    window.__diarioSetOpcoes?.(opcoes);
+
+    preencherSelect(
+        turmaEl,
+        (opcoes.turmas || []).map(t => ({ value: String(t._id), label: t.nome })),
+        'Selecione a turma'
+    );
+    preencherSelect(
+        discEl,
+        (opcoes.disciplinas || []).map(d => ({ value: d, label: d })),
+        'Selecione a disciplina'
+    );
+
+    const gestao = ['admin', 'diretor', 'coordenador', 'secretaria'].includes(usuario.tipo);
+    if (gestao && grupoProf && profEl) {
+        grupoProf.style.display = '';
+        preencherSelect(
+            profEl,
+            (opcoes.professores || []).map(p => ({ value: String(p._id), label: p.nome })),
+            'Todos'
+        );
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('turma_id') && turmaEl) turmaEl.value = params.get('turma_id');
+    if (params.get('disciplina') && discEl) discEl.value = params.get('disciplina');
+    if (params.get('modo') && modoEl) {
+        modoEl.value = params.get('modo');
+        atualizarModo();
+    }
+    if (params.get('data') && dataEl) dataEl.value = params.get('data');
+    if (params.get('periodo') && periodoEl) periodoEl.value = params.get('periodo');
+
+    // Prefill lançamento do dia (professor)
+    const turmaLancar = document.getElementById('filtroTurmaLancar');
+    const discLancar = document.getElementById('filtroDisciplinaLancar');
+    const dataLancar = document.getElementById('filtroDataLancar');
+    if (params.get('turma_id') && turmaLancar) turmaLancar.value = params.get('turma_id');
+    if (params.get('disciplina') && discLancar) discLancar.value = params.get('disciplina');
+    if (params.get('data') && dataLancar) dataLancar.value = params.get('data');
+
+    const carregar = async () => {
+        if (typeof window.__diarioCarregarConsulta === 'function') {
+            await window.__diarioCarregarConsulta();
+            return;
+        }
+        if (!turmaEl?.value || !discEl?.value) {
+            alert('Selecione turma e disciplina');
+            return;
+        }
+
+        const container = document.getElementById('conteudo');
+        if (container) container.innerHTML = '<p class="rel-carregando">Gerando diário...</p>';
+
+        try {
+            const res = await api.obterDiarioAula({
+                turmaId: turmaEl.value,
+                disciplina: discEl.value,
+                modo: modoEl?.value || 'periodo',
+                data: dataEl?.value,
+                periodo: periodoEl?.value,
+                ano: opcoes.anoLetivo,
+                professorId: gestao ? (profEl?.value || undefined) : undefined
+            });
+            renderDiarioAula(res.diario);
+        } catch (erro) {
+            exibirErroRelatorio(erro.message);
+        }
+    };
+
+    btn?.addEventListener('click', carregar);
+
+    // Se veio com parâmetros e for consulta, carrega; se professor com params, abre lançamento
+    if (params.get('turma_id') && params.get('disciplina')) {
+        if (usuario.tipo === 'professor' && (params.get('modo') !== 'periodo')) {
+            const modoUso = document.getElementById('filtroModoUsoDiario');
+            if (modoUso) {
+                modoUso.value = 'lancar';
+                modoUso.dispatchEvent(new Event('change'));
+            }
+            if (typeof abrirDiarioDoDia === 'function') {
+                await abrirDiarioDoDia();
+            } else {
+                // diario-classe.js pode carregar depois do aoPronto paralelo
+                setTimeout(() => {
+                    if (typeof abrirDiarioDoDia === 'function') abrirDiarioDoDia();
+                }, 50);
+            }
+        } else if (params.get('modo') === 'periodo' || gestao) {
+            const modoUso = document.getElementById('filtroModoUsoDiario');
+            if (modoUso) {
+                modoUso.value = 'consultar';
+                modoUso.dispatchEvent(new Event('change'));
+            }
+            await carregar();
+        }
     }
 }
 
@@ -669,6 +1011,7 @@ aoPronto(() => {
         'notas-historico': initNotasHistorico,
         'promocao-escolar': initPromocaoEscolar,
         'declaracao-curso': initDeclaracaoCurso,
+        'diario-aula': initDiarioAula,
         'academico-hub': initAcademicoHub
     };
 

@@ -32,9 +32,9 @@ function montarGridUpload(container, categoria, prefixo) {
         <p class="doc-ajuda">Envie a certidão de nascimento e demais documentos (PDF, JPG ou PNG — máx. 5 MB cada).</p>
         <div class="doc-grid">
             ${tipos.map(tipo => `
-                <div class="doc-item" data-tipo="${tipo}">
-                    <label for="${prefixo}_doc_${tipo}">${DOC_LABELS[tipo] || tipo}</label>
-                    <input type="file" id="${prefixo}_doc_${tipo}" accept=".pdf,.jpg,.jpeg,.png,.webp">
+                <div class="doc-item" data-tipo="${escaparHtml(tipo)}">
+                    <label for="${escaparHtml(prefixo)}_doc_${escaparHtml(tipo)}">${escaparHtml(DOC_LABELS[tipo] || tipo)}</label>
+                    <input type="file" id="${escaparHtml(prefixo)}_doc_${escaparHtml(tipo)}" accept=".pdf,.jpg,.jpeg,.png,.webp">
                     <span class="doc-status"></span>
                 </div>
             `).join('')}
@@ -118,15 +118,10 @@ function fecharModalDocumentos() {
     modalDocsUsuarioId = null;
 }
 
-async function abrirModalDocumentos(usuarioId, nome, categoria) {
-    if (!usuarioId || usuarioId === 'undefined') return;
+async function renderPainelDocumentos(container, usuarioId, nome, categoria) {
+    if (!container || !usuarioId || usuarioId === 'undefined') return;
 
-    const modal = garantirModalDocumentos();
-    modalDocsUsuarioId = usuarioId;
-    document.getElementById('modalDocsTitulo').textContent = `Documentos — ${nome}`;
-    const conteudo = document.getElementById('modalDocsConteudo');
-    conteudo.innerHTML = '<p style="color:#7f8c8d;">Carregando...</p>';
-    modal.style.display = 'flex';
+    container.innerHTML = '<p style="color:#7f8c8d;">Carregando documentos...</p>';
 
     try {
         const res = await api.listarDocumentosUsuario(usuarioId);
@@ -137,7 +132,7 @@ async function abrirModalDocumentos(usuarioId, nome, categoria) {
             id: t, label: DOC_LABELS[t] || t
         }));
 
-        conteudo.innerHTML = `
+        container.innerHTML = `
             <table class="tabela doc-tabela">
                 <thead>
                     <tr>
@@ -154,18 +149,18 @@ async function abrirModalDocumentos(usuarioId, nome, categoria) {
                             ? new Date(doc.dataUpload).toLocaleDateString('pt-BR')
                             : '—';
                         return `
-                            <tr data-tipo="${t.id}">
-                                <td>${t.label}</td>
-                                <td>${doc ? doc.nomeOriginal : '<span style="color:#999;">Não enviado</span>'}</td>
-                                <td>${data}</td>
+                            <tr data-tipo="${escaparHtml(t.id)}">
+                                <td>${escaparHtml(t.label)}</td>
+                                <td>${doc ? escaparHtml(doc.nomeOriginal) : '<span style="color:#999;">Não enviado</span>'}</td>
+                                <td>${escaparHtml(data)}</td>
                                 <td class="doc-acoes">
                                     ${doc ? `
-                                        <a class="btn btn-pequeno btn-info" href="${api.urlDownloadDocumento(doc._id)}" target="_blank" rel="noopener">Baixar</a>
-                                        <button type="button" class="btn btn-pequeno btn-perigo btn-remover-doc" data-id="${doc._id}">Remover</button>
+                                        <a class="btn btn-pequeno btn-info" href="${escaparHtml(api.urlDownloadDocumento(doc._id))}" target="_blank" rel="noopener">Baixar</a>
+                                        <button type="button" class="btn btn-pequeno btn-perigo btn-remover-doc" data-id="${escaparHtml(doc._id)}">Remover</button>
                                     ` : `
                                         <label class="btn btn-pequeno btn-sucesso">
                                             Enviar
-                                            <input type="file" class="input-upload-doc-modal" data-tipo="${t.id}" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;">
+                                            <input type="file" class="input-upload-doc-modal" data-tipo="${escaparHtml(t.id)}" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;">
                                         </label>
                                     `}
                                 </td>
@@ -174,30 +169,42 @@ async function abrirModalDocumentos(usuarioId, nome, categoria) {
                 </tbody>
             </table>`;
 
-        conteudo.querySelectorAll('.input-upload-doc-modal').forEach(input => {
+        container.querySelectorAll('.input-upload-doc-modal').forEach(input => {
             input.addEventListener('change', async () => {
                 if (!input.files?.length) return;
                 try {
-                    await api.uploadDocumento(modalDocsUsuarioId, input.dataset.tipo, input.files[0]);
-                    await abrirModalDocumentos(modalDocsUsuarioId, nome, categoria);
+                    await api.uploadDocumento(usuarioId, input.dataset.tipo, input.files[0]);
+                    await renderPainelDocumentos(container, usuarioId, nome, categoria);
                 } catch (err) {
                     alert(err.message || 'Erro ao enviar documento');
                 }
             });
         });
 
-        conteudo.querySelectorAll('.btn-remover-doc').forEach(btn => {
+        container.querySelectorAll('.btn-remover-doc').forEach(btn => {
             btn.addEventListener('click', async () => {
                 if (!confirm('Remover este documento?')) return;
                 try {
                     await api.removerDocumento(btn.dataset.id);
-                    await abrirModalDocumentos(modalDocsUsuarioId, nome, categoria);
+                    await renderPainelDocumentos(container, usuarioId, nome, categoria);
                 } catch (err) {
                     alert(err.message || 'Erro ao remover documento');
                 }
             });
         });
     } catch (err) {
-        conteudo.innerHTML = `<p class="doc-erro-texto">${err.message || 'Erro ao carregar documentos'}</p>`;
+        container.innerHTML = `<p class="doc-erro-texto">${escaparHtml(err.message || 'Erro ao carregar documentos')}</p>`;
     }
+}
+
+async function abrirModalDocumentos(usuarioId, nome, categoria) {
+    if (!usuarioId || usuarioId === 'undefined') return;
+
+    const modal = garantirModalDocumentos();
+    modalDocsUsuarioId = usuarioId;
+    document.getElementById('modalDocsTitulo').textContent = `Documentos — ${nome}`;
+    const conteudo = document.getElementById('modalDocsConteudo');
+    modal.style.display = 'flex';
+
+    await renderPainelDocumentos(conteudo, usuarioId, nome, categoria);
 }

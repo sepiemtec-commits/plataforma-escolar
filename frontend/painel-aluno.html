@@ -3,21 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VEHO Edu">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+
     <title>Painel do Aluno</title>
-    <link rel="stylesheet" href="styles/painel.css">
-    <link rel="stylesheet" href="styles/fonts.css">
+    <link rel="stylesheet" href="/styles/painel.css">
+    <link rel="stylesheet" href="/styles/fonts.css">
 </head>
 <body>
     <div class="container-principal">
         <aside class="sidebar">
-            <div class="logo">🎓 EdPlus</div>
+            <div class="logo">VEHO</div>
             <ul class="menu">
-                <li><a href="#" class="ativo" onclick="carregarSecao('boletim')">📊 Boletim</a></li>
-                <li><a href="#" onclick="carregarSecao('notas')">📝 Minhas Notas</a></li>
-                <li><a href="#" onclick="carregarSecao('presenca')">📋 Presença</a></li>
-                <li><a href="#" onclick="carregarSecao('conteudo')">📚 Conteúdo</a></li>
-                <li><a href="academico.html">📚 Acadêmico</a></li>
-                <li><a href="#" onclick="fazerLogout()">🚪 Sair</a></li>
+                <li><a href="#" class="ativo" data-secao="boletim">Boletim</a></li>
+                <li><a href="#" data-secao="notas">Minhas Notas</a></li>
+                <li><a href="#" data-secao="provas">Provas online</a></li>
+                <li><a href="diario-aluno.html">Diário / Frequência</a></li>
+                <li><a href="academico.html">Acadêmico</a></li>
+                <li><a href="#" id="btnLogoutMenu">Sair</a></li>
             </ul>
         </aside>
 
@@ -26,27 +35,25 @@
                 <h1>Painel do Aluno</h1>
                 <div class="user-info">
                     <p id="nomeUsuario">Carregando...</p>
-                    <button class="btn-logout" onclick="fazerLogout()">Logout</button>
+                    <button class="btn-logout" id="btnLogoutHeader" type="button">Logout</button>
                 </div>
             </div>
 
             <section id="boletim">
+                <div id="vehoPushContainer"></div>
                 <div class="grid-paineis">
-                    <div class="card">
+                    <a href="diario-aluno.html" class="card card-clicavel" id="cardFrequencia" title="Abrir diário de frequência">
                         <h3>Frequência</h3>
                         <div class="card-valor" id="frequencia">0%</div>
-                    </div>
-                    <div class="card">
-                        <h3>Faltas</h3>
-                        <div class="card-valor" id="faltas">0</div>
-                    </div>
+                        <p class="card-dica">Clique para ver o diário</p>
+                    </a>
                     <div class="card">
                         <h3>Situação Geral</h3>
                         <div class="card-valor" id="situacao">-</div>
                     </div>
                 </div>
 
-                <h2 style="margin: 30px 0 20px 0;">📊 Desempenho por Disciplina</h2>
+                <h2 style="margin: 30px 0 20px 0;">Desempenho por Disciplina</h2>
                 <table class="tabela">
                     <thead>
                         <tr>
@@ -66,10 +73,10 @@
             </section>
 
             <section id="notas" style="display: none;">
-                <h2>📝 Minhas Notas</h2>
+                <h2>Minhas Notas</h2>
                 <div id="filtroNotas" style="margin-bottom: 20px;">
                     <label>Período:
-                        <select id="periodoFiltro" onchange="carregarNotas()">
+                        <select id="periodoFiltro">
                             <option value="">Todos</option>
                             <option value="1º Bimestre">1º Bimestre</option>
                             <option value="2º Bimestre">2º Bimestre</option>
@@ -96,34 +103,36 @@
                 </table>
             </section>
 
-            <section id="presenca" style="display: none;">
-                <h2>📋 Minha Presença</h2>
-                <table class="tabela">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Turma</th>
-                            <th>Status</th>
-                            <th>Professor</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaPresenca">
-                        <tr>
-                            <td colspan="4" style="text-align: center;">Carregando...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </section>
-
-            <section id="conteudo" style="display: none;">
-                <h2>📚 Conteúdo das Aulas</h2>
-                <div id="listaConteudo"></div>
+            <section id="provas" style="display: none;">
+                <div id="listaProvasAluno">
+                    <h2 style="margin-bottom:8px;">Provas online</h2>
+                    <p style="color:#566573;font-size:14px;margin:0 0 16px;">Simulados liberados pelo professor. O tempo começa ao iniciar.</p>
+                    <div id="boxListaProvas"><p style="color:#7f8c8d;">Carregando...</p></div>
+                </div>
+                <div id="areaFazerProva" style="display:none;">
+                    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">
+                        <div>
+                            <button type="button" class="btn btn-pequeno" id="btnVoltarListaProvas">← Voltar</button>
+                            <h2 id="provaTitulo" style="margin:8px 0 0;">Prova</h2>
+                        </div>
+                        <div id="provaTimer" style="font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums;padding:8px 14px;background:#111;color:#fff;border-radius:8px;">
+                            —
+                        </div>
+                    </div>
+                    <div id="provaQuestoes"></div>
+                    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-sucesso" id="btnEnviarProva">Enviar prova</button>
+                    </div>
+                    <div id="provaResultado" style="margin-top:16px;"></div>
+                </div>
             </section>
         </main>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/painel-aluno.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/push.js"></script>
+    <script src="/js/painel-aluno.js"></script>
+    <script src="/js/pwa-register.js"></script>
 </body>
 </html>

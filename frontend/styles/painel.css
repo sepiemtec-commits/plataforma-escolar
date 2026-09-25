@@ -1,15 +1,5 @@
 /* frontend/styles/painel.css - Estilos gerais dos painéis */
-
-:root {
-    --cor-primaria: #2c3e50;
-    --cor-secundaria: #3498db;
-    --cor-sucesso: #27ae60;
-    --cor-erro: #e74c3c;
-    --cor-aviso: #f39c12;
-    --cor-fundo: #ecf0f1;
-    --cor-texto: #2c3e50;
-    --sombra: 0 2px 10px rgba(0,0,0,0.1);
-}
+@import url('tokens.css');
 
 * {
     margin: 0;
@@ -20,7 +10,8 @@
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 500;
-    background: var(--cor-fundo);
+    /* 50%: área principal */
+    background: var(--cor-50);
     color: var(--cor-texto);
 }
 
@@ -29,7 +20,8 @@ body {
 }
 
 .sidebar {
-    background: var(--cor-primaria);
+    /* 30%: estrutura cinza-azul */
+    background: var(--cor-sidebar);
     color: white;
     padding: 20px;
     position: fixed;
@@ -42,11 +34,16 @@ body {
 }
 
 .logo {
-    font-size: 25px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 300;
+    font-size: clamp(1.35rem, 2.2vw, 1.65rem);
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
     margin-bottom: 30px;
     padding-bottom: 20px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     text-align: center;
+    line-height: 1.2;
 }
 
 .menu {
@@ -68,7 +65,8 @@ body {
 
 .menu a:hover,
 .menu a.ativo {
-    background: var(--cor-secundaria);
+    /* 20%: destaque ativo */
+    background: var(--cor-20);
     color: white;
 }
 
@@ -91,9 +89,31 @@ body {
     box-shadow: var(--sombra);
 }
 
-.header h1 {
+.header-inicio {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.header h1,
+.header-inicio h1 {
     font-size: 29px;
     color: var(--cor-primaria);
+    margin: 0;
+}
+
+.btn-voltar-padrao {
+    background: #ecf0f1;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.btn-voltar-padrao:hover {
+    background: #dfe6e9;
 }
 
 .user-info {
@@ -115,7 +135,18 @@ body {
 }
 
 .btn-logout:hover {
-    background: #c0392b;
+    background: var(--cor-erro-hover);
+}
+
+/* Menu Sair — único item vermelho na navegação */
+#btnLogoutMenu {
+    color: #ffcdd2 !important;
+}
+
+#btnLogoutMenu:hover,
+#btnLogoutMenu.ativo {
+    background: var(--cor-erro) !important;
+    color: #fff !important;
 }
 
 .grid-paineis {
@@ -177,6 +208,25 @@ body {
     margin-bottom: 10px;
 }
 
+a.card.card-clicavel {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+}
+
+a.card.card-clicavel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(44, 62, 80, 0.12);
+}
+
+.card-dica {
+    margin: 0;
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
 .card-descricao {
     color: #7f8c8d;
     font-size: 15px;
@@ -224,7 +274,7 @@ body {
 }
 
 .status-falta {
-    background: #f8d7da;
+    background: var(--cor-erro-fundo);
     color: var(--cor-erro);
 }
 
@@ -271,7 +321,7 @@ body {
 }
 
 .btn-erro:hover {
-    background: #c0392b;
+    background: var(--cor-erro-hover);
 }
 
 .formulario {
@@ -416,20 +466,20 @@ input:focus, select:focus, textarea:focus {
 }
 
 .btn-p {
-    background: #85c1e9;
+    background: #8FA8BF; /* cinza-azul presente (inativo) */
 }
 
 .btn-p.ativo {
-    background: #154360;
+    background: var(--cor-20);
     color: #fff;
 }
 
 .btn-f {
-    background: #f1948a;
+    background: #E8A0A0; /* vermelho suave — só falta */
 }
 
 .btn-f.ativo {
-    background: #7b241c;
+    background: var(--cor-erro);
     color: #fff;
 }
 
@@ -583,6 +633,96 @@ input:focus, select:focus, textarea:focus {
     background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
 }
 
+.portal-horario-header-acoes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-voltar-horarios {
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.95);
+    color: #006064;
+    cursor: pointer;
+}
+
+.btn-voltar-horarios:hover {
+    background: #fff;
+}
+
+.horarios-dias-vista {
+    padding: 16px;
+}
+
+.horarios-dias-hint {
+    margin: 0 0 12px;
+    color: #566573;
+    font-size: 14px;
+}
+
+.horarios-dias-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.horario-dia-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    border: 1px solid #b2ebf2;
+    border-radius: 6px;
+    padding: 14px 16px;
+    background: #e0f7fa;
+    color: #006064;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s, transform 0.1s, border-color 0.15s;
+}
+
+.horario-dia-btn:hover {
+    background: #b2ebf2;
+    border-color: #00acc1;
+    transform: translateY(-1px);
+}
+
+.horario-dia-nome {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.horario-dia-meta {
+    font-size: 13px;
+    color: #546e7a;
+}
+
+.horarios-dias-vazio {
+    margin: 0;
+    padding: 8px 0 4px;
+    color: #999;
+    text-align: center;
+}
+
+.horarios-dias-erro {
+    color: #c0392b;
+}
+
+.horario-turno-bloco {
+    margin-bottom: 18px;
+}
+
+.horario-turno-titulo {
+    margin: 12px 16px 8px;
+    font-size: 15px;
+    color: #1565c0;
+}
+
 .tabela-horarios-wrap {
     overflow-x: auto;
 }
@@ -591,6 +731,10 @@ input:focus, select:focus, textarea:focus {
     margin: 0;
     border-radius: 0;
     box-shadow: none;
+}
+
+.tabela-horarios-dia {
+    min-width: 280px;
 }
 
 .tabela-horarios thead {
@@ -774,6 +918,74 @@ input:focus, select:focus, textarea:focus {
     font-weight: 600;
     color: #1565c0;
     font-size: 15px;
+}
+
+.presenca-taxas {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.presenca-taxa-item {
+    background: #f4f7fb;
+    border: 1px solid #d6e0ea;
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.presenca-taxa-item strong {
+    font-size: 22px;
+    color: #1f3a56;
+    line-height: 1.1;
+}
+
+.presenca-taxa-item small {
+    color: #607789;
+    font-size: 13px;
+}
+
+.presenca-taxa-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7c8f;
+    font-weight: 700;
+}
+
+.presenca-taxa-presente {
+    border-color: #a8d5b5;
+    background: #edf8f0;
+}
+
+.presenca-taxa-presente strong {
+    color: #1e7a3a;
+}
+
+.presenca-taxa-falta {
+    border-color: var(--cor-erro-borda);
+    background: var(--cor-erro-fundo);
+}
+
+.presenca-taxa-falta strong {
+    color: var(--cor-erro);
+}
+
+.taxa-aluno-presente {
+    color: var(--cor-sucesso);
+}
+
+.taxa-aluno-falta {
+    color: var(--cor-erro);
+}
+
+@media (max-width: 700px) {
+    .presenca-taxas {
+        grid-template-columns: 1fr;
+    }
 }
 
 .presenca-vazio {
@@ -1459,11 +1671,11 @@ input:focus, select:focus, textarea:focus {
     color: #7f8c8d;
 }
 
-.doc-status.doc-ok { color: #27ae60; }
-.doc-status.doc-erro { color: #e74c3c; }
-.doc-status.doc-enviando { color: #3498db; }
+.doc-status.doc-ok { color: var(--cor-sucesso); }
+.doc-status.doc-erro { color: var(--cor-erro); }
+.doc-status.doc-enviando { color: var(--cor-20); }
 
-.doc-erro-texto { color: #e74c3c; }
+.doc-erro-texto { color: var(--cor-erro); }
 
 .btn-info {
     background: #3498db;
@@ -1541,6 +1753,73 @@ input:focus, select:focus, textarea:focus {
 
 .detalhe-turma-header h2 {
     margin: 0;
+}
+
+.secao-voltar-bar {
+    display: none;
+}
+
+/* Barra azul de voltar — mesmo padrão das páginas de declaração/relatório */
+.barra-voltar-azul {
+    background: linear-gradient(180deg, #4a7eb8 0%, #3d6a9f 100%);
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 150;
+    width: calc(100% + 32px);
+    max-width: none;
+    box-sizing: border-box;
+    margin: -24px -16px 20px;
+    border-radius: 0;
+}
+
+.detalhe-turma-panel .barra-voltar-azul {
+    margin: 0 0 16px;
+    width: 100%;
+}
+
+/* Modal: botão voltar no estilo da barra azul */
+.modal-documentos-acoes .btn-voltar-azul {
+    background: linear-gradient(180deg, #4a7eb8 0%, #3d6a9f 100%);
+    border: 1px solid #2e5080;
+}
+
+.barra-voltar-azul .btn-voltar-azul,
+.barra-voltar-azul a.btn-voltar-azul {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    color: #fff;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.barra-voltar-azul .btn-voltar-azul:hover,
+.barra-voltar-azul a.btn-voltar-azul:hover {
+    background: rgba(255, 255, 255, 0.28);
+    color: #fff;
+}
+
+.btn-voltar-portal {
+    background: #ecf0f1;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.btn-voltar-portal:hover {
+    background: #dfe6e9;
 }
 
 .tabela-responsiva {
@@ -1633,6 +1912,34 @@ input:focus, select:focus, textarea:focus {
     height: 32px;
     cursor: pointer;
     font-size: 17px;
+}
+
+.modal-professor-edit {
+    max-width: 720px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-disciplinas-lista {
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+.lotacao-professor-resumo {
+    margin: 12px 0 16px;
+}
+
+.lotacao-professor-total {
+    margin: 0 0 10px;
+    color: #546e7a;
+    font-size: 14px;
+}
+
+.tabela-compacta th,
+.tabela-compacta td {
+    padding: 8px 10px;
+    font-size: 13px;
 }
 
 .modal-documentos-acoes {
@@ -1840,10 +2147,122 @@ input:focus, select:focus, textarea:focus {
     padding: 0 12px 12px;
 }
 
+.usuarios-abas {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.accordion-usuarios .tabela-usuarios-wrap {
+    max-height: 420px;
+    overflow: auto;
+    border: 1px solid #e8eef3;
+    border-radius: 4px;
+}
+
+.accordion-usuarios .tabela {
+    margin: 0;
+}
+
 @media print {
     .sidebar, .header, .lista-alunos-toolbar, .formulario, .no-print, .menu, .btn-docs-aluno {
         display: none !important;
     }
     .accordion-turma-corpo { display: block !important; }
     .main-content { margin-left: 0 !important; }
+
+    #relatorios {
+        display: block !important;
+    }
+
+    .relatorio-diretor-print .card-valor {
+        font-size: 22px;
+    }
+
+    .relatorio-cabecalho {
+        margin-bottom: 16px;
+    }
 }
+
+.relatorio-cabecalho h3 {
+    margin: 0 0 6px;
+    color: #2c3e50;
+}
+
+.texto-muted {
+    color: var(--cor-texto-suave);
+    font-size: 13px;
+}
+
+.btn-secundario {
+    background: var(--cor-30);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-secundario:hover {
+    background: var(--cor-30-hover);
+}
+
+/* PWA / mobile — secretaria e professor em telas estreitas */
+@media (max-width: 480px) {
+    .main-content {
+        padding: 12px !important;
+    }
+
+    .header h1,
+    .header h2 {
+        font-size: 1.25rem;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+
+    button,
+    .btn,
+    .btn-primario,
+    .btn-secundario,
+    .rel-btn,
+    a.botao,
+    .portal-acao {
+        min-height: 44px;
+    }
+
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+        max-width: 100%;
+    }
+
+    .portal-resumo-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .tabela-scroll,
+    .table-responsive,
+    .lista-presenca-alunos {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        font-size: 13px;
+    }
+
+    .form-row,
+    .filtros,
+    .rel-filtros {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sidebar nav a,
+    .menu-item {
+        padding: 12px 14px;
+        min-height: 44px;
+    }
+}
+

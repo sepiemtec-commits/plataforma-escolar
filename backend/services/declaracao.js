@@ -1,13 +1,15 @@
 const crypto = require('crypto');
 const { DeclaracaoCurso } = require('../database/schema');
 const { labelAno } = require('../constants/ensino');
+const { obterJwtSecret } = require('../utils/jwtSecret');
+const { escapeHtml } = require('../utils/escapeHtml');
 
 function gerarCodigoVerificacao() {
   return crypto.randomBytes(6).toString('hex').toUpperCase();
 }
 
 function gerarHashDocumento(conteudo, escolaId, alunoId, anoLetivo) {
-  const segredo = process.env.JWT_SECRET || 'edplus-assinatura';
+  const segredo = obterJwtSecret();
   return crypto
     .createHash('sha256')
     .update(`${conteudo}|${escolaId}|${alunoId}|${anoLetivo}|${segredo}`)
@@ -108,26 +110,27 @@ async function emitirDeclaracao(dados) {
 }
 
 function formatarDeclaracaoHtml(decl) {
-  const dataBR = new Date(decl.assinatura.dataAssinatura).toLocaleString('pt-BR');
-  const dataEmissao = new Date(decl.dataEmissao).toLocaleDateString('pt-BR');
+  const dataBR = escapeHtml(new Date(decl.assinatura.dataAssinatura).toLocaleString('pt-BR'));
+  const dataEmissao = escapeHtml(new Date(decl.dataEmissao).toLocaleDateString('pt-BR'));
+  const e = escapeHtml;
 
   return `
     <div class="rel-declaracao">
-      <p class="rel-escola-nome">${decl.assinatura.instituicao}</p>
+      <p class="rel-escola-nome">${e(decl.assinatura.instituicao)}</p>
       <h2 class="rel-declaracao-titulo">Declaração de Curso</h2>
-      <p class="rel-declaracao-meta">Ano letivo ${decl.anoLetivo} · Emitida em ${dataEmissao}</p>
+      <p class="rel-declaracao-meta">Ano letivo ${e(decl.anoLetivo)} · Emitida em ${dataEmissao}</p>
       <div class="rel-declaracao-corpo">
-        <p>${decl.textoDeclaracao}</p>
+        <p>${e(decl.textoDeclaracao)}</p>
       </div>
       <div class="rel-assinatura-eletronica">
         <p><strong>Assinatura eletrônica da instituição</strong></p>
-        <p>${decl.assinatura.instituicao}</p>
-        <p>CNPJ: ${decl.assinatura.cnpj || '—'}</p>
-        <p>${decl.assinatura.representante} — ${decl.assinatura.cargo}</p>
+        <p>${e(decl.assinatura.instituicao)}</p>
+        <p>CNPJ: ${e(decl.assinatura.cnpj || '—')}</p>
+        <p>${e(decl.assinatura.representante)} — ${e(decl.assinatura.cargo)}</p>
         <p>Assinado eletronicamente em ${dataBR}</p>
-        <p class="rel-codigo-verificacao">Código de verificação: <strong>${decl.codigoVerificacao}</strong></p>
-        <p class="rel-hash">Hash do documento: ${decl.assinatura.hashDocumento}</p>
-        <p class="rel-aviso-assinatura">Este documento foi gerado eletronicamente pelo sistema EdPlus e possui validade administrativa interna da instituição de ensino.</p>
+        <p class="rel-codigo-verificacao">Código de verificação: <strong>${e(decl.codigoVerificacao)}</strong></p>
+        <p class="rel-hash">Hash do documento: ${e(decl.assinatura.hashDocumento)}</p>
+        <p class="rel-aviso-assinatura">Este documento foi gerado eletronicamente pelo sistema VEHO e possui validade administrativa interna da instituição de ensino.</p>
       </div>
     </div>`;
 }
