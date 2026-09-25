@@ -7,7 +7,7 @@ services:
   - type: web
     name: veho-edu
     runtime: node
-    plan: starter
+    plan: free
     region: oregon
     buildCommand: npm ci --omit=dev || npm install --omit=dev
     startCommand: node backend/server.js

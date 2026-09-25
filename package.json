@@ -48,6 +48,7 @@
     "test:performance": "npm run test:k6:smoke",
     "test:performance:heavy": "echo 'Use staging: test:k6:A / spike / endurance — nunca no PR' && exit 1",
     "validar:golive": "node scripts/validar-go-live.js",
+    "deploy:render": "node scripts/deploy-render.js",
     "seed": "node database/seeds.js",
     "seed:massa": "node database/seed-massa.js",
     "seed:presencas": "node database/seed-presencas.js",
