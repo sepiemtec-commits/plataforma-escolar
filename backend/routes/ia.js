@@ -62,8 +62,8 @@ router.post(
         ...resultado,
         aviso:
           resultado.fonte === 'local'
-            ? 'Gerado pelo motor local da VEHO. Revise antes de salvar. (OpenAI opcional via OPENAI_API_KEY)'
-            : 'Gerado com apoio de modelo externo. Revise antes de salvar.'
+            ? 'Gerado pelo motor local da VEHO com referências pedagógicas curadas. Revise antes de salvar. (OpenAI opcional via OPENAI_API_KEY)'
+            : 'Gerado com modelo externo + base pedagógica curada. Revise antes de salvar.'
       });
     } catch (error) {
       if (responderErroTenant(res, error)) return;

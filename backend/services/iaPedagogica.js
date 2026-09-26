@@ -1,5 +1,10 @@
 // backend/services/iaPedagogica.js — Parecer e orientações para o professor
 const { Avaliacao, Presenca, Desempenho, Usuario, Turma } = require('../database/schema');
+const {
+  selecionarReferencias,
+  formatarReferenciasParaTexto,
+  formatarReferenciasParaPrompt
+} = require('../constants/pedagogiaReferencias');
 
 function mediaDeNotas(avaliacoes) {
   if (!avaliacoes.length) return null;
@@ -181,11 +186,15 @@ function gerarTextoLocal(snapshot) {
         `4. Gerar novo parecer assim que houver dados mínimos de desempenho.`;
   }
 
+  const { referencias } = selecionarReferencias(snapshot.disciplina, snapshot.nivel);
+  const blocoRefs = formatarReferenciasParaTexto(referencias);
+
   return {
     textoParecer,
-    textoOrientacoes,
+    textoOrientacoes: textoOrientacoes + blocoRefs,
     fonte: 'local',
-    situacao: snapshot.nivel
+    situacao: snapshot.nivel,
+    referencias
   };
 }
 
@@ -193,23 +202,32 @@ async function gerarComOpenAI(snapshot) {
   const key = (process.env.OPENAI_API_KEY || '').trim();
   if (!key) return null;
 
+  const { area, referencias } = selecionarReferencias(snapshot.disciplina, snapshot.nivel);
+  const blocoPedagogico = formatarReferenciasParaPrompt(referencias, area);
+
   const model = (process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
   const prompt = {
     role: 'user',
     content:
       `Você é um assistente pedagógico para professores do ensino fundamental/médio no Brasil.\n` +
-      `Com base nos dados a seguir, produza JSON com as chaves "textoParecer" e "textoOrientacoes".\n` +
-      `textoParecer: 1–2 parágrafos descritivos, linguagem profissional, sem inventar fatos além dos dados.\n` +
-      `textoOrientacoes: lista numerada de sugestões práticas para o professor.\n` +
-      `Dados:\n${JSON.stringify({
-        aluno: snapshot.aluno.nome,
-        turma: snapshot.turma.nome,
-        disciplina: snapshot.disciplina || null,
-        media: snapshot.media,
-        frequenciaPercentual: snapshot.frequenciaPercentual,
-        totalFaltas: snapshot.totalFaltas,
-        nivel: snapshot.nivel
-      }, null, 2)}`
+      `Com base nos dados e nas referências curadas, produza JSON com as chaves "textoParecer" e "textoOrientacoes".\n` +
+      `textoParecer: 1–2 parágrafos descritivos, linguagem profissional, sem inventar fatos além dos dados do aluno.\n` +
+      `textoOrientacoes: lista numerada de sugestões práticas; incorpore 1–3 autores/ideias das referências curadas ` +
+      `(ex.: Vygotsky/ZDP, Freire, BNCC), sem inventar obras ou anos. Termine com um item de verificação/acompanhamento.\n` +
+      `Dados do aluno:\n${JSON.stringify(
+        {
+          aluno: snapshot.aluno.nome,
+          turma: snapshot.turma.nome,
+          disciplina: snapshot.disciplina || null,
+          media: snapshot.media,
+          frequenciaPercentual: snapshot.frequenciaPercentual,
+          totalFaltas: snapshot.totalFaltas,
+          nivel: snapshot.nivel
+        },
+        null,
+        2
+      )}\n` +
+      `Referências pedagógicas curadas:\n${JSON.stringify(blocoPedagogico, null, 2)}`
   };
 
   const resposta = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -225,7 +243,9 @@ async function gerarComOpenAI(snapshot) {
       messages: [
         {
           role: 'system',
-          content: 'Responda apenas JSON válido com textoParecer e textoOrientacoes em português do Brasil.'
+          content:
+            'Responda apenas JSON válido com textoParecer e textoOrientacoes em português do Brasil. ' +
+            'Fundamente orientações em pedagogia reconhecida (referências fornecidas). Não invente dados do aluno.'
         },
         prompt
       ]
@@ -253,7 +273,8 @@ async function gerarComOpenAI(snapshot) {
     textoParecer: String(parsed.textoParecer).trim(),
     textoOrientacoes: String(parsed.textoOrientacoes).trim(),
     fonte: 'openai',
-    situacao: snapshot.nivel
+    situacao: snapshot.nivel,
+    referencias
   };
 }
 
@@ -282,7 +303,8 @@ async function gerarParecerPedagogico(opts) {
     textoParecer: gerado.textoParecer,
     textoOrientacoes: gerado.textoOrientacoes,
     fonte: gerado.fonte,
-    situacao: gerado.situacao
+    situacao: gerado.situacao,
+    referencias: gerado.referencias || []
   };
 }
 
