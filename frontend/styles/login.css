@@ -31,9 +31,9 @@ body {
 
 .container-login {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: clamp(1.5rem, 3vw, 2.5rem);
-    max-width: 980px;
+    max-width: 420px;
     width: 100%;
     align-items: stretch;
 }
@@ -47,22 +47,6 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-}
-
-.info-box {
-    background-color: #e8ecef;
-    background-image: repeating-linear-gradient(
-        135deg,
-        transparent,
-        transparent 8px,
-        rgba(255, 255, 255, 0.35) 8px,
-        rgba(255, 255, 255, 0.35) 9px
-    );
-    padding: clamp(2rem, 4vw, 2.75rem);
-    border-radius: 14px;
-    border: 1px solid rgba(90, 106, 122, 0.08);
-    color: #3a4450;
-    box-shadow: none;
 }
 
 .login-box > h1 {
@@ -103,43 +87,6 @@ body {
 .subtitle-login a:hover {
     color: #3a6ea5;
     text-decoration: underline;
-}
-
-.info-box h2 {
-    font-family: 'Inter', system-ui, sans-serif;
-    font-weight: 600;
-    font-size: clamp(1.45rem, 2.5vw, 1.75rem);
-    color: #2a333c;
-    margin: 0 0 0.5rem;
-    letter-spacing: -0.02em;
-}
-
-.info-box > p {
-    color: #6b7682;
-    font-size: 0.95rem;
-    margin-bottom: 0.25rem;
-}
-
-.info-box ul {
-    list-style: none;
-    margin-top: 0.75rem;
-}
-
-.info-box li {
-    padding: 0.85rem 0;
-    border-bottom: 1px solid rgba(90, 106, 122, 0.14);
-    font-size: 0.92rem;
-    color: #5a6570;
-    line-height: 1.4;
-}
-
-.info-box li:last-child {
-    border-bottom: none;
-}
-
-.info-box li strong {
-    color: #2f3a45;
-    font-weight: 600;
 }
 
 .form-group {
@@ -290,12 +237,7 @@ input[type="password"]::-ms-clear {
 
 @media (max-width: 768px) {
     .container-login {
-        grid-template-columns: 1fr;
         gap: 1.25rem;
-    }
-
-    .info-box {
-        order: -1;
     }
 
     .login-box > h1 {
@@ -311,8 +253,7 @@ input[type="password"]::-ms-clear {
         align-items: flex-start;
     }
 
-    .login-box,
-    .info-box {
+    .login-box {
         padding: 1.35rem 1.15rem;
     }
 
