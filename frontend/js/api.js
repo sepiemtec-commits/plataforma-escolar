@@ -765,5 +765,6 @@ class API {
     }
 }
 
-// Instância global
+// Instância global (window.api — push.js e outros checam window.api)
 const api = new API();
+window.api = api;

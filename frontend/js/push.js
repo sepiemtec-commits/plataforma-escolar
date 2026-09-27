@@ -32,8 +32,8 @@
     if (!ambienteSeguro()) {
       throw new Error('Push exige HTTPS (ou localhost). No celular use HTTPS ou o mesmo Wi‑Fi com tunnel seguro.');
     }
-    if (!window.api || typeof api.vapidPublicKey !== 'function') {
-      throw new Error('API não carregada');
+    if (typeof api === 'undefined' || typeof api.vapidPublicKey !== 'function') {
+      throw new Error('API não carregada — atualize a página (Ctrl+F5)');
     }
 
     const perm = await Notification.requestPermission();
