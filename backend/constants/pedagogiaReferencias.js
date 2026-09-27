@@ -45,6 +45,7 @@ const GERAIS = [
 
 /** Chaves normalizadas → área */
 const AREA_POR_PALAVRA = [
+  { re: /computa|programa[cç]|algoritm|desplugad|coding|scratch/i, area: 'computacao' },
   { re: /portugu|l[ií]ngua\s*port|literat|reda[cç]|leitura|escrita/i, area: 'linguagens' },
   { re: /matem|álgebra|algebra|geometr|aritm|n[uú]mero|fra[cç]/i, area: 'matematica' },
   { re: /ci[eê]ncia|biolog|f[ií]sica|qu[ií]mica|natureza/i, area: 'ciencias' },
@@ -109,6 +110,26 @@ const POR_AREA = {
       ideia: 'Investigação científica escolar',
       aplicacao:
         'Trabalhar fenômenos com evidências, modelos e argumentação, ligando conceitos à vida cotidiana.'
+    }
+  ],
+  computacao: [
+    {
+      autor: 'Seymour Papert',
+      ideia: 'Construcionismo',
+      aplicacao:
+        'Aprender fazendo e “debugando”: o erro faz parte do processo; projetos concretos revelam o pensamento do aluno.'
+    },
+    {
+      autor: 'BNCC Computação',
+      ideia: 'Pensamento computacional',
+      aplicacao:
+        'Trabalhar decomposição, reconhecimento de padrões, abstração e algoritmos — inclusive de forma desplugada.'
+    },
+    {
+      autor: 'CS Unplugged / Tim Bell',
+      ideia: 'Computação desplugada',
+      aplicacao:
+        'Ensinar conceitos de computação com jogos, cartas, movimento e papel, sem depender de laboratório.'
     }
   ],
   historia: [
@@ -257,6 +278,16 @@ function selecionarReferencias(disciplina, nivel) {
   push(POR_NIVEL[nivel] || [], 2);
   if (area && area !== 'geral') push(POR_AREA[area] || [], 2);
   push(GERAIS, 2);
+
+  // Se há área disciplinária, coloca essas refs primeiro (melhor para chat/atividades)
+  if (area && area !== 'geral' && POR_AREA[area]?.length) {
+    const daArea = new Set((POR_AREA[area] || []).map((r) => `${r.autor}|${r.ideia}`));
+    refs.sort((a, b) => {
+      const sa = daArea.has(`${a.autor}|${a.ideia}`) ? 0 : 1;
+      const sb = daArea.has(`${b.autor}|${b.ideia}`) ? 0 : 1;
+      return sa - sb;
+    });
+  }
 
   return { area: area || null, referencias: refs.slice(0, 5) };
 }

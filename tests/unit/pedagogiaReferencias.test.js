@@ -61,4 +61,15 @@ describe('responderChatLocal', () => {
     expect(out.fonte).toBe('local');
     expect(out.resposta).toMatch(/Vygotsky|Zona|Proximal/i);
   });
+
+  test('entrega ideias concretas de computação desplugada sem aluno', () => {
+    const out = responderChatLocal(
+      'ME DE DUAS IDEIAS DE TRABALHAR COMPUTAÇÃO DESPLUGADA COM OS ESTUDANTES.'
+    );
+    expect(out.fonte).toBe('local');
+    expect(out.resposta).not.toMatch(/Nenhum aluno selecionado/i);
+    expect(out.resposta).toMatch(/1\)/);
+    expect(out.resposta).toMatch(/2\)/);
+    expect(out.resposta).toMatch(/desplugad|algoritmo|Robô|condi[cç]/i);
+  });
 });
