@@ -7,6 +7,37 @@ const { TIPOS_FUNCIONARIO_ESCOLA } = require('../constants/funcionarios');
 const { inferirNivel } = require('../constants/ensino');
 const { disciplinasDoProfessor } = require('../utils/professorDisciplinas');
 const { idsTurmasDaEscola } = require('../utils/tenant');
+const { montarBoletimCompleto, BIMESTRES } = require('../services/boletim');
+
+function situacaoPorMedia(media) {
+  if (media == null || Number.isNaN(Number(media))) return null;
+  const m = Number(media);
+  if (m < 5) return 'reprovado';
+  if (m < 6) return 'recuperacao';
+  if (m >= 9) return 'excelente';
+  return 'aprovado';
+}
+
+/** Converte boletim acadêmico (Avaliações) no formato do dashboard do responsável. */
+function desempenhoDoBoletim(boletim) {
+  if (!boletim?.disciplinas?.length) return [];
+  const out = [];
+  for (const disc of boletim.disciplinas) {
+    for (const bim of BIMESTRES) {
+      const media = disc.bimestres?.[bim]?.media;
+      if (media == null) continue;
+      out.push({
+        disciplina: disc.disciplina,
+        periodo: bim,
+        mediaGeral: media,
+        frequenciaPercentual: null,
+        situacao: situacaoPorMedia(media),
+        faltas: disc.faltas || 0
+      });
+    }
+  }
+  return out;
+}
 
 // ==================== PAINEL DO DIRETOR ====================
 router.get('/diretor', autenticacao, verificarRole('diretor'), requerEscola, async (req, res) => {
@@ -455,10 +486,11 @@ router.get('/responsavel', autenticacao, verificarRole('responsavel'), requerEsc
       }).select('nome email matriculaNumero ativo')
       : [];
 
-    const desempenho = alunoIds.length
+    const desempenhoDocs = alunoIds.length
       ? await Desempenho.find({ aluno_id: { $in: alunoIds } })
         .select('aluno_id disciplina periodo mediaGeral frequenciaPercentual situacao')
         .sort({ periodo: 1, disciplina: 1 })
+        .lean()
       : [];
 
     const presencas = alunoIds.length
@@ -470,19 +502,46 @@ router.get('/responsavel', autenticacao, verificarRole('responsavel'), requerEsc
       grauPorAluno[String(v.aluno_id)] = v.grau_parentesco || 'outro';
     });
 
-    const alunosDetalhes = alunos.map(aluno => {
+    const alunosDetalhes = await Promise.all(alunos.map(async (aluno) => {
       const id = String(aluno._id);
-      const desAluno = desempenho.filter(d => String(d.aluno_id) === id);
+      const desColecao = desempenhoDocs.filter(d => String(d.aluno_id) === id);
+
+      // Preferir as mesmas notas do boletim acadêmico (Avaliações), que é o que a família vê no relatório
+      let desAluno = desColecao;
+      let mediaGeral = null;
+      try {
+        const boletim = await montarBoletimCompleto(aluno._id);
+        const doBoletim = desempenhoDoBoletim(boletim);
+        if (doBoletim.length) {
+          desAluno = doBoletim;
+          const finais = (boletim.disciplinas || [])
+            .map((d) => d.mediaFinal)
+            .filter((n) => n != null && !Number.isNaN(Number(n)));
+          if (finais.length) {
+            mediaGeral = Number((finais.reduce((a, b) => a + b, 0) / finais.length).toFixed(2));
+          }
+        }
+      } catch (e) {
+        console.warn('Painel responsável: boletim indisponível para', id, e.message);
+      }
+
+      if (mediaGeral == null) {
+        const medias = desAluno.map(d => Number(d.mediaGeral)).filter(n => !Number.isNaN(n));
+        mediaGeral = medias.length
+          ? Number((medias.reduce((a, b) => a + b, 0) / medias.length).toFixed(2))
+          : null;
+      }
+
       const presAluno = presencas.filter(p => String(p.aluno_id) === id);
       const frequencia = presAluno.length
         ? Number(((presAluno.filter(p => p.status === 'presente').length / presAluno.length) * 100).toFixed(1))
         : null;
-      const faltas = presAluno.filter(p => p.status === 'falta').length;
-      const medias = desAluno.map(d => Number(d.mediaGeral)).filter(n => !Number.isNaN(n));
-      const mediaGeral = medias.length
-        ? Number((medias.reduce((a, b) => a + b, 0) / medias.length).toFixed(2))
-        : null;
-      const emRisco = desAluno.some(d => ['recuperacao', 'reprovado'].includes(d.situacao));
+      const faltas = desAluno.some((d) => d.faltas != null)
+        ? desAluno.reduce((s, d) => s + (Number(d.faltas) || 0), 0)
+        : presAluno.filter(p => p.status === 'falta').length;
+      const emRisco =
+        desAluno.some(d => ['recuperacao', 'reprovado'].includes(d.situacao)) ||
+        (mediaGeral != null && mediaGeral < 6);
 
       return {
         _id: aluno._id,
@@ -496,7 +555,7 @@ router.get('/responsavel', autenticacao, verificarRole('responsavel'), requerEsc
         emRisco,
         desempenho: desAluno
       };
-    });
+    }));
 
     res.json({
       sucesso: true,
