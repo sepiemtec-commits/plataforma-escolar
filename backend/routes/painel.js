@@ -506,9 +506,9 @@ router.get('/responsavel', autenticacao, verificarRole('responsavel'), requerEsc
       const id = String(aluno._id);
       const desColecao = desempenhoDocs.filter(d => String(d.aluno_id) === id);
 
-      // Preferir as mesmas notas do boletim acadêmico (Avaliações), que é o que a família vê no relatório
       let desAluno = desColecao;
       let mediaGeral = null;
+      let faltasBoletim = null;
       try {
         const boletim = await montarBoletimCompleto(aluno._id);
         const doBoletim = desempenhoDoBoletim(boletim);
@@ -520,6 +520,10 @@ router.get('/responsavel', autenticacao, verificarRole('responsavel'), requerEsc
           if (finais.length) {
             mediaGeral = Number((finais.reduce((a, b) => a + b, 0) / finais.length).toFixed(2));
           }
+          faltasBoletim = (boletim.disciplinas || []).reduce(
+            (s, d) => s + (Number(d.faltas) || 0),
+            0
+          );
         }
       } catch (e) {
         console.warn('Painel responsável: boletim indisponível para', id, e.message);
@@ -536,9 +540,10 @@ router.get('/responsavel', autenticacao, verificarRole('responsavel'), requerEsc
       const frequencia = presAluno.length
         ? Number(((presAluno.filter(p => p.status === 'presente').length / presAluno.length) * 100).toFixed(1))
         : null;
-      const faltas = desAluno.some((d) => d.faltas != null)
-        ? desAluno.reduce((s, d) => s + (Number(d.faltas) || 0), 0)
-        : presAluno.filter(p => p.status === 'falta').length;
+      const faltas =
+        faltasBoletim != null
+          ? faltasBoletim
+          : presAluno.filter(p => p.status === 'falta').length;
       const emRisco =
         desAluno.some(d => ['recuperacao', 'reprovado'].includes(d.situacao)) ||
         (mediaGeral != null && mediaGeral < 6);
