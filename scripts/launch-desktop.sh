@@ -54,9 +54,11 @@ health_ok() {
 }
 
 api_routes_ok() {
-  local code
+  local code code_backup
   code="$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 2 "${URL}/api/horarios/professor/atualizacao" 2>/dev/null || echo "000")"
-  [[ "$code" != "404" && "$code" != "000" ]]
+  code_backup="$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 2 "${URL}/api/backup/config" 2>/dev/null || echo "000")"
+  # 401 = rota existe (sem token); 404/000 = servidor velho ou fora
+  [[ "$code" != "404" && "$code" != "000" && "$code_backup" != "404" && "$code_backup" != "000" ]]
 }
 
 free_port() {
