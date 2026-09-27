@@ -2266,3 +2266,222 @@ input:focus, select:focus, textarea:focus {
     }
 }
 
+/* ===== Dashboard KPI — responsável ===== */
+.resp-kpi {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 16px;
+    margin: 14px 0 18px;
+}
+
+.resp-kpi-card {
+    background: #fff;
+    border: 1px solid rgba(90, 106, 122, 0.12);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 4px 16px rgba(61, 74, 87, 0.05);
+}
+
+.resp-kpi-card h4 {
+    margin: 0 0 12px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #2f3a45;
+    letter-spacing: -0.01em;
+}
+
+.resp-kpi-metricas {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.resp-kpi-metrica {
+    background: #f5f6f8;
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+}
+
+.resp-kpi-metrica .label {
+    display: block;
+    font-size: 0.72rem;
+    color: #7a8794;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.resp-kpi-metrica .valor {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #2f3a45;
+    line-height: 1.1;
+}
+
+.resp-kpi-metrica.risco .valor { color: #b33a3a; }
+.resp-kpi-metrica.ok .valor { color: #2d6a4f; }
+.resp-kpi-metrica.atencao .valor { color: #b36b00; }
+
+.resp-kpi-barras {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.resp-kpi-barra-item {
+    display: grid;
+    grid-template-columns: minmax(72px, 28%) 1fr 42px;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.82rem;
+    color: #4a5560;
+}
+
+.resp-kpi-barra-item .nome {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resp-kpi-track {
+    height: 10px;
+    background: #e8ecef;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.resp-kpi-fill {
+    height: 100%;
+    border-radius: 999px;
+    min-width: 2px;
+    transition: width 0.4s ease;
+}
+
+.resp-kpi-fill.critico { background: #c44536; }
+.resp-kpi-fill.alerta { background: #d97706; }
+.resp-kpi-fill.bom { background: #5b8c5a; }
+.resp-kpi-fill.excelente { background: #2d6a4f; }
+
+.resp-kpi-barra-item .pct {
+    text-align: right;
+    font-weight: 600;
+    color: #2f3a45;
+    font-variant-numeric: tabular-nums;
+}
+
+.resp-kpi-donut-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 200px;
+}
+
+.resp-kpi-donut {
+    width: 160px;
+    height: 160px;
+}
+
+.resp-kpi-donut-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    justify-content: center;
+    font-size: 0.78rem;
+    color: #566573;
+}
+
+.resp-kpi-donut-legend li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.resp-kpi-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.resp-kpi-dot.excelente { background: #2d6a4f; }
+.resp-kpi-dot.bom { background: #5b8c5a; }
+.resp-kpi-dot.alerta { background: #d97706; }
+.resp-kpi-dot.critico { background: #c44536; }
+.resp-kpi-dot.sem { background: #a8b0b8; }
+
+.resp-kpi-freq {
+    margin-top: 8px;
+}
+
+.resp-kpi-freq .resp-kpi-track {
+    height: 14px;
+}
+
+.resp-kpi-tendencia {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 72px;
+    padding-top: 8px;
+}
+
+.resp-kpi-tendencia .col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.resp-kpi-tendencia .barra-t {
+    width: 100%;
+    max-width: 28px;
+    border-radius: 4px 4px 0 0;
+    background: #5b8c5a;
+    min-height: 4px;
+}
+
+.resp-kpi-tendencia .periodo-t {
+    font-size: 0.65rem;
+    color: #7a8794;
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resp-kpi-vazio {
+    color: #7a8794;
+    font-size: 0.9rem;
+    margin: 8px 0;
+}
+
+@media (max-width: 900px) {
+    .resp-kpi {
+        grid-template-columns: 1fr;
+    }
+    .resp-kpi-metricas {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .resp-kpi-metricas {
+        grid-template-columns: 1fr;
+    }
+    .resp-kpi-barra-item {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}
+

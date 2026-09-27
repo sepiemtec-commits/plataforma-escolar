@@ -98,6 +98,224 @@ function escapar(texto) {
         .replace(/"/g, '&quot;');
 }
 
+function nivelPorMedia(media) {
+    if (media == null || Number.isNaN(Number(media))) return 'sem';
+    const m = Number(media);
+    if (m >= 8) return 'excelente';
+    if (m >= 6.5) return 'bom';
+    if (m >= 5) return 'alerta';
+    return 'critico';
+}
+
+function classeFill(nivel) {
+    return nivel === 'sem' ? 'alerta' : nivel;
+}
+
+/** Escala 0–10 → % para barra (com teto 100). */
+function mediaParaPct(media) {
+    if (media == null || Number.isNaN(Number(media))) return 0;
+    return Math.max(0, Math.min(100, Math.round((Number(media) / 10) * 100)));
+}
+
+function formatarMedia(media) {
+    if (media == null || Number.isNaN(Number(media))) return '—';
+    return Number(media).toFixed(1).replace('.', ',');
+}
+
+/** Agrega desempenho por disciplina (média dos períodos). */
+function agregarPorDisciplina(desempenho) {
+    const map = new Map();
+    (desempenho || []).forEach((d) => {
+        const key = d.disciplina || 'Geral';
+        if (!map.has(key)) map.set(key, { disciplina: key, medias: [], freqs: [], situacoes: [] });
+        const row = map.get(key);
+        if (d.mediaGeral != null) row.medias.push(Number(d.mediaGeral));
+        if (d.frequenciaPercentual != null) row.freqs.push(Number(d.frequenciaPercentual));
+        if (d.situacao) row.situacoes.push(d.situacao);
+    });
+    return [...map.values()]
+        .map((r) => ({
+            disciplina: r.disciplina,
+            media: r.medias.length
+                ? r.medias.reduce((a, b) => a + b, 0) / r.medias.length
+                : null,
+            frequencia: r.freqs.length
+                ? r.freqs.reduce((a, b) => a + b, 0) / r.freqs.length
+                : null
+        }))
+        .sort((a, b) => (b.media ?? -1) - (a.media ?? -1));
+}
+
+/** Média geral por período (para tendência). */
+function tendenciaPorPeriodo(desempenho) {
+    const map = new Map();
+    (desempenho || []).forEach((d) => {
+        const p = d.periodo || '—';
+        if (!map.has(p)) map.set(p, []);
+        if (d.mediaGeral != null) map.get(p).push(Number(d.mediaGeral));
+    });
+    return [...map.entries()]
+        .map(([periodo, vals]) => ({
+            periodo,
+            media: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
+        }))
+        .filter((x) => x.media != null)
+        .slice(-8);
+}
+
+function contarNiveis(porDisc) {
+    const c = { excelente: 0, bom: 0, alerta: 0, critico: 0, sem: 0 };
+    porDisc.forEach((d) => {
+        c[nivelPorMedia(d.media)] += 1;
+    });
+    return c;
+}
+
+function svgDonut(contagem) {
+    const total = Object.values(contagem).reduce((a, b) => a + b, 0) || 1;
+    const cores = {
+        excelente: '#2d6a4f',
+        bom: '#5b8c5a',
+        alerta: '#d97706',
+        critico: '#c44536',
+        sem: '#a8b0b8'
+    };
+    const ordem = ['excelente', 'bom', 'alerta', 'critico', 'sem'];
+    const r = 54;
+    const c = 2 * Math.PI * r;
+    let offset = 0;
+    const arcs = ordem
+        .filter((k) => contagem[k] > 0)
+        .map((k) => {
+            const frac = contagem[k] / total;
+            const len = frac * c;
+            const dash = `${len} ${c - len}`;
+            const el = `<circle cx="80" cy="80" r="${r}" fill="none" stroke="${cores[k]}" stroke-width="18"
+                stroke-dasharray="${dash}" stroke-dashoffset="${-offset}"
+                transform="rotate(-90 80 80)" />`;
+            offset += len;
+            return el;
+        })
+        .join('');
+
+    const legendLabels = {
+        excelente: 'Excelente (≥8)',
+        bom: 'Bom',
+        alerta: 'Atenção',
+        critico: 'Crítico',
+        sem: 'Sem nota'
+    };
+    const legend = ordem
+        .filter((k) => contagem[k] > 0)
+        .map(
+            (k) =>
+                `<li><span class="resp-kpi-dot ${k}"></span>${legendLabels[k]}: ${contagem[k]}</li>`
+        )
+        .join('');
+
+    return `
+        <div class="resp-kpi-donut-wrap">
+            <svg class="resp-kpi-donut" viewBox="0 0 160 160" aria-hidden="true">
+                <circle cx="80" cy="80" r="54" fill="none" stroke="#e8ecef" stroke-width="18" />
+                ${arcs}
+                <text x="80" y="76" text-anchor="middle" font-size="13" fill="#7a8794">Disciplinas</text>
+                <text x="80" y="96" text-anchor="middle" font-size="22" font-weight="700" fill="#2f3a45">${total}</text>
+            </svg>
+            <ul class="resp-kpi-donut-legend">${legend}</ul>
+        </div>`;
+}
+
+function renderDashboardAluno(aluno) {
+    const desempenho = aluno.desempenho || [];
+    const porDisc = agregarPorDisciplina(desempenho);
+    const tendencia = tendenciaPorPeriodo(desempenho);
+    const contagem = contarNiveis(porDisc);
+    const media = aluno.mediaGeral;
+    const freq = aluno.frequencia;
+    const nivelGeral = nivelPorMedia(media);
+    const classeRisco = aluno.emRisco ? 'risco' : nivelGeral === 'excelente' || nivelGeral === 'bom' ? 'ok' : nivelGeral === 'alerta' ? 'atencao' : '';
+
+    const barras =
+        porDisc.length === 0
+            ? '<p class="resp-kpi-vazio">Ainda não há médias por disciplina. Quando o professor lançar notas, elas aparecem aqui.</p>'
+            : `<div class="resp-kpi-barras">${porDisc
+                  .map((d) => {
+                      const nivel = nivelPorMedia(d.media);
+                      const pct = mediaParaPct(d.media);
+                      return `<div class="resp-kpi-barra-item">
+                        <span class="nome" title="${escapar(d.disciplina)}">${escapar(d.disciplina)}</span>
+                        <div class="resp-kpi-track"><div class="resp-kpi-fill ${classeFill(nivel)}" style="width:${pct}%"></div></div>
+                        <span class="pct">${formatarMedia(d.media)}</span>
+                      </div>`;
+                  })
+                  .join('')}</div>`;
+
+    const maxT = Math.max(...tendencia.map((t) => t.media || 0), 10);
+    const tendenciaHtml =
+        tendencia.length < 2
+            ? '<p class="resp-kpi-vazio">Tendência aparece quando houver mais de um período com notas.</p>'
+            : `<div class="resp-kpi-tendencia" aria-label="Tendência por período">${tendencia
+                  .map((t) => {
+                      const h = Math.max(8, Math.round((t.media / maxT) * 64));
+                      const nivel = nivelPorMedia(t.media);
+                      const cor =
+                          nivel === 'excelente'
+                              ? '#2d6a4f'
+                              : nivel === 'bom'
+                                ? '#5b8c5a'
+                                : nivel === 'alerta'
+                                  ? '#d97706'
+                                  : '#c44536';
+                      return `<div class="col">
+                        <div class="barra-t" style="height:${h}px;background:${cor}" title="${escapar(t.periodo)}: ${formatarMedia(t.media)}"></div>
+                        <span class="periodo-t">${escapar(t.periodo)}</span>
+                      </div>`;
+                  })
+                  .join('')}</div>`;
+
+    const freqPct = freq != null ? Math.max(0, Math.min(100, Number(freq))) : 0;
+    const freqNivel = freq == null ? 'sem' : freq >= 90 ? 'excelente' : freq >= 75 ? 'bom' : freq >= 60 ? 'alerta' : 'critico';
+
+    return `
+        <div class="resp-kpi">
+            <div class="resp-kpi-card">
+                <h4>Visão geral</h4>
+                <div class="resp-kpi-metricas">
+                    <div class="resp-kpi-metrica ${classeRisco}">
+                        <span class="label">Média geral</span>
+                        <span class="valor">${formatarMedia(media)}</span>
+                    </div>
+                    <div class="resp-kpi-metrica ${freqNivel === 'critico' || freqNivel === 'alerta' ? 'atencao' : freqNivel === 'excelente' || freqNivel === 'bom' ? 'ok' : ''}">
+                        <span class="label">Frequência</span>
+                        <span class="valor">${freq != null ? `${String(freq).replace('.', ',')}%` : '—'}</span>
+                    </div>
+                    <div class="resp-kpi-metrica ${aluno.emRisco ? 'risco' : 'ok'}">
+                        <span class="label">Situação</span>
+                        <span class="valor" style="font-size:1rem;">${aluno.emRisco ? 'Atenção' : 'Em dia'}</span>
+                    </div>
+                </div>
+                <h4>Notas por disciplina</h4>
+                ${barras}
+                <div class="resp-kpi-freq">
+                    <h4 style="margin-top:16px;">Frequência nas aulas</h4>
+                    <div class="resp-kpi-track">
+                        <div class="resp-kpi-fill ${classeFill(freqNivel === 'sem' ? 'alerta' : freqNivel)}" style="width:${freqPct}%"></div>
+                    </div>
+                    <p style="font-size:12px;color:#7a8794;margin:6px 0 0;">
+                        Faltas registradas: ${aluno.faltas != null ? aluno.faltas : '—'}
+                        · Meta sugerida: ≥ 75%
+                    </p>
+                </div>
+            </div>
+            <div class="resp-kpi-card">
+                <h4>Distribuição do desempenho</h4>
+                ${porDisc.length ? svgDonut(contagem) : '<p class="resp-kpi-vazio">Sem disciplinas para o gráfico.</p>'}
+                <h4 style="margin-top:8px;">Evolução por período</h4>
+                ${tendenciaHtml}
+            </div>
+        </div>`;
+}
+
 async function carregarPainel() {
     const container = document.getElementById('listaFilhos');
     try {
@@ -120,7 +338,7 @@ async function carregarPainel() {
                     <tr>
                         <td>${escapar(d.disciplina)}</td>
                         <td>${escapar(d.periodo)}</td>
-                        <td>${d.mediaGeral ?? '—'}</td>
+                        <td>${d.mediaGeral != null ? formatarMedia(d.mediaGeral) : '—'}</td>
                         <td>${d.frequenciaPercentual != null ? `${d.frequenciaPercentual}%` : '—'}</td>
                         <td><span class="status ${['aprovado', 'excelente'].includes(d.situacao) ? 'status-presente' : 'status-recuperacao'}">${escapar(d.situacao || '—')}</span></td>
                     </tr>`).join('')
@@ -133,20 +351,23 @@ async function carregarPainel() {
                         <span class="accordion-turma-nome">${escapar(aluno.nome)}</span>
                         <span class="accordion-turma-info">
                             ${escapar(aluno.grauParentesco || '')}
-                            · média ${aluno.mediaGeral ?? '—'}
+                            · média ${formatarMedia(aluno.mediaGeral)}
                             · freq. ${aluno.frequencia != null ? `${aluno.frequencia}%` : '—'}
                             ${aluno.emRisco ? ' · em atenção' : ''}
                         </span>
                     </button>
                     <div class="accordion-turma-corpo" style="display:${aberto ? 'block' : 'none'};">
+                        ${renderDashboardAluno(aluno)}
                         <div class="grid-paineis" style="margin:12px 0;">
                             <a class="card card-clicavel" href="diario-aluno.html?aluno=${encodeURIComponent(aluno._id)}" title="Abrir diário de frequência">
-                                <h3>Frequência</h3>
+                                <h3>Diário de frequência</h3>
                                 <div class="card-valor">${aluno.frequencia != null ? `${aluno.frequencia}%` : '—'}</div>
-                                <p class="card-dica">Clique para ver o diário</p>
+                                <p class="card-dica">Clique para detalhes</p>
                             </a>
-                            <div class="card"><h3>Média geral</h3><div class="card-valor">${aluno.mediaGeral ?? '—'}</div></div>
+                            <div class="card"><h3>Média geral</h3><div class="card-valor">${formatarMedia(aluno.mediaGeral)}</div></div>
+                            <div class="card"><h3>Faltas</h3><div class="card-valor">${aluno.faltas != null ? aluno.faltas : '—'}</div></div>
                         </div>
+                        <h3 style="margin:16px 0 8px;font-size:1rem;">Detalhe por período</h3>
                         <table class="tabela">
                             <thead>
                                 <tr>
