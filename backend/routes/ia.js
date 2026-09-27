@@ -10,7 +10,7 @@ const {
   TenantError
 } = require('../utils/tenant');
 const { ParecerIA, HorarioAula } = require('../database/schema');
-const { gerarParecerPedagogico } = require('../services/iaPedagogica');
+const { gerarParecerPedagogico, conversarNiceIA } = require('../services/iaPedagogica');
 
 const rolesIA = ['professor', 'coordenador', 'diretor', 'admin'];
 
@@ -132,6 +132,56 @@ router.post(
       if (responderErroTenant(res, error)) return;
       console.error('Erro ao salvar parecer IA:', error);
       res.status(500).json({ sucesso: false, mensagem: 'Erro ao salvar parecer' });
+    }
+  }
+);
+
+// ==================== CHAT NICE IA ====================
+router.post(
+  '/chat',
+  autenticacao,
+  verificarRole(...rolesIA),
+  requerEscola,
+  async (req, res) => {
+    try {
+      const { mensagem, historico, aluno_id, turma_id, disciplina } = req.body || {};
+      if (!mensagem || !String(mensagem).trim()) {
+        return res.status(400).json({ sucesso: false, mensagem: 'mensagem é obrigatória' });
+      }
+
+      if (turma_id) {
+        await assertProfessorNaTurma(req, turma_id);
+      }
+      if (aluno_id && turma_id) {
+        await assertAlunoNaTurma(req, turma_id, aluno_id);
+      } else if (aluno_id) {
+        await assertAlunoEscola(req, aluno_id);
+      }
+
+      const resultado = await conversarNiceIA({
+        mensagem,
+        historico: Array.isArray(historico) ? historico : [],
+        alunoId: aluno_id || null,
+        turmaId: turma_id || null,
+        disciplina: disciplina ? String(disciplina).trim() : '',
+        escolaId: req.usuario.escola_id
+      });
+
+      res.json({
+        sucesso: true,
+        ...resultado,
+        aviso:
+          resultado.fonte === 'openai'
+            ? 'NICE IA (modelo externo). Revise antes de usar com a família.'
+            : 'NICE IA (motor local). Para respostas mais ricas, configure OPENAI_API_KEY.'
+      });
+    } catch (error) {
+      if (responderErroTenant(res, error)) return;
+      console.error('Erro no chat NICE IA:', error);
+      res.status(error.status || 500).json({
+        sucesso: false,
+        mensagem: error.mensagem || error.message || 'Erro no chat'
+      });
     }
   }
 );

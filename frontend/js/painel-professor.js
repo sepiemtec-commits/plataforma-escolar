@@ -1390,6 +1390,7 @@ function configurarIAPedagogica() {
     const selAluno = document.getElementById('iaAluno');
     const btnGerar = document.getElementById('btnGerarParecerIA');
     const btnSalvar = document.getElementById('btnSalvarParecerIA');
+    const chatForm = document.getElementById('niceChatForm');
     if (!selTurma || !btnGerar) return;
 
     selTurma.addEventListener('change', onMudancaTurmaIA);
@@ -1400,6 +1401,70 @@ function configurarIAPedagogica() {
     });
     btnGerar.addEventListener('click', gerarParecerIA);
     btnSalvar?.addEventListener('click', salvarParecerIA);
+    chatForm?.addEventListener('submit', enviarMensagemNiceChat);
+}
+
+/** Histórico do chat NICE IA na sessão atual (não persiste no servidor). */
+let niceChatHistorico = [];
+
+function appendNiceChatMsg(role, texto) {
+    const box = document.getElementById('niceChatMsgs');
+    if (!box) return;
+    const div = document.createElement('div');
+    const isUser = role === 'user';
+    div.className = isUser ? 'nice-msg nice-msg-user' : 'nice-msg nice-msg-bot';
+    div.style.cssText = isUser
+        ? 'align-self:flex-end;max-width:90%;background:#1e3a55;color:#fff;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;white-space:pre-wrap;'
+        : 'align-self:flex-start;max-width:90%;background:#fff;border:1px solid #e5ebf0;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;color:#3a4450;white-space:pre-wrap;';
+    div.textContent = texto;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+}
+
+async function enviarMensagemNiceChat(ev) {
+    ev.preventDefault();
+    const input = document.getElementById('niceChatInput');
+    const btn = document.getElementById('btnNiceChatEnviar');
+    const status = document.getElementById('niceChatStatus');
+    const mensagem = (input?.value || '').trim();
+    if (!mensagem) return;
+
+    const turma_id = document.getElementById('iaTurma')?.value || '';
+    const aluno_id = document.getElementById('iaAluno')?.value || '';
+    const disciplina = document.getElementById('iaDisciplina')?.value || '';
+
+    appendNiceChatMsg('user', mensagem);
+    input.value = '';
+    btn.disabled = true;
+    if (status) status.textContent = 'NICE IA pensando…';
+
+    try {
+        const resp = await api.chatNiceIA({
+            mensagem,
+            historico: niceChatHistorico,
+            aluno_id: aluno_id || undefined,
+            turma_id: turma_id || undefined,
+            disciplina: disciplina || undefined
+        });
+        const resposta = resp.resposta || 'Sem resposta.';
+        appendNiceChatMsg('assistant', resposta);
+        niceChatHistorico.push({ role: 'user', content: mensagem });
+        niceChatHistorico.push({ role: 'assistant', content: resposta });
+        if (niceChatHistorico.length > 24) {
+            niceChatHistorico = niceChatHistorico.slice(-24);
+        }
+        if (status) {
+            status.textContent =
+                (resp.aviso || '') +
+                (resp.fonte ? ` · fonte: ${resp.fonte}` : '');
+        }
+    } catch (e) {
+        appendNiceChatMsg('assistant', e.message || 'Erro ao conversar com a NICE IA.');
+        if (status) status.textContent = e.message || 'Erro';
+    } finally {
+        btn.disabled = false;
+        input?.focus();
+    }
 }
 
 function prepararSecaoIA() {

@@ -45,3 +45,20 @@ describe('gerarTextoLocal com referências', () => {
     expect(out.referencias.length).toBeGreaterThan(0);
   });
 });
+
+describe('responderChatLocal', () => {
+  const { responderChatLocal } = require('../../backend/services/iaPedagogica');
+
+  test('responde sobre Vygotsky', () => {
+    const out = responderChatLocal('Como usar Vygotsky com este aluno?', {
+      aluno: { nome: 'Ana' },
+      turma: { nome: '5A' },
+      disciplina: 'Matemática',
+      media: 5,
+      frequenciaPercentual: 78,
+      nivel: 'alerta'
+    });
+    expect(out.fonte).toBe('local');
+    expect(out.resposta).toMatch(/Vygotsky|Zona|Proximal/i);
+  });
+});

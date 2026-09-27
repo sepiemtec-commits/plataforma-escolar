@@ -634,6 +634,13 @@ class API {
         return this.requisicao(`/ia/parecer/aluno/${alunoId}`);
     }
 
+    async chatNiceIA(dados) {
+        return this.requisicao('/ia/chat', {
+            method: 'POST',
+            body: JSON.stringify(dados)
+        });
+    }
+
     // HTPC
     async listarHtpc() {
         return this.requisicao('/htpc');

@@ -308,9 +308,202 @@ async function gerarParecerPedagogico(opts) {
   };
 }
 
+function normalizarHistoricoChat(historico) {
+  if (!Array.isArray(historico)) return [];
+  return historico
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && String(m.content || '').trim())
+    .slice(-12)
+    .map((m) => ({
+      role: m.role,
+      content: String(m.content).trim().slice(0, 4000)
+    }));
+}
+
+function responderChatLocal(mensagem, snapshot) {
+  const msg = String(mensagem || '').toLowerCase();
+  const { referencias } = selecionarReferencias(
+    snapshot?.disciplina || '',
+    snapshot?.nivel || 'sem_dados'
+  );
+  const refsTxt = referencias
+    .slice(0, 3)
+    .map((r) => `• ${r.autor} (${r.ideia}): ${r.aplicacao}`)
+    .join('\n');
+
+  const contextoAluno = snapshot?.aluno
+    ? `Contexto atual: ${snapshot.aluno.nome}, turma ${snapshot.turma?.nome || '—'}` +
+      `${snapshot.disciplina ? `, ${snapshot.disciplina}` : ''}. ` +
+      `Média ${snapshot.media != null ? snapshot.media : 'n/d'}, ` +
+      `frequência ${snapshot.frequenciaPercentual != null ? snapshot.frequenciaPercentual + '%' : 'n/d'}, ` +
+      `nível ${snapshot.nivel || 'sem_dados'}.\n\n`
+    : 'Nenhum aluno selecionado — respondo em termos gerais. Selecione turma e aluno para contextualizar.\n\n';
+
+  let corpo;
+  if (/vygotsky|zdp|proximal/.test(msg)) {
+    corpo =
+      'A Zona de Desenvolvimento Proximal (Vygotsky) é o que o aluno faz com mediação, mas ainda não sozinho. ' +
+      'Na prática: tarefas um pouco acima do nível atual, com apoio do professor ou de pares, retirando o andaime aos poucos.';
+  } else if (/freire|di[aá]logo|libertador/.test(msg)) {
+    corpo =
+      'Freire destaca o diálogo e a problematização: parta da realidade do aluno, escute hipóteses e construa o conteúdo com ele, ' +
+      'em vez de apenas “depositar” informação.';
+  } else if (/parecer|relat[oó]rio|fam[ií]lia/.test(msg)) {
+    corpo =
+      'Para um parecer à família, use evidências (média, frequência, participação), linguagem clara e 2–3 combinações práticas. ' +
+      'Use o botão “Gerar parecer” acima para um rascunho revisável com base nos dados do aluno.';
+  } else if (/recupera|interven|dificuld|baixo|falt/.test(msg)) {
+    corpo =
+      'Sugestão de intervenção: (1) diagnosticar a habilidade com maior defasagem; (2) plano curto com metas semanais; ' +
+      '(3) andaime (Vygotsky); (4) diálogo com o aluno e a família (Freire/Wallon); (5) reavaliar em 2–3 semanas.';
+  } else if (/bncc|habilidade|compet[eê]ncia/.test(msg)) {
+    corpo =
+      'Alinhe a atividade a habilidades BNCC da etapa/disciplina e deixe a evidência de aprendizagem observável ' +
+      '(produção, resolução de problema, participação registrada).';
+  } else {
+    corpo =
+      'Posso ajudar com estratégias de aula, pareceres, recuperação, BNCC e autores da pedagogia. ' +
+      'Pergunte de forma específica (ex.: “como usar ZDP em matemática com este aluno?”).';
+  }
+
+  return {
+    resposta: `${contextoAluno}${corpo}\n\nReferências úteis:\n${refsTxt || '• BNCC — competências e habilidades.'}`,
+    fonte: 'local'
+  };
+}
+
+async function responderChatOpenAI({ mensagem, historico, snapshot }) {
+  const key = (process.env.OPENAI_API_KEY || '').trim();
+  if (!key) return null;
+
+  const { area, referencias } = selecionarReferencias(
+    snapshot?.disciplina || '',
+    snapshot?.nivel || 'sem_dados'
+  );
+  const model = (process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
+
+  const system =
+    'Você é a NICE IA, assistente pedagógica da plataforma VEHO Edu, para professores no Brasil. ' +
+    'Converse de forma clara, prática e respeitosa. Não invente notas, faltas ou fatos do aluno além do contexto. ' +
+    'Quando citar autores, use ideias reconhecidas (Vygotsky, Freire, Piaget, Ausubel, Wallon, BNCC, autores da área) ' +
+    'sem inventar livros ou anos. Sempre lembre que o professor deve revisar antes de usar com a família. ' +
+    'Respostas em português do Brasil, preferencialmente curtas (até ~8 frases), com passos acionáveis quando couber.';
+
+  const contexto = {
+    aluno: snapshot?.aluno
+      ? {
+          nome: snapshot.aluno.nome,
+          turma: snapshot.turma?.nome,
+          disciplina: snapshot.disciplina || null,
+          media: snapshot.media,
+          frequenciaPercentual: snapshot.frequenciaPercentual,
+          totalFaltas: snapshot.totalFaltas,
+          nivel: snapshot.nivel
+        }
+      : null,
+    referencias_curadas: formatarReferenciasParaPrompt(referencias, area)
+  };
+
+  const messages = [
+    { role: 'system', content: system },
+    {
+      role: 'system',
+      content: `Contexto do aluno e referências (JSON):\n${JSON.stringify(contexto)}`
+    },
+    ...normalizarHistoricoChat(historico),
+    { role: 'user', content: String(mensagem).trim().slice(0, 4000) }
+  ];
+
+  const resposta = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.5,
+      max_tokens: 900,
+      messages
+    })
+  });
+
+  if (!resposta.ok) {
+    const corpo = await resposta.text();
+    console.warn('OpenAI NICE chat falhou:', resposta.status, corpo.slice(0, 200));
+    return null;
+  }
+
+  const data = await resposta.json();
+  const texto = data.choices?.[0]?.message?.content;
+  if (!texto || !String(texto).trim()) return null;
+
+  return { resposta: String(texto).trim(), fonte: 'openai' };
+}
+
+/**
+ * Chat interativo NICE IA (OpenAI se houver chave; senão respostas locais).
+ */
+async function conversarNiceIA({
+  mensagem,
+  historico,
+  alunoId,
+  turmaId,
+  disciplina,
+  escolaId
+}) {
+  const texto = String(mensagem || '').trim();
+  if (!texto) {
+    const err = new Error('Mensagem vazia');
+    err.status = 400;
+    throw err;
+  }
+  if (texto.length > 4000) {
+    const err = new Error('Mensagem muito longa (máx. 4000 caracteres)');
+    err.status = 400;
+    throw err;
+  }
+
+  let snapshot = null;
+  if (alunoId && turmaId && escolaId) {
+    snapshot = await montarSnapshot({
+      alunoId,
+      turmaId,
+      disciplina: disciplina ? String(disciplina).trim() : '',
+      escolaId
+    });
+  }
+
+  let gerado = await responderChatOpenAI({
+    mensagem: texto,
+    historico,
+    snapshot
+  });
+  if (!gerado) {
+    gerado = responderChatLocal(texto, snapshot);
+  }
+
+  return {
+    resposta: gerado.resposta,
+    fonte: gerado.fonte,
+    snapshot: snapshot
+      ? {
+          aluno: snapshot.aluno,
+          turma: snapshot.turma,
+          disciplina: snapshot.disciplina,
+          media: snapshot.media,
+          frequenciaPercentual: snapshot.frequenciaPercentual,
+          totalFaltas: snapshot.totalFaltas,
+          nivel: snapshot.nivel
+        }
+      : null
+  };
+}
+
 module.exports = {
   montarSnapshot,
   gerarParecerPedagogico,
+  conversarNiceIA,
   classificarSituacao,
-  gerarTextoLocal
+  gerarTextoLocal,
+  responderChatLocal
 };

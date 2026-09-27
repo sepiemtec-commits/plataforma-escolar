@@ -6,11 +6,16 @@ Gera **parecer descritivo** e **orientações pedagógicas** a partir de notas e
 
 1. Entre no **painel do professor**.
 2. Abra o menu **NICE IA**.
-3. Escolha **turma**, **aluno** e, se quiser, **disciplina**.
-4. Clique em **Gerar parecer**.
-5. Revise os textos nos campos editáveis.
-6. Clique em **Salvar parecer revisado**.
-7. O **histórico** do mesmo aluno lista os pareceres salvos.
+3. (Opcional) Escolha **turma**, **aluno** e **disciplina** para contextualizar.
+4. Use o **chat** para perguntar (estratégias, autores, recuperação, BNCC…).
+5. Ou clique em **Gerar parecer**, revise os textos e **Salvar parecer revisado**.
+6. O **histórico** do mesmo aluno lista os pareceres salvos.
+
+## Chat interativo
+
+Rota: `POST /api/ia/chat` com `{ mensagem, historico?, aluno_id?, turma_id?, disciplina? }`.
+
+Com `OPENAI_API_KEY`, a conversa usa o modelo; sem chave, respostas locais com base pedagógica curada.
 
 ## Motor local (padrão)
 
@@ -44,6 +49,7 @@ Se a chave existir, a geração tenta o modelo externo **recebendo as mesmas ref
 | `POST` | `/api/ia/parecer/gerar` | Gera parecer (não persiste) |
 | `POST` | `/api/ia/parecer/salvar` | Salva parecer revisado |
 | `GET` | `/api/ia/parecer/aluno/:id` | Lista pareceres salvos do aluno |
+| `POST` | `/api/ia/chat` | Chat interativo NICE IA |
 
 Roles: `professor`, `coordenador`, `diretor`, `admin`. O professor só gera/salva para turmas a que está vinculado.
 
