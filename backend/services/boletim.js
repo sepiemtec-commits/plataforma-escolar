@@ -195,7 +195,15 @@ async function montarFichaMatricula(alunoId) {
   if (!aluno) return null;
 
   return {
-    escola: escola?.nome || 'Escola',
+    escola: escola
+      ? {
+          nome: escola.nome,
+          cnpj: escola.cnpj || null,
+          endereco: escola.endereco || null,
+          telefone: escola.telefone || null,
+          email: escola.email || null
+        }
+      : { nome: 'Escola' },
     matricula: aluno.matriculaNumero || aluno.cpf,
     dadosAcademicos: {
       anoLetivo: escola?.configuracao?.anoLetivo || new Date().getFullYear(),

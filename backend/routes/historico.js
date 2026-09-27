@@ -19,12 +19,21 @@ const DISCIPLINAS_PADRAO = [
 
 router.get('/aluno/:alunoId', autenticacao, async (req, res) => {
   try {
-    const aluno = await assertAlunoEscola(req, req.params.alunoId, { select: 'nome cpf' });
+    const aluno = await assertAlunoEscola(req, req.params.alunoId, { select: 'nome cpf escola_id' });
     const historicos = await HistoricoEscolar.find({
       aluno_id: req.params.alunoId,
       ...filtroEscola(req)
     }).sort({ anoLetivo: -1 });
-    res.json({ sucesso: true, aluno, historicos });
+    const escolaId = req.usuario.escola_id || aluno.escola_id;
+    const escola = escolaId ? await Escola.findById(escolaId).select('nome cnpj endereco') : null;
+    res.json({
+      sucesso: true,
+      aluno,
+      historicos,
+      escola: escola
+        ? { nome: escola.nome, cnpj: escola.cnpj || null, endereco: escola.endereco || null }
+        : null
+    });
   } catch (error) {
     if (responderErroTenant(res, error)) return;
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao listar histórico' });

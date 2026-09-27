@@ -61,15 +61,22 @@ async function initFichaIndividual() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${f.componentes.map(c => `
+                        ${f.componentes.map(c => {
+                            const resultado = c.resultado || '—';
+                            const classeRes =
+                                resultado === 'Aprovado' ? 'rel-resultado-ok'
+                                    : resultado === 'Reprovado' ? 'rel-resultado-reprov'
+                                        : resultado === 'Recuperação' ? 'rel-resultado-rec'
+                                            : '';
+                            return `
                             <tr>
                                 <td>${escaparHtml(c.disciplina)}</td>
                                 <td>${escaparHtml(c.cargaHoraria)} Hrs</td>
                                 <td>${escaparHtml(formatarNotaBR(c.resultadoFinal))}</td>
-                                <td><strong>${escaparHtml(c.resultado || '—')}</strong></td>
+                                <td class="${classeRes}"><strong>${escaparHtml(resultado)}</strong></td>
                                 <td>${escaparHtml(c.faltas)}</td>
-                            </tr>
-                        `).join('')}
+                            </tr>`;
+                        }).join('')}
                     </tbody>
                 </table>
                 <p class="rel-rodape-escola" style="text-align:center;margin-top:24px;font-size:12px;color:#555;">
@@ -88,8 +95,17 @@ async function initFichaMatricula() {
             const res = await api.obterFichaMatricula(alunoId);
             const f = res.ficha;
 
+            const escolaNome = typeof f.escola === 'string' ? f.escola : (f.escola?.nome || 'Escola');
+            const escolaCnpj = typeof f.escola === 'object' ? f.escola?.cnpj : null;
+            const escolaEndereco = typeof f.escola === 'object' ? f.escola?.endereco : null;
+
             document.getElementById('conteudo').innerHTML = `
-                <p class="rel-escola-nome">${escaparHtml(f.escola)}</p>
+                <header class="rel-cabecalho-escola">
+                    <p class="rel-escola-nome">${escaparHtml(escolaNome)}</p>
+                    ${escolaCnpj ? `<p class="rel-escola-meta">CNPJ: ${escaparHtml(escolaCnpj)}</p>` : ''}
+                    ${escolaEndereco ? `<p class="rel-escola-meta">${escaparHtml(escolaEndereco)}</p>` : ''}
+                    <p class="rel-doc-titulo">Ficha de Matrícula</p>
+                </header>
                 <h2 style="color:var(--rel-azul);margin:20px 0 10px;">Dados Acadêmicos</h2>
                 <div class="rel-ficha-dados">
                     <p><strong>Matrícula:</strong> ${escaparHtml(f.matricula)}</p>
@@ -112,7 +128,10 @@ async function initFichaMatricula() {
                     <p><strong>Telefone:</strong> ${escaparHtml(f.dadosAluno.telefone)}</p>
                     <p><strong>Cidade:</strong> ${escaparHtml(f.dadosAluno.cidade)} · <strong>UF:</strong> ${escaparHtml(f.dadosAluno.uf)}</p>
                     <p><strong>CEP:</strong> ${escaparHtml(f.dadosAluno.cep)}</p>
-                </div>`;
+                </div>
+                <p class="rel-rodape-escola" style="text-align:center;margin-top:24px;font-size:12px;color:#555;">
+                    Documento emitido pela plataforma VEHO Edu · ${escaparHtml(escolaNome)}
+                </p>`;
         } catch (erro) {
             exibirErroRelatorio(erro.message);
         }
@@ -262,6 +281,11 @@ async function carregarHistorico(alunoId) {
     }</td></tr>`;
 
     document.getElementById('conteudo').innerHTML = `
+        <header class="rel-cabecalho-escola">
+            <p class="rel-escola-nome">${escaparHtml(res.escola?.nome || 'Escola')}</p>
+            ${res.escola?.cnpj ? `<p class="rel-escola-meta">CNPJ: ${escaparHtml(res.escola.cnpj)}</p>` : ''}
+            <p class="rel-doc-titulo">Histórico Escolar</p>
+        </header>
         <table class="rel-tabela">
             <thead>
                 <tr>
@@ -273,7 +297,10 @@ async function carregarHistorico(alunoId) {
                 </tr>
             </thead>
             <tbody>${linhas}</tbody>
-        </table>`;
+        </table>
+        <p class="rel-rodape-escola" style="text-align:center;margin-top:24px;font-size:12px;color:#555;">
+            Documento emitido pela plataforma VEHO Edu · ${escaparHtml(res.escola?.nome || 'Escola')}
+        </p>`;
 
     if (soConsulta) return;
 
