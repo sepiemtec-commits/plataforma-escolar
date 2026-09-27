@@ -382,29 +382,77 @@ function ideiasComputacaoDesplugada(qtd) {
   return banco.slice(0, n).map((item, i) => `${i + 1}) ${item.titulo}\n${item.texto}`).join('\n\n');
 }
 
-function ideiasGenericasAula(msg, qtd) {
-  const m = String(msg || '').toLowerCase();
-  if (/matem/.test(m)) {
-    const ideias = [
+function ideiasPorDisciplina(msgOuDisciplina, qtd) {
+  const m = String(msgOuDisciplina || '').toLowerCase();
+  let ideias;
+
+  if (/computa|desplugad|algoritm|programa[cç]|scratch|coding/.test(m)) {
+    return ideiasComputacaoDesplugada(qtd);
+  }
+  if (/matem|fra[cç]|geometr|álgebra|algebra|n[uú]mero/.test(m)) {
+    ideias = [
       'Estação de problemas em grupos: cada trio resolve um problema diferente e ensina o método aos outros (ensino entre pares / ZDP).',
       'Manipulativos concretos (tampinhas, material dourado, geoplano) antes do registro simbólico — do concreto ao abstrato.',
-      '“Erro produtivo”: coletar 2 respostas incorretas anônimas e discutir o raciocínio, sem expor o aluno.'
+      '“Erro produtivo”: coletar 2 respostas incorretas anônimas e discutir o raciocínio, sem expor o aluno.',
+      'Problema do cotidiano (compra, receita, medida da sala) para ancorar o conceito (Ausubel / aprendizagem significativa).'
     ];
-    return ideias.slice(0, qtd).map((t, i) => `${i + 1}) ${t}`).join('\n\n');
-  }
-  if (/portugu|leitura|escrita/.test(m)) {
-    const ideias = [
+  } else if (/portugu|leitura|escrita|reda[cç]|literat/.test(m)) {
+    ideias = [
       'Leitura compartilhada com pausas para previsão e inferência (estratégias de Solé).',
       'Produção em duplas: um dita, outro escreve; depois trocam e revisam juntos.',
-      'Cantinho de gêneros textuais da vida real ( bilhete, receita, notícia) alinhado ao letramento.'
+      'Cantinho de gêneros textuais da vida real (bilhete, receita, notícia) alinhado ao letramento (Magda Soares).',
+      'Reescrita coletiva no quadro: a turma melhora um texto anônimo (clareza, pontuação, coesão).'
     ];
-    return ideias.slice(0, qtd).map((t, i) => `${i + 1}) ${t}`).join('\n\n');
+  } else if (/hist[oó]ria/.test(m)) {
+    ideias = [
+      'Tribunal da história: a turma analisa uma fonte (imagem, carta, notícia de época) e argumenta “como sabemos?” antes de concluir.',
+      'Linha do tempo viva: alunos encenam ou seguram cartazes de eventos e reordenam a sequência, discutindo causa e consequência.',
+      'Passado–presente: relacione o tema a um problema atual do bairro/escola (Freire — leitura crítica do mundo).'
+    ];
+  } else if (/geograf/.test(m)) {
+    ideias = [
+      'Mapa do trajeto casa–escola: localizar pontos, distâncias e paisagens do cotidiano (Milton Santos — espaço vivido).',
+      'Comparação de mapas (bairro x cidade x país): o que muda na escala? Treino de raciocínio geográfico BNCC.',
+      'Saída de campo curta no pátio/entorno: observar relevo, vegetação, fluxos e registrar em croqui.'
+    ];
+  } else if (/ci[eê]ncia|biolog|f[ií]sica|qu[ií]mica|natureza/.test(m)) {
+    ideias = [
+      'Ciclo pergunta → hipótese → teste simples → conclusão com registro (Dewey / investigação escolar).',
+      'Estação de evidências: objetos ou fotos para classificar, medir ou comparar antes de nomear o conceito.',
+      'Modelo com material reciclável (sistema, célula, ciclo da água) + explicação oral em duplas.'
+    ];
+  } else if (/educa[cç][aã]o\s*f[ií]sica|\bef\b|esporte|corpo/.test(m)) {
+    ideias = [
+      'Circuito de estações motoras com meta clara (cooperação, ritmo, equilíbrio) e rotação a cada 5–7 min.',
+      'Jogo modificado: a turma ajuda a criar 1 regra nova e discute inclusão e fair play depois.',
+      'Autopercepção: ao final, cada aluno marca no cartão “consegui / quase / preciso de ajuda” sem ranqueamento público.'
+    ];
+  } else if (/arte|m[uú]sica|teatro|dan[cç]a/.test(m)) {
+    ideias = [
+      'Observação → experimentação → socialização: ver uma obra/música, experimentar técnica simples e apresentar em 1 min.',
+      'Releitura criativa: reinterpretar um tema com materiais acessíveis (jornal, giz, corpo, voz).',
+      'Diário estético: registrar em desenho ou frase curta “o que senti / o que descobri” (processo > produto).'
+    ];
+  } else if (/ingl[eê]s|espanhol|estrangeira/.test(m)) {
+    ideias = [
+      'Info gap em pares: cada um tem metade da informação e precisa falar para completar a tarefa.',
+      'Role-play curto de situação real (cantina, apresentação, pedido de ajuda) com 6–8 falas modelo.',
+      'Vocabulário em contexto: cartões de imagem + frase completa, nunca lista solta de palavras.'
+    ];
+  } else if (/filosof|sociolog|humanas/.test(m)) {
+    ideias = [
+      'Dilema ético em círculo: 1 caso curto, regras de escuta e 2 rodadas de argumento + contra-argumento.',
+      'Conceito em 3 atos: definição espontânea → leitura/mini-texto → redefinição coletiva no quadro.',
+      'Conexão com a vida escolar: “onde isso aparece na nossa turma?” (Freire — problematização).'
+    ];
+  } else {
+    ideias = [
+      'Rotação por estações (3 postos de 10–12 min): exploração, prática guiada e desafio — todos passam pelos três.',
+      'Pergunta-problematizadora no início (Freire): parta de uma situação real da turma e só depois formalize o conteúdo.',
+      'Saída com evidência rápida: ticket de saída (1 frase ou desenho) mostrando o que aprendeu hoje.'
+    ];
   }
-  const ideias = [
-    'Rotação por estações (3 postos de 10–12 min): exploração, prática guiada e desafio — todos passam pelos três.',
-    'Pergunta-problematizadora no início (Freire): parta de uma situação real da turma e só depois formalize o conteúdo.',
-    'Saída com evidência rápida: ticket de saída (1 frase ou desenho) mostrando o que aprendeu hoje.'
-  ];
+
   return ideias.slice(0, qtd).map((t, i) => `${i + 1}) ${t}`).join('\n\n');
 }
 
@@ -424,21 +472,23 @@ function responderChatLocal(mensagem, snapshot) {
     })
     .slice(0, 2);
 
-  const pedindoIdeias = /ideia|atividade|estrat[eé]gia|proposta|como\s+(trabalhar|fazer|ensinar|abordar)|desplugad|din[aâ]mica|oficina/.test(msgL);
+  const pedindoIdeias = /ideia|atividade|estrat[eé]gia|proposta|como\s+(trabalhar|fazer|ensinar|abordar|aplicar)|desplugad|din[aâ]mica|oficina|sugest|exerc[ií]cio|aula\s+(de|sobre)|trabalhar/.test(msgL);
   const qtd = quantidadeIdeiasPedidas(msgL);
+  const temaDetectado = disciplinaCtx || disciplinaDaMensagem(msg);
 
   let corpo;
 
-  if (/desplugad|computa.*sem\s*comput|pensamento\s*computacional|computa[cç][aã]o/.test(msgL) &&
-      (pedindoIdeias || /trabalhar|atividade|aula|estudante|aluno|turma/.test(msgL) || /desplugad/.test(msgL))) {
+  if (/desplugad|computa.*sem\s*comput|pensamento\s*computacional/.test(msgL) ||
+      (/computa[cç][aã]o|algoritm|scratch|coding/.test(msgL) && (pedindoIdeias || /estudante|aluno|turma|aula/.test(msgL)))) {
     corpo =
       `Aqui vão ${qtd} ideias de computação desplugada (sem computador), prontas para sala:\n\n` +
       ideiasComputacaoDesplugada(qtd) +
       '\n\nDica: ao final, peça que a turma nomeie o conceito (algoritmo, condição, depuração) com as próprias palavras — isso fixa a metáfora.';
-  } else if (pedindoIdeias) {
+  } else if (pedindoIdeias || temaDetectado) {
     corpo =
-      `Sugestões práticas para a sua pergunta:\n\n` +
-      ideiasGenericasAula(msgL, qtd);
+      `Sugestões práticas${temaDetectado ? ` para ${temaDetectado}` : ''}:\n\n` +
+      ideiasPorDisciplina(temaDetectado || msgL, qtd) +
+      `\n\nSe quiser, peça o ano/série (ex.: “5º ano”) que eu ajusto o nível.`;
   } else if (/vygotsky|zdp|proximal|andaime|scaffolding/.test(msgL)) {
     corpo =
       'A Zona de Desenvolvimento Proximal (Vygotsky) é o que o aluno faz com mediação, mas ainda não sozinho.\n\n' +
@@ -470,10 +520,11 @@ function responderChatLocal(mensagem, snapshot) {
       'Wallon (afeto e vínculo como condição de aprender). Peça uma disciplina ou uma atividade que eu detalhe o passo a passo.';
   } else {
     corpo =
-      'Entendi sua pergunta. Em termos práticos: defina o objetivo da aula, escolha uma evidência de aprendizagem e ' +
-      'use uma sequência curto–médio–longo (exploração → prática guiada → desafio).\n\n' +
-      'Posso detalhar melhor se você pedir, por exemplo: “2 ideias de computação desplugada”, ' +
-      '“como recuperar frações com ZDP” ou “atividade de leitura para 5º ano”.';
+      'Posso ajudar com ideias de aula por disciplina. Experimente perguntas como:\n' +
+      '• “2 ideias de história com fontes”\n' +
+      '• “atividades de frações para 5º ano”\n' +
+      '• “como trabalhar ciências por investigação”\n' +
+      '• “duas ideias de computação desplugada”';
   }
 
   const partes = [corpo];
@@ -503,7 +554,7 @@ function responderChatLocal(mensagem, snapshot) {
 
 async function responderChatOpenAI({ mensagem, historico, snapshot }) {
   const key = (process.env.OPENAI_API_KEY || '').trim();
-  if (!key) return null;
+  if (!key) return { ok: false, motivo: 'sem_chave' };
 
   const disciplinaCtx = snapshot?.disciplina || disciplinaDaMensagem(mensagem) || '';
   const { area, referencias } = selecionarReferencias(
@@ -548,31 +599,48 @@ async function responderChatOpenAI({ mensagem, historico, snapshot }) {
     { role: 'user', content: String(mensagem).trim().slice(0, 4000) }
   ];
 
-  const resposta = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.55,
-      max_tokens: 1100,
-      messages
-    })
-  });
+  try {
+    const resposta = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.55,
+        max_tokens: 1100,
+        messages
+      })
+    });
 
-  if (!resposta.ok) {
-    const corpo = await resposta.text();
-    console.warn('OpenAI NICE chat falhou:', resposta.status, corpo.slice(0, 200));
-    return null;
+    if (!resposta.ok) {
+      const corpo = await resposta.text();
+      console.warn('OpenAI NICE chat falhou:', resposta.status, corpo.slice(0, 200));
+      let motivo = `http_${resposta.status}`;
+      try {
+        const j = JSON.parse(corpo);
+        const code = j?.error?.code || j?.error?.type || '';
+        if (/insufficient_quota|credit_balance|billing/i.test(`${code} ${j?.error?.message || ''}`)) {
+          motivo = 'sem_creditos';
+        } else if (resposta.status === 401) {
+          motivo = 'chave_invalida';
+        }
+      } catch {
+        /* ignore */
+      }
+      return { ok: false, motivo };
+    }
+
+    const data = await resposta.json();
+    const texto = data.choices?.[0]?.message?.content;
+    if (!texto || !String(texto).trim()) return { ok: false, motivo: 'resposta_vazia' };
+
+    return { ok: true, resposta: String(texto).trim(), fonte: 'openai' };
+  } catch (e) {
+    console.warn('OpenAI NICE chat erro de rede:', e.message);
+    return { ok: false, motivo: 'rede' };
   }
-
-  const data = await resposta.json();
-  const texto = data.choices?.[0]?.message?.content;
-  if (!texto || !String(texto).trim()) return null;
-
-  return { resposta: String(texto).trim(), fonte: 'openai' };
 }
 
 /**
@@ -608,18 +676,20 @@ async function conversarNiceIA({
     });
   }
 
-  let gerado = await responderChatOpenAI({
+  const openai = await responderChatOpenAI({
     mensagem: texto,
     historico,
     snapshot
   });
-  if (!gerado) {
-    gerado = responderChatLocal(texto, snapshot);
-  }
+
+  const gerado = openai?.ok
+    ? { resposta: openai.resposta, fonte: 'openai' }
+    : responderChatLocal(texto, snapshot);
 
   return {
     resposta: gerado.resposta,
     fonte: gerado.fonte,
+    openaiMotivo: openai?.ok ? null : (openai?.motivo || null),
     snapshot: snapshot
       ? {
           aluno: snapshot.aluno,

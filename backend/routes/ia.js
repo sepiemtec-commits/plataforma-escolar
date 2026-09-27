@@ -167,13 +167,22 @@ router.post(
         escolaId: req.usuario.escola_id
       });
 
+      const avisoLocal =
+        resultado.openaiMotivo === 'sem_creditos'
+          ? 'NICE IA (motor local): a conta OpenAI está sem créditos. Respostas pedagógicas locais ativas.'
+          : resultado.openaiMotivo === 'sem_chave'
+            ? 'NICE IA (motor local). Configure OPENAI_API_KEY para respostas mais ricas.'
+            : resultado.openaiMotivo
+              ? `NICE IA (motor local; OpenAI indisponível: ${resultado.openaiMotivo}).`
+              : 'NICE IA (motor local).';
+
       res.json({
         sucesso: true,
         ...resultado,
         aviso:
           resultado.fonte === 'openai'
             ? 'NICE IA (modelo externo). Revise antes de usar com a família.'
-            : 'NICE IA (motor local). Para respostas mais ricas, configure OPENAI_API_KEY.'
+            : avisoLocal
       });
     } catch (error) {
       if (responderErroTenant(res, error)) return;
