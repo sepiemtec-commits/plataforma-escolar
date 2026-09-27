@@ -34,8 +34,19 @@ GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 4. Na escola: Diretor → Configurações (ou Secretaria → Backup) → cole o link da pasta → compartilhe a pasta com o e-mail `client_email` da service account (permissão Editor).
 5. Clique em **Gerar backup agora**.
 
+## Restauração
+
+Diretor/Secretaria podem:
+
+1. Enviar o arquivo `.json.gz` baixado, ou
+2. Clicar em **Restaurar neste VEHO** em um backup já gerado no servidor.
+
+O VEHO recolocará os registros (por `_id`) em alunos, turmas, notas, presença, PEI, etc.  
+Só aceita backup da **mesma escola**. Senhas de usuários existentes não são alteradas.
+
 ## Limites do MVP
 
 - Não inclui binários de documentos (PDF/fotos) no pacote — só metadados.
 - Não substitui backup Atlas da infraestrutura VEHO; é cópia operacional da escola.
 - Sem service account, o botão ainda gera e baixa o arquivo; o envio ao Drive fica pendente.
+- Formato: **JSON compactado (.json.gz)**, não CSV.

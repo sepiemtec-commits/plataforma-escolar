@@ -637,6 +637,30 @@ class API {
             nomeArquivo || 'veho-backup.json.gz'
         );
     }
+    async restaurarBackupArquivo(arquivo) {
+        const token = localStorage.getItem('token');
+        this.token = token;
+        const form = new FormData();
+        form.append('arquivo', arquivo);
+        const headers = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const resposta = await fetch(`${this.baseURL}/backup/restaurar`, {
+            method: 'POST',
+            headers,
+            body: form
+        });
+        const dados = await resposta.json().catch(() => ({}));
+        if (!resposta.ok) {
+            throw new Error(dados.mensagem || 'Erro ao restaurar backup');
+        }
+        return dados;
+    }
+    async restaurarBackupId(backupId) {
+        return this.requisicao(`/backup/${backupId}/restaurar`, {
+            method: 'POST',
+            body: '{}'
+        });
+    }
 
     // IA PEDAGÓGICA
     async gerarParecerIA(dados) {

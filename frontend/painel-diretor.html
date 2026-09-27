@@ -205,9 +205,9 @@
                     <hr style="margin:20px 0;border:none;border-top:1px solid #e0e0e0;">
                     <h3 style="margin-bottom:8px;">Backup dos dados</h3>
                     <p class="texto-muted" style="margin-bottom:12px;font-size:14px;">
-                        Gere uma cópia dos dados desta escola (alunos, notas, presença, PEI, etc.).
-                        Cadastre o link de uma pasta do Google Drive para envio automático quando a VEHO ativar a conta de serviço.
-                        O download local sempre fica disponível.
+                        O backup é um arquivo <strong>.json.gz</strong> (dados estruturados da escola — não é CSV).
+                        Gere uma cópia, guarde no Drive e, se precisar, restaure neste VEHO nos campos corretos
+                        (alunos, notas, presença, PEI, etc.).
                     </p>
                     <div class="form-group">
                         <label for="backupDriveUrl">Link da pasta no Google Drive</label>
@@ -217,7 +217,12 @@
                         <button class="btn btn-secundario" id="btnSalvarDriveBackup" type="button">Salvar pasta do Drive</button>
                         <button class="btn btn-sucesso" id="btnGerarBackup" type="button">Gerar backup agora</button>
                     </div>
-                    <p id="backupStatus" class="texto-muted" style="font-size:13px;margin-bottom:12px;"></p>
+                    <div class="form-group" style="margin-top:16px;">
+                        <label for="backupArquivoRestore">Restaurar de um arquivo .json.gz</label>
+                        <input type="file" id="backupArquivoRestore" accept=".gz,.json,application/gzip,application/json">
+                    </div>
+                    <button class="btn btn-secundario" id="btnRestaurarBackup" type="button">Restaurar arquivo</button>
+                    <p id="backupStatus" class="texto-muted" style="font-size:13px;margin:12px 0;"></p>
                     <div id="listaBackups"></div>
                     <hr style="margin:20px 0;border:none;border-top:1px solid #e0e0e0;">
                     <h3 style="margin-bottom:8px;">Assinatura VEHO</h3>

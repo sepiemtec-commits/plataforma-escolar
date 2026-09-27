@@ -70,6 +70,7 @@ async function carregarPainelBackup() {
                         <p style="margin:6px 0;font-size:13px;color:#566573;">${escaparHtml(quando)} · ${escaparHtml(por)} · ${escaparHtml(tam)} · ${b.registros || 0} registros</p>
                         <p style="margin:0 0 8px;font-size:13px;">${drive}</p>
                         <button type="button" class="btn btn-pequeno" data-dl-backup="${escaparHtml(b._id)}" data-nome="${escaparHtml(b.nomeArquivo)}">Baixar</button>
+                        <button type="button" class="btn btn-pequeno btn-secundario" data-rest-backup="${escaparHtml(b._id)}" style="margin-left:6px;">Restaurar neste VEHO</button>
                     </article>`;
                 }).join('');
                 lista.querySelectorAll('[data-dl-backup]').forEach((btn) => {
@@ -81,6 +82,18 @@ async function carregarPainelBackup() {
                             );
                         } catch (e) {
                             alert(e.message || 'Erro no download');
+                        }
+                    });
+                });
+                lista.querySelectorAll('[data-rest-backup]').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        if (!confirm('Restaurar este backup nesta escola? Dados com o mesmo ID serão atualizados.')) return;
+                        try {
+                            const res = await api.restaurarBackupId(btn.getAttribute('data-rest-backup'));
+                            alert(res.mensagem || 'Restaurado');
+                            await carregarPainelBackup();
+                        } catch (e) {
+                            alert(e.message || 'Erro ao restaurar');
                         }
                     });
                 });
@@ -140,7 +153,36 @@ async function gerarBackupAgora() {
     }
 }
 
+async function restaurarBackupArquivoAgora() {
+    const input = document.getElementById('backupArquivoRestore');
+    const arquivo = input?.files?.[0];
+    if (!arquivo) {
+        alert('Escolha o arquivo .json.gz gerado pelo VEHO');
+        return;
+    }
+    if (!confirm('Restaurar este arquivo nesta escola? Registros com o mesmo ID serão atualizados.')) return;
+    const btn = document.getElementById('btnRestaurarBackup');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Restaurando…';
+    }
+    try {
+        const res = await api.restaurarBackupArquivo(arquivo);
+        alert(res.mensagem || 'Backup restaurado');
+        if (input) input.value = '';
+        await carregarPainelBackup();
+    } catch (e) {
+        alert(e.message || 'Erro ao restaurar');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Restaurar arquivo';
+        }
+    }
+}
+
 function configurarEventosBackup() {
     document.getElementById('btnSalvarDriveBackup')?.addEventListener('click', salvarPastaDriveBackup);
     document.getElementById('btnGerarBackup')?.addEventListener('click', gerarBackupAgora);
+    document.getElementById('btnRestaurarBackup')?.addEventListener('click', restaurarBackupArquivoAgora);
 }

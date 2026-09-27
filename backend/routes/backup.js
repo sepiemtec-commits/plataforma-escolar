@@ -1,6 +1,7 @@
 // backend/routes/backup.js — backup da escola (diretor / secretaria)
 const express = require('express');
 const fs = require('fs');
+const multer = require('multer');
 const router = express.Router();
 const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
 const {
@@ -9,10 +10,25 @@ const {
   salvarConfigBackup,
   listarBackups,
   obterBackupDaEscola,
-  resolverCaminhoBackup
+  resolverCaminhoBackup,
+  restaurarBackupArquivo,
+  restaurarBackupRegistro
 } = require('../services/backupEscola');
 
 const rolesBackup = ['diretor', 'secretaria', 'admin'];
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 40 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    const nome = String(file.originalname || '').toLowerCase();
+    if (nome.endsWith('.json') || nome.endsWith('.json.gz') || nome.endsWith('.gz')) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error('Envie o arquivo .json.gz gerado pelo VEHO'));
+  }
+});
 
 router.get('/config', autenticacao, verificarRole(...rolesBackup), requerEscola, async (req, res) => {
   try {
@@ -59,7 +75,7 @@ router.post('/gerar', autenticacao, verificarRole(...rolesBackup), requerEscola,
       ...resultado,
       mensagem: resultado.drive?.enviado
         ? 'Backup gerado e enviado ao Google Drive.'
-        : 'Backup gerado. Você pode baixar o arquivo agora.'
+        : 'Backup gerado (arquivo .json.gz). Você pode baixar agora.'
     });
   } catch (error) {
     console.error('Erro backup:', error);
@@ -69,6 +85,73 @@ router.post('/gerar', autenticacao, verificarRole(...rolesBackup), requerEscola,
     });
   }
 });
+
+router.post(
+  '/restaurar',
+  autenticacao,
+  verificarRole(...rolesBackup),
+  requerEscola,
+  (req, res, next) => {
+    upload.single('arquivo')(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ sucesso: false, mensagem: err.message || 'Upload inválido' });
+      }
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      if (!req.file?.buffer) {
+        return res.status(400).json({ sucesso: false, mensagem: 'Envie o arquivo de backup (.json.gz)' });
+      }
+      const resultado = await restaurarBackupArquivo({
+        escolaId: req.usuario.escola_id,
+        usuarioId: req.usuario._id,
+        buffer: req.file.buffer,
+        nomeArquivo: req.file.originalname
+      });
+      res.json({
+        sucesso: true,
+        ...resultado,
+        mensagem:
+          'Backup restaurado nesta escola. Usuários novos receberam senha temporária (peça redefinição).'
+      });
+    } catch (error) {
+      console.error('Erro restaurar backup:', error);
+      res.status(error.status || 500).json({
+        sucesso: false,
+        mensagem: error.message || 'Erro ao restaurar backup'
+      });
+    }
+  }
+);
+
+router.post(
+  '/:id/restaurar',
+  autenticacao,
+  verificarRole(...rolesBackup),
+  requerEscola,
+  async (req, res) => {
+    try {
+      const resultado = await restaurarBackupRegistro({
+        escolaId: req.usuario.escola_id,
+        usuarioId: req.usuario._id,
+        backupId: req.params.id
+      });
+      res.json({
+        sucesso: true,
+        ...resultado,
+        mensagem: 'Backup do servidor restaurado nesta escola.'
+      });
+    } catch (error) {
+      console.error('Erro restaurar backup id:', error);
+      res.status(error.status || 500).json({
+        sucesso: false,
+        mensagem: error.message || 'Erro ao restaurar backup'
+      });
+    }
+  }
+);
 
 router.get('/:id/download', autenticacao, verificarRole(...rolesBackup), requerEscola, async (req, res) => {
   try {
