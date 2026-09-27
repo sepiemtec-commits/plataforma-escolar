@@ -553,7 +553,7 @@ input:focus, select:focus, textarea:focus {
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    background: linear-gradient(180deg, #26c6da 0%, #00acc1 100%);
+    background: var(--cor-sidebar);
     color: #fff;
     padding: 12px 16px;
     font-weight: 600;
@@ -592,8 +592,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .portal-disciplinas-tabela thead {
-    background: #e0f7fa;
-    color: #006064;
+    background: var(--cor-sidebar);
+    color: #fff;
 }
 
 .portal-disciplinas-tabela th,
@@ -630,7 +630,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .portal-bloco-secundario .portal-bloco-header {
-    background: linear-gradient(180deg, #78909c 0%, #607d8b 100%);
+    background: var(--cor-sidebar);
 }
 
 .portal-horario-header-acoes {
@@ -676,19 +676,19 @@ input:focus, select:focus, textarea:focus {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    border: 1px solid #b2ebf2;
+    border: 1px solid var(--cor-borda);
     border-radius: 6px;
     padding: 14px 16px;
-    background: #e0f7fa;
-    color: #006064;
+    background: var(--cor-50);
+    color: var(--cor-texto);
     cursor: pointer;
     text-align: left;
     transition: background 0.15s, transform 0.1s, border-color 0.15s;
 }
 
 .horario-dia-btn:hover {
-    background: #b2ebf2;
-    border-color: #00acc1;
+    background: var(--cor-50-forte);
+    border-color: var(--cor-sidebar);
     transform: translateY(-1px);
 }
 
@@ -738,7 +738,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .tabela-horarios thead {
-    background: #1565c0;
+    background: var(--cor-sidebar);
     color: #fff;
 }
 
@@ -897,7 +897,7 @@ input:focus, select:focus, textarea:focus {
 .portal-acao-notas { background: #e53935; }
 .portal-acao-material { background: #43a047; }
 .portal-acao-diario { background: #9e9e9e; }
-.portal-acao-alunos { background: #29b6f6; }
+.portal-acao-alunos { background: var(--cor-sidebar); }
 .portal-acao-boletim { background: #fb8c00; }
 .portal-acao-frequencia { background: #1565c0; }
 
@@ -1236,7 +1236,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .btn-notas-salvar {
-    background: linear-gradient(180deg, #5bc0de 0%, #46b8da 100%);
+    background: var(--cor-sidebar);
     color: #fff;
 }
 
@@ -1264,7 +1264,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .tabela-notas-academicas thead tr {
-    background: linear-gradient(180deg, #4a7eb8 0%, #3d6a9f 100%);
+    background: var(--cor-sidebar);
     color: #fff;
 }
 
@@ -1272,7 +1272,7 @@ input:focus, select:focus, textarea:focus {
     padding: 10px 12px;
     text-align: center;
     font-weight: 600;
-    border: 1px solid #3a6594;
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .tabela-notas-academicas th:first-child {
@@ -1314,7 +1314,7 @@ input:focus, select:focus, textarea:focus {
     width: 72px;
     padding: 5px 6px;
     text-align: center;
-    border: 2px solid #5bc0de;
+    border: 2px solid var(--cor-sidebar);
     border-radius: 3px;
     font-size: 14px;
     background: #fff;

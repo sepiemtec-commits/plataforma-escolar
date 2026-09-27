@@ -132,7 +132,7 @@ body.relatorio-page {
 }
 
 .rel-btn-primario {
-    background: linear-gradient(180deg, #5bc0de 0%, #46b8da 100%);
+    background: var(--rel-azul);
     color: #fff;
 }
 
@@ -153,7 +153,7 @@ body.relatorio-page {
 }
 
 .rel-tabela thead tr {
-    background: linear-gradient(180deg, var(--rel-azul-claro) 0%, var(--rel-azul) 100%);
+    background: var(--rel-azul);
     color: #fff;
 }
 
@@ -182,7 +182,7 @@ body.relatorio-page {
     width: 60px;
     padding: 4px;
     text-align: center;
-    border: 2px solid #5bc0de;
+    border: 2px solid var(--rel-azul);
     border-radius: 3px;
 }
 
