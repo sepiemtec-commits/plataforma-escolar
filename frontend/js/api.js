@@ -615,6 +615,29 @@ class API {
         URL.revokeObjectURL(link.href);
     }
 
+    // BACKUP ESCOLAR
+    async obterConfigBackup() {
+        return this.requisicao('/backup/config');
+    }
+    async salvarConfigBackup(dados) {
+        return this.requisicao('/backup/config', { method: 'PUT', body: JSON.stringify(dados) });
+    }
+    async listarBackupsEscola() {
+        return this.requisicao('/backup/lista');
+    }
+    async gerarBackupEscola(enviarDrive = true) {
+        return this.requisicao('/backup/gerar', {
+            method: 'POST',
+            body: JSON.stringify({ enviarDrive })
+        });
+    }
+    async downloadBackupEscola(backupId, nomeArquivo) {
+        return this._baixarArquivo(
+            `${this.baseURL}/backup/${backupId}/download`,
+            nomeArquivo || 'veho-backup.json.gz'
+        );
+    }
+
     // IA PEDAGÓGICA
     async gerarParecerIA(dados) {
         return this.requisicao('/ia/parecer/gerar', {

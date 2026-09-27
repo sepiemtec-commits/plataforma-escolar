@@ -45,6 +45,7 @@ function formatarDisciplinasFuncionario(funcionario) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     configurarNavegacao();
+    configurarEventosBackup();
     configurarPortalSecretaria();
 
     const usuarioOk = await verificarAutenticacao();
@@ -1660,6 +1661,9 @@ function carregarSecao(secao, linkAtivo) {
         if (document.getElementById('horarioTurmaSelect')?.value) {
             carregarQuadroHorariosSecretaria();
         }
+    }
+    if (secao === 'backup') {
+        carregarPainelBackup();
     }
 }
 

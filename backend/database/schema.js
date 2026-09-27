@@ -105,6 +105,14 @@ const escolaSchema = new mongoose.Schema({
     assinaturaInstituicao: {
       representante: { type: String, default: 'Diretor(a) Escolar' },
       cargo: { type: String, default: 'Direção' }
+    },
+    backup: {
+      driveFolderUrl: { type: String, default: '' },
+      driveFolderId: { type: String, default: '' },
+      ultimoBackupEm: { type: Date },
+      ultimoBackupPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' },
+      ultimoDriveFileId: { type: String, default: '' },
+      ultimoDriveWebViewLink: { type: String, default: '' }
     }
   },
   // Assinatura SaaS (Stripe). Escolas de seed sem Stripe são tratadas como ativas.
@@ -677,6 +685,25 @@ const respostaSimuladoSchema = new mongoose.Schema({
 respostaSimuladoSchema.index({ simulado_id: 1, aluno_id: 1 }, { unique: true });
 respostaSimuladoSchema.index({ escola_id: 1, simulado_id: 1 });
 
+// ==================== BACKUP ESCOLAR ====================
+const backupEscolaSchema = new mongoose.Schema({
+  escola_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Escola', required: true },
+  geradoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
+  nomeArquivo: { type: String, required: true },
+  caminho: { type: String, required: true },
+  tamanhoBytes: { type: Number, default: 0 },
+  colecoes: { type: Number, default: 0 },
+  registros: { type: Number, default: 0 },
+  drive: {
+    enviado: { type: Boolean, default: false },
+    fileId: { type: String },
+    webViewLink: { type: String },
+    erro: { type: String }
+  },
+  dataCriacao: { type: Date, default: Date.now }
+});
+backupEscolaSchema.index({ escola_id: 1, dataCriacao: -1 });
+
 // Exportar modelos
 module.exports = {
   Usuario: mongoose.model('Usuario', usuarioSchema),
@@ -703,5 +730,6 @@ module.exports = {
   RespostaSimulado: mongoose.model('RespostaSimulado', respostaSimuladoSchema),
   ConcurrencyLock: mongoose.model('ConcurrencyLock', concurrencyLockSchema),
   IdempotencyRecord: mongoose.model('IdempotencyRecord', idempotencyRecordSchema),
+  BackupEscola: mongoose.model('BackupEscola', backupEscolaSchema),
   Log: mongoose.model('Log', logSchema)
 };

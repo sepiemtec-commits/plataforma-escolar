@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnDownloadRelatorio').addEventListener('click', baixarRelatorio);
     document.getElementById('btnSalvarConfig').addEventListener('click', salvarConfiguracao);
     document.getElementById('btnPortalAssinatura')?.addEventListener('click', abrirPortalAssinatura);
+    configurarEventosBackup();
     document.getElementById('btnRecuperacaoDash').addEventListener('click', alternarRecuperacaoDash);
     document.getElementById('formCadastroUsuario')?.addEventListener('submit', cadastrarUsuarioDiretor);
     document.getElementById('cadTipo')?.addEventListener('change', atualizarCamposCadastroUsuario);
@@ -138,6 +139,9 @@ function carregarSecao(secao, linkAtivo) {
     if (secao === 'usuarios') {
         atualizarCamposCadastroUsuario();
         carregarListaUsuarios();
+    }
+    if (secao === 'configuracoes') {
+        carregarPainelBackup();
     }
 }
 
