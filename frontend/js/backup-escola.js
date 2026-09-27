@@ -12,7 +12,8 @@ async function carregarPainelBackup() {
             api.listarBackupsEscola()
         ]);
         const cfg = cfgRes.config || {};
-        if (inputDrive) inputDrive.value = cfg.driveFolderUrl || '';
+        if (inputDrive && !inputDrive.value) inputDrive.value = cfg.driveFolderUrl || '';
+        else if (inputDrive && cfg.driveFolderUrl) inputDrive.value = cfg.driveFolderUrl;
 
         if (status) {
             const partes = [];
@@ -86,8 +87,12 @@ async function carregarPainelBackup() {
             }
         }
     } catch (e) {
-        if (status) status.textContent = e.message || 'Erro ao carregar backup';
-        if (lista) lista.innerHTML = `<p style="color:#c62828;">${escaparHtml(e.message || 'Erro')}</p>`;
+        const msg = e.message || 'Erro ao carregar backup';
+        if (status) {
+            status.innerHTML = `${escaparHtml(msg)} · <button type="button" class="btn btn-pequeno" id="btnRetryBackup">Tentar de novo</button>`;
+            document.getElementById('btnRetryBackup')?.addEventListener('click', carregarPainelBackup);
+        }
+        if (lista) lista.innerHTML = '';
     }
 }
 
