@@ -1,11 +1,11 @@
-# IA Pedagógica (professor) — MVP
+# NICE IA (professor) — MVP
 
 Gera **parecer descritivo** e **orientações pedagógicas** a partir de notas e frequência já lançadas no VEHO Edu. O texto **não é publicado automaticamente**: o professor revisa, edita e salva.
 
 ## Como usar
 
 1. Entre no **painel do professor**.
-2. Abra o menu **IA Pedagógica**.
+2. Abra o menu **NICE IA**.
 3. Escolha **turma**, **aluno** e, se quiser, **disciplina**.
 4. Clique em **Gerar parecer**.
 5. Revise os textos nos campos editáveis.
