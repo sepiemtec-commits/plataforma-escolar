@@ -1658,8 +1658,8 @@ async function carregarHtpcProfessor() {
                 <p style="font-size:13px;color:#566573;margin:6px 0;">${escaparHtml(data)} · ${escaparHtml(r.turno || '')} · ${escaparHtml(r.status)} · ${escaparHtml(labelPublico[r.publico] || '')}</p>
                 <p style="white-space:pre-wrap;font-size:14px;">${escaparHtml(r.pauta || '')}</p>
                 ${r.ata ? `<p style="font-size:13px;"><strong>Ata:</strong> ${escaparHtml(r.ata.slice(0, 300))}</p>` : ''}
-                <button type="button" class="btn btn-pequeno ${presente ? 'btn-secundario' : 'btn-sucesso'}" data-htpc-eu="${escaparHtml(r._id)}" data-presente="${presente ? '0' : '1'}">
-                    ${presente ? 'Presente (clique para desmarcar)' : 'Marcar minha presença'}
+                <button type="button" class="btn btn-pequeno ${presente ? 'btn-erro' : 'btn-sucesso'}" data-htpc-eu="${escaparHtml(r._id)}" data-presente="${presente ? '0' : '1'}">
+                    ${presente ? 'Presença confirmada' : 'Marcar minha presença'}
                 </button>
             </article>`;
         }).join('');

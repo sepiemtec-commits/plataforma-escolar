@@ -49,38 +49,85 @@ async function carregarReunioesResponsavel() {
             return;
         }
         const labelPublico = { pais: 'Pais', professores: 'Professores', todos: 'Todos' };
+        const meuId = String(usuario?._id || usuario?.id || '');
+
         box.innerHTML = lista.map((r) => {
             const data = r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '—';
-            const meuId = String(usuario?._id);
-            const eu = (r.participantes || []).find((p) => {
-                const uid = String(p.usuario_id?._id || p.usuario_id || p.professor_id?._id || p.professor_id);
-                return uid === meuId;
-            });
-            const presente = eu?.presente;
-            return `<article style="border:1px solid #d0d7de;border-radius:8px;padding:14px;margin-bottom:12px;background:#fff;">
+            const eu = (r.participantes || []).find((p) => idParticipanteFront(p) === meuId);
+            const presente = Boolean(eu?.presente);
+            return `<article class="htpc-card-resp" style="border:1px solid #d0d7de;border-radius:8px;padding:14px;margin-bottom:12px;background:#fff;">
                 <strong>${escapar(r.titulo)}</strong>
                 <p style="font-size:13px;color:#566573;margin:6px 0;">${escapar(data)} · ${escapar(r.turno || '')} · ${escapar(r.status)} · ${escapar(labelPublico[r.publico] || '')}</p>
                 <p style="white-space:pre-wrap;font-size:14px;">${escapar(r.pauta || '')}</p>
-                <button type="button" class="btn btn-pequeno ${presente ? 'btn-secundario' : 'btn-sucesso'}" data-reuniao-eu="${escapar(r._id)}" data-presente="${presente ? '0' : '1'}">
-                    ${presente ? 'Presente (clique para desmarcar)' : 'Marcar minha presença'}
+                <button type="button"
+                    class="btn btn-pequeno ${presente ? 'btn-erro' : 'btn-sucesso'}"
+                    data-reuniao-eu="${escapar(r._id)}"
+                    data-presente="${presente ? '0' : '1'}"
+                    aria-pressed="${presente ? 'true' : 'false'}">
+                    ${presente ? 'Presença confirmada' : 'Marcar minha presença'}
                 </button>
+                <span class="htpc-feedback" style="display:block;margin-top:8px;font-size:13px;color:#7a8794;"></span>
             </article>`;
         }).join('');
+
         box.querySelectorAll('[data-reuniao-eu]').forEach((btn) => {
             btn.addEventListener('click', async () => {
+                const artigo = btn.closest('.htpc-card-resp');
+                const feedback = artigo?.querySelector('.htpc-feedback');
+                const querPresente = btn.getAttribute('data-presente') === '1';
+                btn.disabled = true;
+                if (feedback) feedback.textContent = 'Salvando...';
                 try {
                     await api.presencaHtpc(btn.getAttribute('data-reuniao-eu'), {
-                        presente: btn.getAttribute('data-presente') === '1'
+                        presente: querPresente
                     });
-                    carregarReunioesResponsavel();
+                    // Atualiza o botão na hora (vermelho = confirmado)
+                    if (querPresente) {
+                        btn.classList.remove('btn-sucesso');
+                        btn.classList.add('btn-erro');
+                        btn.textContent = 'Presença confirmada';
+                        btn.setAttribute('data-presente', '0');
+                        btn.setAttribute('aria-pressed', 'true');
+                        if (feedback) {
+                            feedback.style.color = '#b33a3a';
+                            feedback.textContent = 'Presença confirmada.';
+                        }
+                    } else {
+                        btn.classList.remove('btn-erro');
+                        btn.classList.add('btn-sucesso');
+                        btn.textContent = 'Marcar minha presença';
+                        btn.setAttribute('data-presente', '1');
+                        btn.setAttribute('aria-pressed', 'false');
+                        if (feedback) {
+                            feedback.style.color = '#7a8794';
+                            feedback.textContent = 'Presença desmarcada.';
+                        }
+                    }
                 } catch (e) {
-                    alert(e.message);
+                    if (feedback) {
+                        feedback.style.color = '#c62828';
+                        feedback.textContent = e.message || 'Erro ao registrar presença';
+                    } else {
+                        alert(e.message || 'Erro ao registrar presença');
+                    }
+                } finally {
+                    btn.disabled = false;
                 }
             });
         });
     } catch (e) {
         box.innerHTML = `<p class="alerta alerta-erro">${escapar(e.message)}</p>`;
     }
+}
+
+function idParticipanteFront(p) {
+    const u = p?.usuario_id;
+    if (u && typeof u === 'object') return String(u._id || u.id || '');
+    if (u) return String(u);
+    const pr = p?.professor_id;
+    if (pr && typeof pr === 'object') return String(pr._id || pr.id || '');
+    if (pr) return String(pr);
+    return '';
 }
 
 async function verificarAutenticacao() {

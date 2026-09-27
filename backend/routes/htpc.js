@@ -8,7 +8,13 @@ const rolesGestao = ['coordenador', 'diretor', 'admin'];
 const rolesLeitura = ['coordenador', 'diretor', 'admin', 'professor', 'responsavel'];
 
 function idParticipante(p) {
-  return String(p.usuario_id || p.professor_id || '');
+  const u = p.usuario_id;
+  const pr = p.professor_id;
+  if (u && typeof u === 'object') return String(u._id || '');
+  if (u) return String(u);
+  if (pr && typeof pr === 'object') return String(pr._id || '');
+  if (pr) return String(pr);
+  return '';
 }
 
 function normalizarParticipante(p) {
@@ -318,6 +324,7 @@ router.post('/:id/presenca', autenticacao, verificarRole(...rolesLeitura), reque
       }
     }
 
+    reuniao.markModified('participantes');
     reuniao.dataAtualizacao = new Date();
     await reuniao.save();
 
