@@ -70,6 +70,11 @@ app.listen(PORT, HOST, () => {
     lan.forEach((ip) => console.log(`   http://${ip}:${PORT}`));
   }
   console.log('');
+  try {
+    require('./jobs/backupAgendado').iniciarBackupAgendado();
+  } catch (e) {
+    console.warn('Scheduler backup não iniciado:', e.message);
+  }
 });
 
 module.exports = app;

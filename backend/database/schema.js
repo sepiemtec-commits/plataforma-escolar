@@ -112,7 +112,17 @@ const escolaSchema = new mongoose.Schema({
       ultimoBackupEm: { type: Date },
       ultimoBackupPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' },
       ultimoDriveFileId: { type: String, default: '' },
-      ultimoDriveWebViewLink: { type: String, default: '' }
+      ultimoDriveWebViewLink: { type: String, default: '' },
+      // Agendamento automático
+      agendaAtivo: { type: Boolean, default: false },
+      frequencia: { type: String, enum: ['diaria', 'semanal'], default: 'semanal' },
+      diaSemana: { type: Number, min: 0, max: 6, default: 0 }, // 0=domingo
+      hora: { type: String, default: '03:00' }, // HH:mm (horário de Brasília)
+      proximaExecucao: { type: Date },
+      ultimoAgendadoEm: { type: Date },
+      ultimaFalhaAgendada: { type: String, default: '' },
+      // Alerta se passar X dias sem backup
+      alertaDias: { type: Number, min: 1, max: 90, default: 7 }
     }
   },
   // Assinatura SaaS (Stripe). Escolas de seed sem Stripe são tratadas como ativas.

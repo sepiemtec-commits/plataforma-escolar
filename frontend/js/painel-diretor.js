@@ -96,6 +96,8 @@ async function carregarPainel() {
             });
         }
 
+        verificarAlertaBackupPortal('alertaBackupPortal');
+
     } catch (erro) {
         console.error('Erro ao carregar painel:', erro);
     }

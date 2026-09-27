@@ -29,6 +29,7 @@ const {
 const { extrairFolderId, uploadArquivoDrive, driveConfigurado, emailContaServico } =
   require('../utils/googleDrive');
 const { assertPathInsideRoot } = require('../utils/safePath');
+const { calcularProximaExecucao, montarAlertaBackup } = require('../utils/backupAgenda');
 
 const BACKUP_ROOT = path.join(__dirname, '../../private/backups');
 
@@ -225,6 +226,7 @@ function resolverCaminhoBackup(registro) {
 async function obterConfigBackup(escolaId) {
   const escola = await Escola.findById(escolaId).select('nome configuracao.backup').lean();
   const b = escola?.configuracao?.backup || {};
+  const alerta = montarAlertaBackup(b);
   return {
     escola: escola?.nome,
     driveFolderUrl: b.driveFolderUrl || '',
@@ -232,28 +234,80 @@ async function obterConfigBackup(escolaId) {
     ultimoBackupEm: b.ultimoBackupEm || null,
     ultimoDriveWebViewLink: b.ultimoDriveWebViewLink || '',
     driveProntoNoServidor: driveConfigurado(),
-    emailContaServico: emailContaServico()
+    emailContaServico: emailContaServico(),
+    agendaAtivo: Boolean(b.agendaAtivo),
+    frequencia: b.frequencia || 'semanal',
+    diaSemana: b.diaSemana ?? 0,
+    hora: b.hora || '03:00',
+    proximaExecucao: b.proximaExecucao || null,
+    ultimoAgendadoEm: b.ultimoAgendadoEm || null,
+    ultimaFalhaAgendada: b.ultimaFalhaAgendada || '',
+    alertaDias: b.alertaDias != null ? b.alertaDias : 7,
+    alerta
   };
 }
 
-async function salvarConfigBackup(escolaId, { driveFolderUrl }) {
+async function salvarConfigBackup(escolaId, dados = {}) {
   const escola = await Escola.findById(escolaId);
   if (!escola) {
     const err = new Error('Escola não encontrada');
     err.status = 404;
     throw err;
   }
-  const url = String(driveFolderUrl || '').trim();
-  const folderId = extrairFolderId(url);
-  if (url && !folderId) {
-    const err = new Error('Link da pasta do Drive inválido. Use o link completo da pasta.');
-    err.status = 400;
-    throw err;
-  }
   if (!escola.configuracao) escola.configuracao = {};
   if (!escola.configuracao.backup) escola.configuracao.backup = {};
-  escola.configuracao.backup.driveFolderUrl = url;
-  escola.configuracao.backup.driveFolderId = folderId;
+  const b = escola.configuracao.backup;
+
+  if (dados.driveFolderUrl !== undefined) {
+    const url = String(dados.driveFolderUrl || '').trim();
+    const folderId = extrairFolderId(url);
+    if (url && !folderId) {
+      const err = new Error('Link da pasta do Drive inválido. Use o link completo da pasta.');
+      err.status = 400;
+      throw err;
+    }
+    b.driveFolderUrl = url;
+    b.driveFolderId = folderId;
+  }
+
+  if (dados.agendaAtivo !== undefined) b.agendaAtivo = Boolean(dados.agendaAtivo);
+  if (dados.frequencia === 'diaria' || dados.frequencia === 'semanal') {
+    b.frequencia = dados.frequencia;
+  }
+  if (dados.diaSemana !== undefined && dados.diaSemana !== null && dados.diaSemana !== '') {
+    const d = Number(dados.diaSemana);
+    if (d >= 0 && d <= 6) b.diaSemana = d;
+  }
+  if (dados.hora !== undefined) {
+    const hora = String(dados.hora || '03:00').trim();
+    if (!/^\d{1,2}:\d{2}$/.test(hora)) {
+      const err = new Error('Hora inválida. Use HH:mm (ex.: 03:00).');
+      err.status = 400;
+      throw err;
+    }
+    b.hora = hora.length === 4 ? `0${hora}` : hora;
+  }
+  if (dados.alertaDias !== undefined) {
+    const n = Number(dados.alertaDias);
+    if (!Number.isFinite(n) || n < 1 || n > 90) {
+      const err = new Error('Alerta deve ser entre 1 e 90 dias.');
+      err.status = 400;
+      throw err;
+    }
+    b.alertaDias = Math.round(n);
+  }
+
+  if (b.agendaAtivo) {
+    b.proximaExecucao = calcularProximaExecucao({
+      frequencia: b.frequencia || 'semanal',
+      diaSemana: b.diaSemana ?? 0,
+      hora: b.hora || '03:00'
+    });
+    b.ultimaFalhaAgendada = '';
+  } else {
+    b.proximaExecucao = null;
+  }
+
   escola.markModified('configuracao');
   await escola.save();
   return obterConfigBackup(escolaId);

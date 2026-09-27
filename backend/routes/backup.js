@@ -41,10 +41,8 @@ router.get('/config', autenticacao, verificarRole(...rolesBackup), requerEscola,
 
 router.put('/config', autenticacao, verificarRole(...rolesBackup), requerEscola, async (req, res) => {
   try {
-    const config = await salvarConfigBackup(req.usuario.escola_id, {
-      driveFolderUrl: req.body?.driveFolderUrl
-    });
-    res.json({ sucesso: true, config, mensagem: 'Pasta do Drive salva' });
+    const config = await salvarConfigBackup(req.usuario.escola_id, req.body || {});
+    res.json({ sucesso: true, config, mensagem: 'Configuração de backup salva' });
   } catch (error) {
     res.status(error.status || 500).json({
       sucesso: false,

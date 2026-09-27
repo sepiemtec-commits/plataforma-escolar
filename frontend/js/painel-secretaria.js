@@ -151,6 +151,7 @@ async function carregarDados() {
         preencherSelectHorarioTurma();
         await carregarDisciplinas();
         atualizarCampoDisciplinaFuncionario();
+        verificarAlertaBackupPortal('alertaBackupPortal');
     } catch (erro) {
         mostrarErro(erro.message);
     }

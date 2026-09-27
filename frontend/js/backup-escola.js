@@ -1,5 +1,41 @@
 // frontend/js/backup-escola.js — UI compartilhada (diretor / secretaria)
 
+function toggleDiaSemanaBackup() {
+    const freq = document.getElementById('backupFrequencia')?.value;
+    const grupo = document.getElementById('grupoBackupDiaSemana');
+    if (grupo) grupo.style.display = freq === 'diaria' ? 'none' : '';
+}
+
+function preencherFormAgendaBackup(cfg) {
+    const alertaDias = document.getElementById('backupAlertaDias');
+    const hora = document.getElementById('backupHora');
+    const freq = document.getElementById('backupFrequencia');
+    const dia = document.getElementById('backupDiaSemana');
+    const ativo = document.getElementById('backupAgendaAtivo');
+    if (alertaDias) alertaDias.value = cfg.alertaDias != null ? cfg.alertaDias : 7;
+    if (hora) hora.value = cfg.hora || '03:00';
+    if (freq) freq.value = cfg.frequencia || 'semanal';
+    if (dia) dia.value = String(cfg.diaSemana ?? 0);
+    if (ativo) ativo.checked = Boolean(cfg.agendaAtivo);
+    toggleDiaSemanaBackup();
+}
+
+function renderAlertaBackup(cfg) {
+    const box = document.getElementById('backupAlerta');
+    if (!box) return;
+    const alerta = cfg.alerta;
+    if (!alerta?.ativo) {
+        box.style.display = 'none';
+        box.textContent = '';
+        return;
+    }
+    box.style.display = 'block';
+    box.style.borderColor = alerta.nivel === 'alto' ? '#e57373' : '#f0c36d';
+    box.style.background = alerta.nivel === 'alto' ? '#fdecea' : '#fff8e6';
+    box.style.color = alerta.nivel === 'alto' ? '#8a1f1f' : '#7a5b00';
+    box.textContent = alerta.mensagem;
+}
+
 async function carregarPainelBackup() {
     const status = document.getElementById('backupStatus');
     const lista = document.getElementById('listaBackups');
@@ -12,8 +48,9 @@ async function carregarPainelBackup() {
             api.listarBackupsEscola()
         ]);
         const cfg = cfgRes.config || {};
-        if (inputDrive && !inputDrive.value) inputDrive.value = cfg.driveFolderUrl || '';
-        else if (inputDrive && cfg.driveFolderUrl) inputDrive.value = cfg.driveFolderUrl;
+        if (inputDrive) inputDrive.value = cfg.driveFolderUrl || '';
+        preencherFormAgendaBackup(cfg);
+        renderAlertaBackup(cfg);
 
         if (status) {
             const partes = [];
@@ -22,25 +59,28 @@ async function carregarPainelBackup() {
             } else {
                 partes.push('Nenhum backup gerado ainda.');
             }
-            if (cfg.driveFolderId) {
-                partes.push('Pasta do Drive cadastrada.');
+            if (cfg.agendaAtivo) {
+                partes.push(
+                    `Agenda ${cfg.frequencia || 'semanal'} às ${cfg.hora || '03:00'}` +
+                    (cfg.proximaExecucao
+                        ? ` · próxima: ${new Date(cfg.proximaExecucao).toLocaleString('pt-BR')}`
+                        : '')
+                );
             } else {
-                partes.push('Cadastre o link da pasta do Google Drive.');
+                partes.push('Agenda automática desligada.');
+            }
+            if (cfg.driveFolderId) partes.push('Pasta do Drive cadastrada.');
+            else partes.push('Cadastre o link da pasta do Google Drive.');
+            if (cfg.ultimaFalhaAgendada) {
+                partes.push(`Última falha agendada: ${cfg.ultimaFalhaAgendada}`);
             }
             if (cfg.driveProntoNoServidor) {
                 partes.push(
-                    `Envio automático ativo` +
-                    (cfg.emailContaServico
-                        ? ` (compartilhe a pasta com ${cfg.emailContaServico}).`
-                        : '.')
+                    `Envio automático ao Drive ativo` +
+                    (cfg.emailContaServico ? ` (${cfg.emailContaServico})` : '')
                 );
             } else {
-                partes.push(
-                    'Envio automático ao Drive ainda não está ativo no servidor VEHO — o arquivo sempre pode ser baixado e enviado manualmente à pasta.'
-                );
-            }
-            if (cfg.ultimoDriveWebViewLink) {
-                partes.push(`Último no Drive: ${cfg.ultimoDriveWebViewLink}`);
+                partes.push('Envio automático ao Drive ainda não ativo no servidor — o arquivo fica no VEHO para download.');
             }
             status.textContent = partes.join(' ');
         }
@@ -61,7 +101,7 @@ async function carregarPainelBackup() {
                             : 'Enviado ao Drive')
                         : (b.drive?.erro
                             ? `<span style="color:#b36b00;">Drive: ${escaparHtml(b.drive.erro)}</span>`
-                            : 'Só download');
+                            : 'Só no servidor');
                     const tam = b.tamanhoBytes
                         ? `${Math.max(1, Math.round(b.tamanhoBytes / 1024))} KB`
                         : '—';
@@ -110,12 +150,17 @@ async function carregarPainelBackup() {
 }
 
 async function salvarPastaDriveBackup() {
-    const input = document.getElementById('backupDriveUrl');
-    if (!input) return;
     try {
-        await api.salvarConfigBackup({ driveFolderUrl: input.value.trim() });
-        if (typeof mostrarSucesso === 'function') mostrarSucesso('Pasta do Drive salva');
-        else alert('Pasta do Drive salva');
+        await api.salvarConfigBackup({
+            driveFolderUrl: document.getElementById('backupDriveUrl')?.value?.trim() || '',
+            agendaAtivo: document.getElementById('backupAgendaAtivo')?.checked === true,
+            frequencia: document.getElementById('backupFrequencia')?.value || 'semanal',
+            diaSemana: Number(document.getElementById('backupDiaSemana')?.value || 0),
+            hora: document.getElementById('backupHora')?.value || '03:00',
+            alertaDias: Number(document.getElementById('backupAlertaDias')?.value || 7)
+        });
+        if (typeof mostrarSucesso === 'function') mostrarSucesso('Configuração de backup salva');
+        else alert('Configuração de backup salva');
         await carregarPainelBackup();
     } catch (e) {
         if (typeof mostrarErro === 'function') mostrarErro(e.message);
@@ -181,8 +226,33 @@ async function restaurarBackupArquivoAgora() {
     }
 }
 
+/** Mostra faixa de alerta no portal (diretor/secretaria) se backup atrasado. */
+async function verificarAlertaBackupPortal(destinoId) {
+    const el = document.getElementById(destinoId || 'alertaBackupPortal');
+    if (!el || !window.api?.obterConfigBackup) return;
+    try {
+        const res = await api.obterConfigBackup();
+        const alerta = res.config?.alerta;
+        if (!alerta?.ativo) {
+            el.style.display = 'none';
+            return;
+        }
+        el.style.display = 'block';
+        el.innerHTML = `${escaparHtml(alerta.mensagem)} <a href="#" data-ir-backup style="margin-left:8px;">Abrir Backup</a>`;
+        el.querySelector('[data-ir-backup]')?.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            const link = document.querySelector('.menu a[data-secao="backup"], .menu a[data-secao="configuracoes"]');
+            if (link) link.click();
+            else if (typeof carregarSecao === 'function') carregarSecao('backup');
+        });
+    } catch {
+        el.style.display = 'none';
+    }
+}
+
 function configurarEventosBackup() {
     document.getElementById('btnSalvarDriveBackup')?.addEventListener('click', salvarPastaDriveBackup);
     document.getElementById('btnGerarBackup')?.addEventListener('click', gerarBackupAgora);
     document.getElementById('btnRestaurarBackup')?.addEventListener('click', restaurarBackupArquivoAgora);
+    document.getElementById('backupFrequencia')?.addEventListener('change', toggleDiaSemanaBackup);
 }

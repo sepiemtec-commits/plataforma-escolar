@@ -34,7 +34,12 @@ GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 4. Na escola: Diretor → Configurações (ou Secretaria → Backup) → cole o link da pasta → compartilhe a pasta com o e-mail `client_email` da service account (permissão Editor).
 5. Clique em **Gerar backup agora**.
 
-## Restauração
+## Alerta e agendamento
+
+- **Alerta:** se passar N dias (padrão 7) sem backup, aparece aviso no portal do diretor/secretaria e na tela Backup.
+- **Agenda:** frequencia diária ou semanal + horário (Brasília). O servidor checa a cada ~1 minuto e gera o `.json.gz` automaticamente (e tenta Drive se configurado).
+
+Campos em Configuração de Backup: `agendaAtivo`, `frequencia`, `diaSemana`, `hora`, `alertaDias`.
 
 Diretor/Secretaria podem:
 
