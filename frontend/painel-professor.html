@@ -452,39 +452,24 @@
 
             <!-- PEI -->
             <section id="pei" style="display:none;">
-                <h2 style="margin-bottom:12px;">PEI — Alunos da sua turma</h2>
+                <h2 style="margin-bottom:12px;">PEI — Consulta</h2>
+                <p style="color:#566573;font-size:14px;margin:0 0 16px;max-width:720px;">
+                    O PEI é elaborado pela coordenação. Busque pelo nome e turma do aluno para consultar o documento.
+                </p>
                 <div class="formulario" style="max-width:720px;margin-bottom:20px;">
-                    <form id="formPeiProf">
-                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                            <div class="form-group">
-                                <label for="peiProfTurma">Turma</label>
-                                <select id="peiProfTurma"><option value="">Selecione</option></select>
-                            </div>
-                            <div class="form-group">
-                                <label for="peiProfAluno">Aluno</label>
-                                <select id="peiProfAluno" disabled><option value="">Turma primeiro</option></select>
-                            </div>
+                    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="peiProfTurma">Turma</label>
+                            <select id="peiProfTurma"><option value="">Todas as suas turmas</option></select>
                         </div>
-                        <div class="form-group">
-                            <label for="peiProfDiagnostico">Diagnóstico</label>
-                            <textarea id="peiProfDiagnostico" rows="2"></textarea>
+                        <div class="form-group" style="margin:0;">
+                            <label for="peiProfNome">Nome do aluno</label>
+                            <input type="text" id="peiProfNome" placeholder="Digite o nome" autocomplete="off">
                         </div>
-                        <div class="form-group">
-                            <label for="peiProfNecessidades">Necessidades</label>
-                            <textarea id="peiProfNecessidades" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="peiProfMetas">Metas (uma por linha)</label>
-                            <textarea id="peiProfMetas" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="peiProfEstrategias">Estratégias</label>
-                            <textarea id="peiProfEstrategias" rows="2"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-sucesso">Criar PEI</button>
-                    </form>
+                        <button type="button" class="btn btn-primario" id="btnBuscarPeiProf">Buscar</button>
+                    </div>
                 </div>
-                <div id="listaPeiProf"><p style="color:#7f8c8d;">Carregando...</p></div>
+                <div id="listaPeiProf"><p style="color:#7f8c8d;">Use a busca para localizar o PEI.</p></div>
             </section>
 
             <!-- BNCC -->

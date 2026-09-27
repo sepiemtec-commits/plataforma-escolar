@@ -14,8 +14,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarPortalProfessor();
     configurarIAPedagogica();
     document.getElementById('btnBuscarBncc')?.addEventListener('click', buscarBnccProfessor);
-    document.getElementById('formPeiProf')?.addEventListener('submit', salvarPeiProfessor);
-    document.getElementById('peiProfTurma')?.addEventListener('change', onPeiProfTurmaChange);
+    document.getElementById('btnBuscarPeiProf')?.addEventListener('click', carregarPeiProfessor);
+    document.getElementById('peiProfNome')?.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+            ev.preventDefault();
+            carregarPeiProfessor();
+        }
+    });
     document.getElementById('formSimulado')?.addEventListener('submit', salvarSimuladoProf);
     document.getElementById('btnBuscarItens')?.addEventListener('click', buscarItensSimProf);
     document.getElementById('btnCorrigirSim')?.addEventListener('click', corrigirSimuladoAtivo);
@@ -1363,7 +1368,8 @@ function carregarSecao(secao, linkAtivo) {
 
     if (secao === 'pei') {
         prepararPeiProfessor();
-        carregarPeiProfessor();
+        const lista = document.getElementById('listaPeiProf');
+        if (lista) lista.innerHTML = '<p style="color:#7f8c8d;">Use a busca para localizar o PEI.</p>';
     }
 
     if (secao === 'bncc') {
@@ -1684,96 +1690,90 @@ async function carregarHtpcProfessor() {
 function prepararPeiProfessor() {
     const sel = document.getElementById('peiProfTurma');
     if (!sel) return;
-    sel.innerHTML = '<option value="">Selecione</option>';
+    const atual = sel.value;
+    sel.innerHTML = '<option value="">Todas as suas turmas</option>';
     turmasAtuais.forEach((t) => {
         const o = document.createElement('option');
         o.value = t._id;
         o.textContent = t.nome;
         sel.appendChild(o);
     });
+    if (atual && [...sel.options].some((o) => o.value === atual)) {
+        sel.value = atual;
+    }
 }
 
-function onPeiProfTurmaChange() {
-    const turma = obterTurmaPorId(document.getElementById('peiProfTurma').value);
-    const sel = document.getElementById('peiProfAluno');
-    if (!turma) {
-        sel.disabled = true;
-        sel.innerHTML = '<option value="">Turma primeiro</option>';
-        return;
-    }
-    sel.disabled = false;
-    sel.innerHTML = '<option value="">Selecione</option>';
-    (turma.alunos || []).forEach((a) => {
-        const o = document.createElement('option');
-        o.value = a._id || a;
-        o.textContent = a.nome || String(a._id || a);
-        sel.appendChild(o);
-    });
-}
-
-async function salvarPeiProfessor(e) {
-    e.preventDefault();
-    const aluno_id = document.getElementById('peiProfAluno').value;
-    const turma_id = document.getElementById('peiProfTurma').value;
-    if (!aluno_id) {
-        mostrarErro('Selecione o aluno');
-        return;
-    }
-    const metas = (document.getElementById('peiProfMetas').value || '')
-        .split('\n').map((l) => l.trim()).filter(Boolean)
-        .map((descricao) => ({ descricao, status: 'pendente' }));
+function formatarDataPei(d) {
+    if (!d) return '—';
     try {
-        await api.criarPei({
-            aluno_id,
-            turma_id,
-            diagnostico: document.getElementById('peiProfDiagnostico').value,
-            necessidades: document.getElementById('peiProfNecessidades').value,
-            estrategias: document.getElementById('peiProfEstrategias').value,
-            metas,
-            status: 'rascunho'
-        });
-        mostrarSucesso('PEI criado');
-        e.target.reset();
-        carregarPeiProfessor();
-    } catch (err) {
-        mostrarErro(err.message);
+        return new Date(d).toLocaleDateString('pt-BR');
+    } catch {
+        return '—';
     }
+}
+
+function renderPeiConsulta(p) {
+    const aluno = p.aluno_id?.nome || '—';
+    const turma = p.turma_id?.nome || '—';
+    const criadoPor = p.criadoPor?.nome || p.responsavelPedagogico?.nome || 'Coordenação';
+    const metas = Array.isArray(p.metas) && p.metas.length
+        ? `<ul style="margin:6px 0 0 18px;">${p.metas.map((m) =>
+            `<li>${escaparHtml(m.descricao || m)}${m.status ? ` <em>(${escaparHtml(m.status)})</em>` : ''}</li>`
+        ).join('')}</ul>`
+        : '<p style="margin:6px 0;color:#7f8c8d;">Sem metas registradas.</p>';
+    const acomp = Array.isArray(p.acompanhamentos) && p.acompanhamentos.length
+        ? `<ul style="margin:6px 0 0 18px;">${p.acompanhamentos.map((a) =>
+            `<li><strong>${escaparHtml(formatarDataPei(a.data))}</strong> — ${escaparHtml(a.texto)}${
+                a.autor_id?.nome ? ` <span style="color:#7f8c8d;">(${escaparHtml(a.autor_id.nome)})</span>` : ''
+            }</li>`
+        ).join('')}</ul>`
+        : '<p style="margin:6px 0;color:#7f8c8d;">Nenhum acompanhamento registrado.</p>';
+
+    return `<article style="border:1px solid #d0d7de;border-radius:8px;padding:14px;margin-bottom:12px;background:#fff;">
+        <header style="margin-bottom:10px;">
+            <strong style="font-size:16px;">${escaparHtml(aluno)}</strong>
+            <span style="color:#566573;"> · ${escaparHtml(turma)} · ${escaparHtml(p.status || '—')}</span>
+            <p style="margin:4px 0 0;font-size:13px;color:#7f8c8d;">Documento elaborado por ${escaparHtml(criadoPor)}</p>
+        </header>
+        <p style="margin:8px 0;"><strong>Diagnóstico:</strong><br>${escaparHtml(p.diagnostico || '—')}</p>
+        <p style="margin:8px 0;"><strong>Necessidades:</strong><br>${escaparHtml(p.necessidades || '—')}</p>
+        <div style="margin:8px 0;"><strong>Metas:</strong>${metas}</div>
+        <p style="margin:8px 0;"><strong>Estratégias:</strong><br>${escaparHtml(p.estrategias || '—')}</p>
+        ${p.recursos ? `<p style="margin:8px 0;"><strong>Recursos:</strong><br>${escaparHtml(p.recursos)}</p>` : ''}
+        <div style="margin:8px 0;"><strong>Acompanhamentos:</strong>${acomp}</div>
+    </article>`;
 }
 
 async function carregarPeiProfessor() {
     const box = document.getElementById('listaPeiProf');
     if (!box) return;
-    box.innerHTML = '<p style="color:#7f8c8d;">Carregando...</p>';
+    box.innerHTML = '<p style="color:#7f8c8d;">Buscando...</p>';
     try {
-        const res = await api.listarPeis();
+        const params = {};
+        const turma_id = document.getElementById('peiProfTurma')?.value;
+        const q = document.getElementById('peiProfNome')?.value?.trim();
+        if (turma_id) params.turma_id = turma_id;
+        if (q) params.q = q;
+
+        const res = await api.listarPeis(params);
         const lista = res.peis || [];
         if (!lista.length) {
-            box.innerHTML = '<p style="color:#7f8c8d;">Nenhum PEI dos seus alunos ainda.</p>';
+            box.innerHTML = '<p style="color:#7f8c8d;">Nenhum PEI encontrado para esta busca. O documento precisa ter sido criado pela coordenação.</p>';
             return;
         }
-        box.innerHTML = lista.map((p) => {
-            const aluno = p.aluno_id?.nome || '—';
-            return `<article style="border:1px solid #d0d7de;border-radius:8px;padding:12px;margin-bottom:10px;background:#fff;">
-                <strong>${escaparHtml(aluno)}</strong> · ${escaparHtml(p.status)}
-                <p style="font-size:14px;margin:8px 0;">${escaparHtml((p.diagnostico || '').slice(0, 180))}</p>
-                <textarea data-pei-prof-acomp="${escaparHtml(p._id)}" rows="2" style="width:100%;margin-bottom:6px;" placeholder="Acompanhamento"></textarea>
-                <button type="button" class="btn btn-pequeno btn-sucesso" data-pei-prof-add="${escaparHtml(p._id)}">Registrar</button>
-            </article>`;
-        }).join('');
-        box.querySelectorAll('[data-pei-prof-add]').forEach((btn) => {
-            btn.addEventListener('click', async () => {
-                const id = btn.getAttribute('data-pei-prof-add');
-                const texto = box.querySelector(`[data-pei-prof-acomp="${id}"]`)?.value?.trim();
-                if (!texto) return mostrarErro('Digite o texto');
+
+        // Carrega detalhes completos (acompanhamentos) dos resultados
+        const detalhados = await Promise.all(
+            lista.map(async (p) => {
                 try {
-                    await api.acompanhamentoPei(id, texto);
-                    mostrarSucesso('Registrado');
-                    carregarPeiProfessor();
-                } catch (e) {
-                    mostrarErro(e.message);
+                    const d = await api.obterPei(p._id);
+                    return d.pei || p;
+                } catch {
+                    return p;
                 }
-            });
-        });
+            })
+        );
+        box.innerHTML = detalhados.map(renderPeiConsulta).join('');
     } catch (e) {
         box.innerHTML = `<p style="color:#c62828;">${escaparHtml(e.message)}</p>`;
     }
