@@ -1,6 +1,34 @@
 const { Avaliacao, Presenca, Turma, Usuario, Escola } = require('../database/schema');
 
 const BIMESTRES = ['1º Bimestre', '2º Bimestre', '3º Bimestre', '4º Bimestre'];
+/** Média mínima para aprovação (alinhada à promoção escolar). */
+const MEDIA_APROVACAO = Number(process.env.MEDIA_APROVACAO || 6);
+
+function resultadoPorMedia(media) {
+  if (media == null || Number.isNaN(Number(media))) return 'Sem notas';
+  const m = Number(media);
+  if (m < 5) return 'Reprovado';
+  if (m < MEDIA_APROVACAO) return 'Recuperação';
+  return 'Aprovado';
+}
+
+function avaliarSituacaoGeral(disciplinas) {
+  const comNota = (disciplinas || []).filter((d) => d.mediaFinal != null);
+  if (!comNota.length) {
+    return { situacaoGeral: 'Sem notas', mediaGeral: null };
+  }
+  const mediaGeral =
+    Math.round((comNota.reduce((s, d) => s + Number(d.mediaFinal), 0) / comNota.length) * 100) / 100;
+  const reprovadas = comNota.filter((d) => Number(d.mediaFinal) < MEDIA_APROVACAO);
+  if (reprovadas.length > 0 || mediaGeral < MEDIA_APROVACAO) {
+    return {
+      situacaoGeral: reprovadas.some((d) => Number(d.mediaFinal) < 5) ? 'Reprovado' : 'Recuperação',
+      mediaGeral,
+      disciplinasEmRecuperacao: reprovadas.map((d) => d.disciplina)
+    };
+  }
+  return { situacaoGeral: 'Aprovado', mediaGeral, disciplinasEmRecuperacao: [] };
+}
 
 function pesoTipo(tipo) {
   return tipo === 'comportamental' ? 0.5 : 1;
@@ -95,9 +123,12 @@ function montarBoletimDisciplinas(aluno, turma, escola, disciplinas, mapa, prese
       bimestres,
       mediaFinal,
       faltas,
+      resultado: resultadoPorMedia(mediaFinal),
       recuperacaoFinal: null
     };
   });
+
+  const { situacaoGeral, mediaGeral, disciplinasEmRecuperacao } = avaliarSituacaoGeral(linhas);
 
   return {
     aluno: {
@@ -107,10 +138,22 @@ function montarBoletimDisciplinas(aluno, turma, escola, disciplinas, mapa, prese
       email: aluno.email
     },
     turma: turma ? { nome: turma.nome, serie: turma.nome, ano: turma.ano } : null,
-    escola: escola ? { nome: escola.nome } : null,
+    escola: escola
+      ? {
+          nome: escola.nome,
+          cnpj: escola.cnpj || null,
+          endereco: escola.endereco || null,
+          telefone: escola.telefone || null,
+          email: escola.email || null
+        }
+      : null,
     anoLetivo: escola?.configuracao?.anoLetivo || new Date().getFullYear(),
     bimestres: BIMESTRES,
-    disciplinas: linhas
+    disciplinas: linhas,
+    mediaGeral,
+    situacaoGeral,
+    disciplinasEmRecuperacao: disciplinasEmRecuperacao || [],
+    mediaAprovacao: MEDIA_APROVACAO
   };
 }
 
@@ -139,8 +182,11 @@ async function montarFichaIndividual(alunoId) {
       disciplina: d.disciplina,
       cargaHoraria: d.cargaHoraria,
       resultadoFinal: d.mediaFinal,
+      resultado: d.resultado,
       faltas: d.faltas
-    }))
+    })),
+    mediaGeral: boletim.mediaGeral,
+    situacaoGeral: boletim.situacaoGeral
   };
 }
 
@@ -179,11 +225,14 @@ async function montarFichaMatricula(alunoId) {
 
 module.exports = {
   BIMESTRES,
+  MEDIA_APROVACAO,
   montarBoletimCompleto,
   montarFichaIndividual,
   montarFichaMatricula,
   calcularMedia,
   mapaAvaliacoes,
   contarFaltasDisciplina,
-  pesoTipo
+  pesoTipo,
+  resultadoPorMedia,
+  avaliarSituacaoGeral
 };

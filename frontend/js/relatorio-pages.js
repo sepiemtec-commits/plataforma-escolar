@@ -33,7 +33,11 @@ async function initFichaIndividual() {
             const f = res.ficha;
 
             document.getElementById('conteudo').innerHTML = `
-                <p class="rel-escola-nome">${escaparHtml(f.escola?.nome || 'Escola')}</p>
+                <header class="rel-cabecalho-escola">
+                    <p class="rel-escola-nome">${escaparHtml(f.escola?.nome || 'Escola')}</p>
+                    ${f.escola?.cnpj ? `<p class="rel-escola-meta">CNPJ: ${escaparHtml(f.escola.cnpj)}</p>` : ''}
+                    <p class="rel-doc-titulo">Ficha Individual</p>
+                </header>
                 <div class="rel-ficha-dados">
                     <p><strong>SÉRIE:</strong> ${escaparHtml(f.turma?.nome || '—')}</p>
                     <p><strong>TURMA:</strong> ${escaparHtml(f.turma?.serie || 'A')}</p>
@@ -44,13 +48,15 @@ async function initFichaIndividual() {
                     <p><strong>DATA DE NASCIMENTO:</strong> ${escaparHtml(formatarDataBR(f.aluno.dataNascimento))}</p>
                     <p><strong>ENDEREÇO:</strong> ${escaparHtml(f.aluno.endereco || '—')}</p>
                     <p><strong>CIDADE:</strong> ${escaparHtml(f.aluno.cidade || '—')} · <strong>UF:</strong> ${escaparHtml(f.aluno.uf || '—')}</p>
+                    ${f.situacaoGeral ? `<p><strong>RESULTADO GERAL:</strong> ${escaparHtml(f.situacaoGeral)}${f.mediaGeral != null ? ` (média ${escaparHtml(formatarNotaBR(f.mediaGeral))})` : ''}</p>` : ''}
                 </div>
                 <table class="rel-tabela">
                     <thead>
                         <tr>
                             <th>Componentes Curriculares</th>
                             <th>CH</th>
-                            <th>Resultados Finais</th>
+                            <th>Média</th>
+                            <th>Resultado</th>
                             <th>Faltas</th>
                         </tr>
                     </thead>
@@ -60,11 +66,15 @@ async function initFichaIndividual() {
                                 <td>${escaparHtml(c.disciplina)}</td>
                                 <td>${escaparHtml(c.cargaHoraria)} Hrs</td>
                                 <td>${escaparHtml(formatarNotaBR(c.resultadoFinal))}</td>
+                                <td><strong>${escaparHtml(c.resultado || '—')}</strong></td>
                                 <td>${escaparHtml(c.faltas)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
-                </table>`;
+                </table>
+                <p class="rel-rodape-escola" style="text-align:center;margin-top:24px;font-size:12px;color:#555;">
+                    Documento emitido pela plataforma VEHO Edu · ${escaparHtml(f.escola?.nome || 'Escola')}
+                </p>`;
         } catch (erro) {
             exibirErroRelatorio(erro.message);
         }

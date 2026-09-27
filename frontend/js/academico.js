@@ -401,6 +401,12 @@ function renderBoletimTabela(boletim, container) {
             const b = d.bimestres[bim] || {};
             return `<td>${escaparHtml(formatarNotaBR(b.av1))}</td><td>${escaparHtml(formatarNotaBR(b.av2))}</td><td><strong>${escaparHtml(formatarNotaBR(b.media))}</strong></td>`;
         }).join('');
+        const resultado = d.resultado || '—';
+        const classeRes =
+            resultado === 'Aprovado' ? 'rel-resultado-ok'
+                : resultado === 'Reprovado' ? 'rel-resultado-reprov'
+                    : resultado === 'Recuperação' ? 'rel-resultado-rec'
+                        : '';
 
         return `<tr>
             <td>${escaparHtml(d.disciplina)}</td>
@@ -408,21 +414,54 @@ function renderBoletimTabela(boletim, container) {
             <td>${escaparHtml(d.professor)}</td>
             ${bimCells}
             <td><strong>${escaparHtml(formatarNotaBR(d.mediaFinal))}</strong></td>
+            <td class="${classeRes}"><strong>${escaparHtml(resultado)}</strong></td>
             <td>${escaparHtml(d.faltas)}</td>
         </tr>`;
     }).join('');
 
+    const escola = boletim.escola || {};
+    const situacao = boletim.situacaoGeral || '—';
+    const classeSit =
+        situacao === 'Aprovado' ? 'rel-resultado-ok'
+            : situacao === 'Reprovado' ? 'rel-resultado-reprov'
+                : situacao === 'Recuperação' ? 'rel-resultado-rec'
+                    : '';
+    const mediaMin = boletim.mediaAprovacao != null ? boletim.mediaAprovacao : 6;
+
     container.innerHTML = `
-        <p class="rel-escola-nome">${escaparHtml(boletim.escola?.nome || 'Escola')} — Boletim Acadêmico</p>
-        <p style="text-align:center;margin-bottom:16px;">
+        <header class="rel-cabecalho-escola">
+            <p class="rel-escola-nome">${escaparHtml(escola.nome || 'Escola')}</p>
+            ${escola.cnpj ? `<p class="rel-escola-meta">CNPJ: ${escaparHtml(escola.cnpj)}</p>` : ''}
+            ${escola.endereco ? `<p class="rel-escola-meta">${escaparHtml(escola.endereco)}</p>` : ''}
+            <p class="rel-doc-titulo">Boletim Acadêmico</p>
+        </header>
+        <p style="text-align:center;margin-bottom:12px;">
             <strong>${escaparHtml(boletim.aluno.nome)}</strong> · ${escaparHtml(boletim.turma?.nome || '')} · ${escaparHtml(boletim.anoLetivo)}
+        </p>
+        <p style="text-align:center;margin-bottom:16px;" class="${classeSit}">
+            <strong>Resultado final: ${escaparHtml(situacao)}</strong>
+            ${boletim.mediaGeral != null ? ` · Média geral: ${escaparHtml(formatarNotaBR(boletim.mediaGeral))}` : ''}
+            <span style="display:block;font-size:12px;color:#666;font-weight:400;margin-top:4px;">
+                Critério: média ≥ ${escaparHtml(String(mediaMin).replace('.', ','))} por disciplina
+            </span>
         </p>
         <div style="overflow-x:auto">
         <table class="rel-tabela">
             <thead>
-                <tr><th rowspan="2">Disciplina</th><th rowspan="2">CH</th><th rowspan="2">Professor</th>${colsBim}<th rowspan="2">Média Final</th><th rowspan="2">Faltas</th></tr>
+                <tr>
+                    <th rowspan="2">Disciplina</th>
+                    <th rowspan="2">CH</th>
+                    <th rowspan="2">Professor</th>
+                    ${colsBim}
+                    <th rowspan="2">Média Final</th>
+                    <th rowspan="2">Resultado</th>
+                    <th rowspan="2">Faltas</th>
+                </tr>
                 <tr>${subCols}</tr>
             </thead>
             <tbody>${linhas}</tbody>
-        </table></div>`;
+        </table></div>
+        <p class="rel-rodape-escola" style="text-align:center;margin-top:24px;font-size:12px;color:#555;">
+            Documento emitido pela plataforma VEHO Edu · ${escaparHtml(escola.nome || 'Escola')}
+        </p>`;
 }

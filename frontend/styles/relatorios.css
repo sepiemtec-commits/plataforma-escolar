@@ -248,7 +248,39 @@ body.relatorio-page {
     text-align: center;
     font-size: 19px;
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+.rel-cabecalho-escola {
+    text-align: center;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #d0d7de;
+}
+
+.rel-escola-meta {
+    margin: 2px 0;
+    font-size: 12px;
+    color: #666;
+}
+
+.rel-doc-titulo {
+    margin: 10px 0 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2f3a45;
+}
+
+.rel-resultado-ok { color: #1b7a4a; }
+.rel-resultado-rec { color: #b36b00; }
+.rel-resultado-reprov { color: #b33a3a; }
+
+@media print {
+    .rel-cabecalho-escola,
+    .rel-escola-nome,
+    .rel-rodape-escola {
+        color: #000 !important;
+    }
 }
 
 .rel-descricao {
