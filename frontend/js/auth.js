@@ -37,10 +37,29 @@ function secaoPedidaNaUrl() {
     return secao;
 }
 
+const HOME_SECOES = new Set(['portal', 'dashboard', 'boletim', 'filhos']);
+
+function mostrarSecaoPedidaAgora() {
+    const secao = secaoPedidaNaUrl();
+    if (secao) {
+        document.querySelectorAll('main > section').forEach((s) => {
+            s.style.display = 'none';
+        });
+        const el = document.getElementById(secao);
+        if (el) el.style.display = 'block';
+        document.querySelectorAll('.menu a').forEach((a) => a.classList.remove('ativo'));
+        document.querySelector(`.menu a[data-secao="${secao}"]`)?.classList.add('ativo');
+        document.body.classList.toggle('secao-interna', !HOME_SECOES.has(secao));
+    }
+    document.documentElement.classList.add('secao-pronta');
+    return secao;
+}
+
 function abrirSecaoPedida(carregar) {
     const secao = secaoPedidaNaUrl();
     if (!secao || typeof carregar !== 'function') return false;
     const link = document.querySelector(`.menu a[data-secao="${secao}"]`);
     carregar(secao, link);
+    document.documentElement.classList.add('secao-pronta');
     return true;
 }

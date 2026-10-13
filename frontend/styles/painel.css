@@ -27,6 +27,15 @@ html.menu-recolhido {
     --menu-largura: 0px;
 }
 
+/* Enquanto a seção da URL não foi aplicada, o portal não aparece no meio da troca. */
+html.secao-url .main-content {
+    visibility: hidden;
+}
+
+html.secao-url.secao-pronta .main-content {
+    visibility: visible;
+}
+
 .sidebar {
     /* 30%: estrutura cinza-azul */
     background: var(--cor-sidebar);

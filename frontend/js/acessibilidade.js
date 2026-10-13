@@ -1,5 +1,15 @@
 /* Aumentar ou diminuir as letras. A escolha fica salva neste navegador. */
 (function () {
+  try {
+    var pedida = new URLSearchParams(location.search).get('secao');
+    var homes = { portal: 1, dashboard: 1, boletim: 1, filhos: 1 };
+    if (pedida && !homes[pedida]) document.documentElement.classList.add('secao-url');
+  } catch (_) {}
+  setTimeout(function () {
+    document.documentElement.classList.add('secao-pronta');
+  }, 2500);
+})();
+(function () {
   var CHAVE = 'veho-tamanho-letra';
   var NIVEIS = [0.85, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 

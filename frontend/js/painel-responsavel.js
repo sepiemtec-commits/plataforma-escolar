@@ -3,6 +3,7 @@
 let usuario = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    mostrarSecaoPedidaAgora();
     const ok = await verificarAutenticacao();
     if (!ok) return;
 

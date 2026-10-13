@@ -10,6 +10,7 @@ let configEscola = { avaliacaoComportamental: false };
 let iaGeradoCache = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    mostrarSecaoPedidaAgora();
     configurarNavegacao();
     configurarPortalProfessor();
     configurarIAPedagogica();

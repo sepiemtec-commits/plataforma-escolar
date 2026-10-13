@@ -8,6 +8,7 @@ let provaTimerId = null;
 let provaExpiraEm = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    mostrarSecaoPedidaAgora();
     configurarNavegacao();
 
     const usuarioOk = await verificarAutenticacao();

@@ -44,6 +44,7 @@ function formatarDisciplinasFuncionario(funcionario) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    mostrarSecaoPedidaAgora();
     configurarNavegacao();
     configurarEventosBackup();
     configurarPortalSecretaria();

@@ -4,6 +4,7 @@ let usuario = null;
 let ultimoRelatorioDownload = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    mostrarSecaoPedidaAgora();
     configurarNavegacao();
 
     const usuarioOk = await verificarAutenticacao();

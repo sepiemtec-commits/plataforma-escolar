@@ -3,6 +3,7 @@ let dadosPainel = null;
 let turmasNotificacao = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    mostrarSecaoPedidaAgora();
     configurarNavegacao();
 
     const usuarioOk = await verificarAutenticacao();
