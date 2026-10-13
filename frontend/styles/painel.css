@@ -1526,6 +1526,36 @@ input:focus, select:focus, textarea:focus {
     }
 }
 
+/* Ctrl+scroll no computador reduz a largura em pixels e caía neste bloco,
+   fazendo o menu ocupar a tela inteira. Mouse fino mantém a coluna. */
+@media (max-width: 768px) and (hover: hover) and (pointer: fine) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: var(--menu-largura);
+        height: 100vh;
+        border-bottom: 0;
+    }
+
+    html.menu-recolhido .sidebar {
+        width: var(--menu-largura);
+        padding-left: 0;
+        padding-right: 0;
+        overflow: hidden;
+    }
+
+    .btn-recolher-menu {
+        display: block;
+    }
+
+    .main-content {
+        margin-left: var(--menu-largura);
+        width: calc(100% - var(--menu-largura));
+        padding: 24px 16px;
+    }
+}
+
 /* Cadastro — documentação */
 .secao-form {
     color: var(--cor-primaria, #3498db);
