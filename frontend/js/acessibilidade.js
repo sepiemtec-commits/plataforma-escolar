@@ -88,7 +88,7 @@
       var linha = linhaDoUsuario(info);
       return {
         pai: linha,
-        antes: linha.querySelector('.btn-logout, button'),
+        antes: linha.querySelector(':scope > .btn-logout'),
         modo: 'header'
       };
     }
@@ -121,31 +121,42 @@
     if (barra && !barra.querySelector('#controleLetras')) barra.remove();
   }
 
+  var movendo = false;
+
   function encaixar() {
     var grupo = document.getElementById('controleLetras');
-    if (!grupo) return;
+    if (!grupo || movendo) return;
     var dest = acharDestino();
+    var pai = dest.pai;
+    var antes = dest.antes && dest.antes.parentElement === pai ? dest.antes : null;
+    if (!pai) {
+      pai = garantirBarraTopo();
+      antes = null;
+    }
+    var noLugar = grupo.parentElement === pai && grupo.nextElementSibling === antes;
+    if (!noLugar) {
+      movendo = true;
+      if (antes) pai.insertBefore(grupo, antes);
+      else pai.appendChild(grupo);
+      movendo = false;
+    }
     if (dest.pai) {
-      var noLugar = grupo.parentElement === dest.pai &&
-        (!dest.antes || grupo.nextElementSibling === dest.antes);
-      if (!noLugar) {
-        if (dest.antes && dest.antes.parentElement === dest.pai) {
-          dest.pai.insertBefore(grupo, dest.antes);
-        } else {
-          dest.pai.appendChild(grupo);
-        }
-      }
       var topo = document.getElementById('barraLetrasTopo');
-      if (topo) topo.remove();
-    } else {
-      var barra = garantirBarraTopo();
-      if (grupo.parentElement !== barra) barra.appendChild(grupo);
+      if (topo && topo !== pai) topo.remove();
     }
     grupo.dataset.lugar = dest.modo;
   }
 
   var agendado = false;
-  function agendarEncaixe() {
+  function agendarEncaixe(mutations) {
+    if (movendo) return;
+    if (mutations && mutations.length) {
+      var soOControle = mutations.every(function (m) {
+        var t = m.target;
+        return t && t.closest && t.closest('#controleLetras, #barraLetrasTopo');
+      });
+      if (soOControle) return;
+    }
     if (agendado) return;
     agendado = true;
     requestAnimationFrame(function () {

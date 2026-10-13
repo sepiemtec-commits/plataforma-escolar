@@ -1,5 +1,5 @@
 /* VEHO Edu — service worker: cache do shell + Web Push */
-const CACHE_NAME = 'veho-edu-shell-v19';
+const CACHE_NAME = 'veho-edu-shell-v20';
 const SHELL = [
   '/',
   '/index.html',

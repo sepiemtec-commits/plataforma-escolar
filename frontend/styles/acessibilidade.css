@@ -64,7 +64,19 @@ html {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    flex-wrap: nowrap;
     gap: 8px;
+}
+
+.header .user-info {
+    min-width: 0;
+    max-width: 58%;
+}
+
+.header .user-info p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .barra-voltar-azul .controle-letras,
