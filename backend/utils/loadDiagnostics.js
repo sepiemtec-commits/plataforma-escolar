@@ -113,6 +113,10 @@ function attachLoadDiagnostics(app) {
       /* ignore */
     }
 
+    const eventLoopDelayP95Ms = Number((el.percentile(95) / 1e6).toFixed(2));
+    const eventLoopDelayMaxMs = Number((el.max / 1e6).toFixed(2));
+    el.reset();
+
     return {
       ts: new Date().toISOString(),
       uptimeSec: Number(((Date.now() - startedAt) / 1000).toFixed(1)),
@@ -125,8 +129,8 @@ function attachLoadDiagnostics(app) {
         heapUsedMb: Number((mem.heapUsed / 1024 / 1024).toFixed(1)),
         heapTotalMb: Number((mem.heapTotal / 1024 / 1024).toFixed(1)),
         externalMb: Number((mem.external / 1024 / 1024).toFixed(1)),
-        eventLoopDelayP95Ms: Number((el.percentile(95) / 1e6).toFixed(2)),
-        eventLoopDelayMaxMs: Number((el.max / 1e6).toFixed(2))
+        eventLoopDelayP95Ms,
+        eventLoopDelayMaxMs
       },
       mongo: {
         readyState: mongoose.connection.readyState,

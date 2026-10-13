@@ -18,6 +18,9 @@ const {
 } = require('../constants/ensino');
 const { filtroEscola, assertAlunoEscola, responderErroTenant } = require('../utils/tenant');
 const { matricularAlunoUmaTurma } = require('../utils/conflitosAgenda');
+const { criarCache } = require('../utils/respostaCache');
+
+const cacheListaTurmas = criarCache({ ttlMs: 4000, max: 100 });
 const { obterSenhaCadastro } = require('../utils/senhaPadrao');
 
 const rolesGestao = ['secretaria', 'admin', 'diretor'];
@@ -154,16 +157,18 @@ router.get('/niveis-ensino', autenticacao, async (req, res) => {
 // ==================== LISTAR TURMAS ====================
 router.get('/', autenticacao, async (req, res) => {
   try {
-    const turmas = await Turma.find(filtroEscola(req))
-      .populate('professor_id', 'nome email')
-      .populate('alunos', 'nome email cpf whatsapp')
-      .sort({ nivel: 1, ano: 1, nome: 1 });
-
-    res.json({
-      sucesso: true,
-      total: turmas.length,
-      turmas: turmas.map(enriquecerTurma)
+    const chave = `${req.usuario.escola_id || 'all'}`;
+    const payload = await cacheListaTurmas.obter(chave, async () => {
+      const turmas = await Turma.find(filtroEscola(req))
+        .populate('professor_id', 'nome email')
+        .populate('alunos', 'nome email cpf whatsapp')
+        .sort({ nivel: 1, ano: 1, nome: 1 })
+        .lean();
+      const lista = turmas.map(enriquecerTurma);
+      return JSON.stringify({ sucesso: true, total: lista.length, turmas: lista });
     });
+
+    res.type('application/json').send(payload);
   } catch (error) {
     console.error('Erro ao listar turmas:', error);
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao listar turmas' });

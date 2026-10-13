@@ -1,6 +1,6 @@
 /**
  * Base pedagógica curada (MVP) — referências a pensadores e abordagens por área.
- * Usada pelo motor local e injetada no prompt OpenAI. Não inventa citações bibliográficas
+ * Usada pelo motor de regras e injetada no prompt do modelo local (Ollama). Não inventa citações bibliográficas
  * completas; oferece ideias e aplicações práticas revisáveis pelo professor.
  */
 
@@ -51,8 +51,8 @@ const AREA_POR_PALAVRA = [
   { re: /ci[eê]ncia|biolog|f[ií]sica|qu[ií]mica|natureza/i, area: 'ciencias' },
   { re: /hist[oó]ria/i, area: 'historia' },
   { re: /geograf/i, area: 'geografia' },
-  { re: /educa[cç][aã]o\s*f[ií]sica|\bef\b|esporte|corpo/i, area: 'ed_fisica' },
-  { re: /arte|m[uú]sica|teatro|dan[cç]a|visual/i, area: 'artes' },
+  { re: /educa[cç][aã]o\s*f[ií]sica|(?:^|[^a-zà-ÿ])ef(?:[^a-zà-ÿ]|$)|(?:^|[^a-zà-ÿ])esporte(?:[^a-zà-ÿ]|$)|(?:^|[^a-zà-ÿ])corpo(?:[^a-zà-ÿ]|$)/i, area: 'ed_fisica' },
+  { re: /(?:^|[^a-zà-ÿ])artes?(?:[^a-zà-ÿ]|$)|m[uú]sica|teatro|dan[cç]a|(?:^|[^a-zà-ÿ])visual(?:[^a-zà-ÿ]|$)/i, area: 'artes' },
   { re: /ingl[eê]s|espanhol|l[ií]ngua\s*estrangeira/i, area: 'linguagens' },
   { re: /filosof|sociolog/i, area: 'humanas' }
 ];

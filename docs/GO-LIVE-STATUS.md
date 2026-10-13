@@ -14,12 +14,19 @@
 | `STRIPE_SECRET_KEY` (test) | **salvo** em `.env.production` |
 | `STRIPE_PUBLISHABLE_KEY` (test) | **salvo** em `.env.production` |
 
+## Em andamento
+
+| Item | Status |
+|------|--------|
+| Render `veho-edu` | **Live** https://veho-edu.onrender.com |
+| Stripe webhook | **enabled** |
+
 ## Falta (nesta ordem)
 
 1. ~~**Ativar Mongo**~~ — **feito**
 2. ~~**Secret key Stripe**~~ — **feito** (modo test)
-3. **Render** — criar Web Service / Blueprint (`render.yaml`) → anotar URL → `FRONTEND_URL=https://....onrender.com`
-4. **Webhook Stripe** — `https://SUA-URL/api/assinatura/webhook` → colar `whsec_...`
+3. ~~**Render**~~ — **feito** → `https://veho-edu.onrender.com`
+4. ~~**Webhook Stripe**~~ — **feito** (`whsec_` salvo)
 
 ## Colar no chat agora (próximo passo)
 
@@ -30,4 +37,4 @@ FRONTEND_URL=https://seu-servico.onrender.com
 ```
 
 
-<!-- ativar-mongo 2026-09-25T22:25:12.745Z ok db=veho_edu -->
+<!-- ativar-mongo 2026-09-25T22:52:56.529Z ok db=veho_edu -->

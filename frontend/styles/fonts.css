@@ -27,7 +27,7 @@ body {
 .menu a {
     font-family: var(--fonte-base);
     font-weight: 600;
-    font-size: var(--texto-base);
+    font-size: var(--texto-md);
 }
 
 h1,

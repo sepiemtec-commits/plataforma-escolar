@@ -30,3 +30,17 @@ async function exigirPerfil(tipoEsperado) {
         return null;
     }
 }
+
+function secaoPedidaNaUrl() {
+    const secao = new URLSearchParams(window.location.search).get('secao');
+    if (!secao || !document.getElementById(secao)) return null;
+    return secao;
+}
+
+function abrirSecaoPedida(carregar) {
+    const secao = secaoPedidaNaUrl();
+    if (!secao || typeof carregar !== 'function') return false;
+    const link = document.querySelector(`.menu a[data-secao="${secao}"]`);
+    carregar(secao, link);
+    return true;
+}

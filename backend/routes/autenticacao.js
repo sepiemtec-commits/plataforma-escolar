@@ -1,12 +1,14 @@
 // backend/routes/autenticacao.js - Rotas de Autenticação
+const crypto = require('crypto');
 const express = require('express');
 const router = express.Router();
-const crypto = require('crypto');
 const { Usuario, Escola, Log } = require('../database/schema');
 const { autenticacao } = require('../middleware/autenticacao');
 const { body, validationResult } = require('express-validator');
 const { disciplinasDoProfessor } = require('../utils/professorDisciplinas');
-const { rateLimitLogin } = require('../middleware/rateLimitLogin');
+const { rateLimitLogin, rateLimitRecuperacao } = require('../middleware/rateLimitLogin');
+const { smtpConfigurado, enviarRecuperacaoSenha } = require('../services/email');
+const notificadorSms = require('../services/sms');
 const { senhaEFraca } = require('../utils/senhaPadrao');
 const { createSemaphore } = require('../utils/semaphore');
 const {
@@ -25,6 +27,37 @@ const {
 /** Limita bcrypt+DB concorrentes no login (evita waitQueue Mongo no dia do boletim). */
 const loginGate = createSemaphore(Number(process.env.LOGIN_CONCURRENCY || 40));
 const LOGIN_GATE_TIMEOUT_MS = Math.max(2000, Number(process.env.LOGIN_GATE_TIMEOUT_MS || 8000));
+const escolasLogin = new Map();
+const senhaConfirmada = new Map();
+const SENHA_CACHE_MS = 45000;
+
+function hashSenhaDigitada(senha) {
+  return crypto.createHash('sha256').update(String(senha)).digest('hex');
+}
+
+function senhaConfirmadaRecentemente(id, senha) {
+  const hit = senhaConfirmada.get(String(id));
+  if (!hit || hit.exp < Date.now()) return false;
+  return hit.h === hashSenhaDigitada(senha);
+}
+
+function lembrarSenhaConfirmada(id, senha) {
+  if (senhaConfirmada.size > 20000) senhaConfirmada.clear();
+  senhaConfirmada.set(String(id), { h: hashSenhaDigitada(senha), exp: Date.now() + SENHA_CACHE_MS });
+}
+
+function esquecerSenhaConfirmada(id) {
+  senhaConfirmada.delete(String(id));
+}
+
+async function escolaParaLogin(id) {
+  const key = String(id);
+  const hit = escolasLogin.get(key);
+  if (hit && Date.now() - hit.at < 20000) return hit.escola;
+  const escola = await Escola.findById(id).select('nome ativo assinatura').lean();
+  escolasLogin.set(key, { at: Date.now(), escola });
+  return escola;
+}
 
 function normalizarEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -62,86 +95,81 @@ router.post('/login', rateLimitLogin, [
     const email = normalizarEmail(req.body.email);
     const { senha } = req.body;
 
-    let resultado;
-    try {
-      resultado = await loginGate.run(async () => {
-        const usuario = await Usuario.findOne({ email });
+    const usuario = await Usuario.findOne({ email })
+      .select('-refreshTokens -resetSenhaHash -resetSenhaExpira');
 
-        if (!usuario) {
-          return { status: 401, body: { sucesso: false, mensagem: 'Email ou senha inválidos' } };
-        }
-
-        const senhaValida = await usuario.compararSenha(senha);
-        if (!senhaValida) {
-          return { status: 401, body: { sucesso: false, mensagem: 'Email ou senha inválidos' } };
-        }
-
-        if (usuario.ativo === false) {
-          return {
-            status: 403,
-            body: {
-              sucesso: false,
-              mensagem: 'Usuário desativado. Entre em contato com a secretaria.'
-            }
-          };
-        }
-
-        let avisoAssinatura = null;
-        if (usuario.tipo !== 'admin' && usuario.escola_id) {
-          const escola = await Escola.findById(usuario.escola_id)
-            .select('nome ativo assinatura')
-            .lean();
-          if (!assinaturaPermiteAcesso(escola)) {
-            return {
-              status: 403,
-              body: {
-                sucesso: false,
-                mensagem: mensagemBloqueioAssinatura(escola),
-                codigo: 'ASSINATURA_BLOQUEADA'
-              }
-            };
-          }
-          if (escola?.assinatura?.status === 'past_due') {
-            avisoAssinatura = 'Assinatura em atraso. Regularize o pagamento para evitar bloqueio.';
-          }
-        }
-
-        const sessao = await emitirSessao(usuario);
-
-        // Log assíncrono — não segura conexão do pool no caminho crítico
-        Log.create({
-          usuario_id: usuario._id,
-          acao: 'LOGIN',
-          modulo: 'autenticacao',
-          descricao: `${usuario.tipo} ${usuario.nome} fez login`,
-          ipAddress: req.ip
-        }).catch((err) => console.error('Log LOGIN:', err.message));
-
-        return {
-          status: 200,
-          body: {
-            sucesso: true,
-            mensagem: 'Login realizado com sucesso',
-            token: sessao.token,
-            refreshToken: sessao.refreshToken,
-            avisoAssinatura,
-            usuario: payloadUsuario(usuario)
-          }
-        };
-      }, LOGIN_GATE_TIMEOUT_MS);
-    } catch (gateErr) {
-      if (gateErr && gateErr.code === 'CONCURRENCY_LIMIT') {
-        res.set('Retry-After', '2');
-        return res.status(503).json({
-          sucesso: false,
-          mensagem: gateErr.message,
-          codigo: 'LOGIN_BUSY'
-        });
-      }
-      throw gateErr;
+    if (!usuario) {
+      return res.status(401).json({ sucesso: false, mensagem: 'Email ou senha inválidos' });
     }
 
-    return res.status(resultado.status).json(resultado.body);
+    let senhaValida = senhaConfirmadaRecentemente(usuario._id, senha);
+    if (!senhaValida) {
+      try {
+        senhaValida = await loginGate.run(() => usuario.compararSenha(senha), LOGIN_GATE_TIMEOUT_MS);
+      } catch (gateErr) {
+        if (gateErr && gateErr.code === 'CONCURRENCY_LIMIT') {
+          res.set('Retry-After', '2');
+          return res.status(503).json({
+            sucesso: false,
+            mensagem: gateErr.message,
+            codigo: 'LOGIN_BUSY'
+          });
+        }
+        throw gateErr;
+      }
+      if (senhaValida) lembrarSenhaConfirmada(usuario._id, senha);
+    }
+
+    if (!senhaValida) {
+      return res.status(401).json({ sucesso: false, mensagem: 'Email ou senha inválidos' });
+    }
+
+    if (String(usuario.senha).startsWith('$2')) {
+      usuario.senha = senha;
+      await usuario.save();
+      esquecerSenhaConfirmada(usuario._id);
+    }
+
+    if (usuario.ativo === false) {
+      return res.status(403).json({
+        sucesso: false,
+        mensagem: 'Usuário desativado. Entre em contato com a secretaria.'
+      });
+    }
+
+    let avisoAssinatura = null;
+    if (usuario.tipo !== 'admin' && usuario.escola_id) {
+      const escola = await escolaParaLogin(usuario.escola_id);
+      if (!assinaturaPermiteAcesso(escola)) {
+        return res.status(403).json({
+          sucesso: false,
+          mensagem: mensagemBloqueioAssinatura(escola),
+          codigo: 'ASSINATURA_BLOQUEADA'
+        });
+      }
+      if (escola?.assinatura?.status === 'past_due') {
+        avisoAssinatura = 'Assinatura em atraso. Regularize o pagamento para evitar bloqueio.';
+      }
+    }
+
+    const sessao = await emitirSessao(usuario);
+
+    Log.create({
+      usuario_id: usuario._id,
+      acao: 'LOGIN',
+      modulo: 'autenticacao',
+      descricao: `${usuario.tipo} ${usuario.nome} fez login`,
+      ipAddress: req.ip
+    }).catch((err) => console.error('Log LOGIN:', err.message));
+
+    return res.status(200).json({
+      sucesso: true,
+      mensagem: 'Login realizado com sucesso',
+      token: sessao.token,
+      refreshToken: sessao.refreshToken,
+      avisoAssinatura,
+      usuario: payloadUsuario(usuario)
+    });
   } catch (error) {
     // Fila do pool Mongo esgotada / timeout — resposta clara
     const msg = String(error.message || '');
@@ -235,13 +263,13 @@ router.post('/logout', autenticacao, async (req, res) => {
     }
     await incrementarTokenVersion(req.usuario);
 
-    await Log.create({
+    Log.create({
       usuario_id: req.usuario._id,
       acao: 'LOGOUT',
       modulo: 'autenticacao',
       descricao: `${req.usuario.tipo} fez logout`,
       ipAddress: req.ip
-    });
+    }).catch((err) => console.error('Log LOGOUT:', err.message));
 
     res.json({
       sucesso: true,
@@ -266,7 +294,13 @@ router.post('/alterar-senha', autenticacao, [
       return res.status(400).json({ sucesso: false, erros: erros.array() });
     }
 
-    const { senhaAtual, senhaNova } = req.body;
+    const { senhaAtual, senhaNova, senhaConfirmacao } = req.body;
+    if (senhaConfirmacao != null && senhaConfirmacao !== senhaNova) {
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: 'A confirmação não confere com a nova senha'
+      });
+    }
     const ok = await req.usuario.compararSenha(senhaAtual);
     if (!ok) {
       return res.status(401).json({
@@ -291,6 +325,7 @@ router.post('/alterar-senha', autenticacao, [
 
     req.usuario.senha = senhaNova;
     await req.usuario.save();
+    esquecerSenhaConfirmada(req.usuario._id);
     await incrementarTokenVersion(req.usuario);
 
     await Log.create({
@@ -315,7 +350,7 @@ router.post('/alterar-senha', autenticacao, [
 const MSG_RECUPERACAO =
   'Se o e-mail estiver cadastrado, enviaremos instruções para redefinir a senha.';
 
-router.post('/recuperar-senha', rateLimitLogin, [
+router.post('/recuperar-senha', rateLimitRecuperacao, [
   body('email').isEmail()
 ], async (req, res) => {
   try {
@@ -338,8 +373,36 @@ router.post('/recuperar-senha', rateLimitLogin, [
       usuario.resetSenhaExpira = new Date(Date.now() + 60 * 60 * 1000);
       await usuario.save();
 
-      // Nunca expor em produção; em test/dev permite validação automatizada
-      if (process.env.NODE_ENV !== 'production') {
+      const base = String(process.env.FRONTEND_URL || '').replace(/\/$/, '');
+      const link = `${base}/recuperar-senha.html?token=${encodeURIComponent(token)}`;
+      let enviou = false;
+      if (smtpConfigurado()) {
+        try {
+          enviou = await enviarRecuperacaoSenha(usuario.email, link);
+        } catch (err) {
+          console.error('Falha ao enviar e-mail de recuperação:', err.message);
+        }
+      }
+      if (!enviou) {
+        const fone = usuario.whatsapp || usuario.telefone;
+        if (fone) {
+          try {
+            enviou = await notificadorSms.enviarNotificacao(
+              fone,
+              'Redefinir senha',
+              'Link válido por 1 hora, um único uso: ' + link
+            );
+          } catch (err) {
+            console.error('Falha ao enviar SMS de recuperação:', err.message);
+          }
+        }
+      }
+      if (!enviou && process.env.NODE_ENV !== 'test') {
+        console.error('Recuperação de senha sem canal (configure SMTP_HOST e SMTP_FROM, ou Twilio).');
+      }
+
+      // Só a suíte de testes recebe o token. A resposta normal nunca traz o segredo.
+      if (process.env.NODE_ENV === 'test') {
         resposta.resetToken = token;
       }
     }
@@ -361,7 +424,13 @@ router.post('/redefinir-senha', [
       return res.status(400).json({ sucesso: false, erros: erros.array() });
     }
 
-    const { token, senhaNova } = req.body;
+    const { token, senhaNova, senhaConfirmacao } = req.body;
+    if (senhaConfirmacao != null && senhaConfirmacao !== senhaNova) {
+      return res.status(400).json({
+        sucesso: false,
+        mensagem: 'A confirmação não confere com a nova senha'
+      });
+    }
     if (senhaEFraca(senhaNova)) {
       return res.status(400).json({
         sucesso: false,

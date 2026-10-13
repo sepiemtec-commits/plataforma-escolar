@@ -53,7 +53,7 @@ function createApp(options = {}) {
     credentials: true
   }));
 
-  if (!isTest) {
+  if (!isTest && process.env.LOG_HTTP !== '0') {
     app.use(morgan(isProd ? 'combined' : 'dev'));
   }
 

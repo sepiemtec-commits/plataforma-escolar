@@ -74,6 +74,70 @@ async function obterDadosAluno(alunoId) {
   return { aluno, turma, escola };
 }
 
+function linhasDisciplina(avaliacoes, disciplinaFiltro) {
+  const mapa = mapaAvaliacoes(avaliacoes);
+  let disciplinas = [...new Set(avaliacoes.map((a) => a.disciplina))];
+  if (disciplinaFiltro) disciplinas = [disciplinaFiltro];
+  else if (!disciplinas.length) disciplinas = ['Biologia', 'Matemática', 'Português'];
+  return { mapa, disciplinas };
+}
+
+/**
+ * Resumo de gestão para todos os alunos da escola em poucas consultas
+ * (a versão por aluno repetia usuário, turma, notas e faltas).
+ */
+async function resumosGestao(filtroAluno) {
+  const alunos = await Usuario.find(filtroAluno)
+    .select('nome cpf email escola_id')
+    .lean();
+  const ids = alunos.map((a) => a._id);
+  const escolaId = filtroAluno.escola_id;
+  const [avaliacoes, presencas, turmas, escola] = await Promise.all([
+    ids.length
+      ? Avaliacao.find({ aluno_id: { $in: ids } }).select('aluno_id disciplina periodo tipo nota').lean()
+      : [],
+    ids.length
+      ? Presenca.find({ aluno_id: { $in: ids } }).select('aluno_id turma_id disciplina status').lean()
+      : [],
+    Turma.find(escolaId ? { escola_id: escolaId } : {}).populate('professor_id', 'nome').lean(),
+    escolaId
+      ? Escola.findById(escolaId).select('nome cnpj endereco telefone email configuracao').lean()
+      : null
+  ]);
+
+  const turmaPorAluno = new Map();
+  turmas.forEach((turma) => {
+    (turma.alunos || []).forEach((aid) => turmaPorAluno.set(String(aid), turma));
+  });
+  const avPorAluno = new Map();
+  avaliacoes.forEach((av) => {
+    const k = String(av.aluno_id);
+    if (!avPorAluno.has(k)) avPorAluno.set(k, []);
+    avPorAluno.get(k).push(av);
+  });
+  const prPorAluno = new Map();
+  presencas.forEach((p) => {
+    const k = String(p.aluno_id);
+    if (!prPorAluno.has(k)) prPorAluno.set(k, []);
+    prPorAluno.get(k).push(p);
+  });
+
+  return alunos.map((aluno) => {
+    const avs = avPorAluno.get(String(aluno._id)) || [];
+    const { mapa, disciplinas } = linhasDisciplina(avs);
+    const turma = turmaPorAluno.get(String(aluno._id)) || null;
+    const boletim = montarBoletimDisciplinas(
+      aluno,
+      turma,
+      escola,
+      disciplinas,
+      mapa,
+      prPorAluno.get(String(aluno._id)) || []
+    );
+    return { aluno, turma, boletim };
+  });
+}
+
 async function montarBoletimCompleto(alunoId, disciplinaFiltro) {
   const { aluno, turma, escola } = await obterDadosAluno(alunoId);
   if (!aluno) return null;
@@ -235,6 +299,7 @@ module.exports = {
   BIMESTRES,
   MEDIA_APROVACAO,
   montarBoletimCompleto,
+  resumosGestao,
   montarFichaIndividual,
   montarFichaMatricula,
   calcularMedia,

@@ -10,17 +10,33 @@ body.relatorio-page {
 }
 
 .rel-topbar {
-    background: var(--cor-sidebar);
+    background: linear-gradient(180deg, #4a7eb8 0%, #3d6a9f 100%);
     color: #fff;
     padding: 10px 20px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
+    gap: 12px;
     position: sticky;
     top: 0;
     z-index: 200;
     width: 100%;
+    min-height: 54px;
     box-sizing: border-box;
+}
+
+.rel-topbar .rel-titulo {
+    color: #fff;
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    order: 1;
+}
+
+.rel-topbar #nomeUsuario {
+    display: none;
 }
 
 .rel-topbar a {
@@ -37,6 +53,9 @@ body.relatorio-page {
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+    order: 3;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .rel-btn-voltar {
@@ -67,6 +86,23 @@ body.relatorio-page {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+}
+
+body.pagina-com-menu .rel-topbar {
+    width: calc(100% + 32px);
+    margin: -24px -16px 0;
+}
+
+body.pagina-com-menu .rel-container {
+    max-width: none;
+    padding: 20px 0 0;
+}
+
+@media (max-width: 768px) {
+    body.pagina-com-menu .rel-topbar {
+        width: calc(100% + 40px);
+        margin: -20px -20px 0;
+    }
 }
 
 .rel-titulo {
@@ -631,7 +667,23 @@ body.relatorio-page {
 }
 
 @media print {
-    .rel-topbar, .rel-filtros, .rel-acoes-linha, .no-print { display: none !important; }
+    .rel-filtros, .rel-acoes-linha, .no-print { display: none !important; }
+    .rel-topbar {
+        display: block !important;
+        background: none !important;
+        position: static !important;
+        padding: 0 0 8px !important;
+        min-height: 0 !important;
+    }
+    .rel-topbar .rel-topbar-nav,
+    .rel-topbar #nomeUsuario {
+        display: none !important;
+    }
+    .rel-topbar .rel-titulo {
+        color: var(--rel-azul) !important;
+        font-size: 23px !important;
+        margin: 0 0 16px !important;
+    }
     .rel-container { max-width: 100%; padding: 0; }
     .diario-documento {
         border: none;

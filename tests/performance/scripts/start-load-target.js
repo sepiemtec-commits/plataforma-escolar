@@ -1,9 +1,10 @@
 #!/usr/bin/env node
+if (!process.env.UV_THREADPOOL_SIZE) process.env.UV_THREADPOOL_SIZE = '12';
 /**
  * Alvo local para carga/spike (TOKEN 07/08).
  * MongoMemoryServer + seed + Express (DISABLE_RATE_LIMIT=1, LOAD_DIAGNOSTICS=1).
  *
- * Env: PORT, LOAD_USER_POOL (default 200), LOAD_DIAGNOSTICS=1
+ * Env: PORT, LOAD_USER_POOL (default 500 — um usuário por VU no endurance), LOAD_DIAGNOSTICS=1
  */
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 process.env.DISABLE_RATE_LIMIT = '1';
@@ -20,6 +21,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 process.env.DISABLE_RATE_LIMIT = '1';
 process.env.LOAD_DIAGNOSTICS = process.env.LOAD_DIAGNOSTICS || '1';
+process.env.LOG_HTTP = '0';
 
 const fs = require('fs');
 const mongoose = require('mongoose');
@@ -30,7 +32,7 @@ const { connectMongo } = require('../../../backend/utils/mongoConnect');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
-const POOL = Math.max(50, Number(process.env.LOAD_USER_POOL || 200));
+const POOL = Math.max(50, Number(process.env.LOAD_USER_POOL || 500));
 
 
 async function seedMinimo() {
@@ -198,7 +200,9 @@ async function main() {
   process.env.MONGODB_URI = uri;
   // Padrão alto no alvo de carga (override via MONGO_MAX_POOL)
   if (!process.env.MONGO_MAX_POOL) process.env.MONGO_MAX_POOL = '300';
-  if (!process.env.LOGIN_CONCURRENCY) process.env.LOGIN_CONCURRENCY = '60';
+  // Poucas conferências de senha ao mesmo tempo: scrypt em paralelo demais
+  // estoura a memória e a fila de login passa de vários segundos.
+  process.env.LOGIN_CONCURRENCY = process.env.LOAD_LOGIN_CONCURRENCY || '8';
   const opts = await connectMongo(mongoose, uri);
   console.log(`✓ Mongo em memória (maxPoolSize=${opts.maxPoolSize})`);
 

@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs');
+const { hash: hashSenha } = require('../utils/bcryptPool');
 const { Escola, Usuario, AssinaturaPendente, Log } = require('../database/schema');
 const { obterPlano } = require('../constants/planos');
 const { priceIdDoPlano } = require('../constants/planos');
@@ -114,8 +114,7 @@ async function atualizarAssinaturaEscolaPorCustomer(customerId, patch) {
 }
 
 async function hashSenhaAdmin(senha) {
-  const salt = await bcrypt.genSalt(10);
-  return bcrypt.hash(senha, salt);
+  return hashSenha(senha);
 }
 
 module.exports = {

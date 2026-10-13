@@ -14,6 +14,9 @@ const {
   responderErroTenant
 } = require('../utils/tenant');
 const { validarConflitoPresencaTempo } = require('../utils/conflitosAgenda');
+const { criarCache } = require('../utils/respostaCache');
+
+const cacheListaPresenca = criarCache({ ttlMs: 2000, max: 400 });
 
 function parseDataLocal(data) {
   if (data instanceof Date) {
@@ -268,6 +271,7 @@ async function upsertPresenca(usuario, { aluno_id, turma_id, status, data, obser
   }
 
   await notificarFaltaSeNecessario(presenca, data, statusAnterior);
+  cacheListaPresenca.invalidarPrefixo(`turma:${String(turma_id)}:`);
 
   return presenca;
 }
@@ -470,16 +474,18 @@ router.get('/turma/:turmaId', autenticacao, async (req, res) => {
     }
     if (disciplina) filtro.disciplina = disciplina;
 
-    const presencas = await Presenca.find(filtro)
-      .populate('aluno_id', 'nome email')
-      .populate('professor_id', 'nome')
-      .sort({ disciplina: 1, tempo: 1 });
-
-    res.json({
-      sucesso: true,
-      total: presencas.length,
-      presencas
+    const chave = `turma:${turmaId}:${data || ''}:${disciplina || ''}`;
+    const presencas = await cacheListaPresenca.obter(chave, async () => {
+      const lista = await Presenca.find(filtro)
+        .select('aluno_id professor_id disciplina tempo status data observacoes')
+        .populate('aluno_id', 'nome email')
+        .populate('professor_id', 'nome')
+        .sort({ disciplina: 1, tempo: 1 })
+        .lean();
+      return JSON.stringify({ sucesso: true, total: lista.length, presencas: lista });
     });
+
+    res.type('application/json').send(presencas);
 
   } catch (error) {
     if (responderErroTenant(res, error)) return;

@@ -4,6 +4,7 @@ const { Usuario, Turma, Escola, DisciplinaConfig } = require('../database/schema
 const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
 const {
   montarBoletimCompleto,
+  resumosGestao,
   montarFichaIndividual,
   montarFichaMatricula
 } = require('../services/boletim');
@@ -97,28 +98,13 @@ function nivelDaTurma(turma) {
 
 router.get('/gestao-boletins', autenticacao, verificarRole('admin', 'diretor', 'coordenador', 'secretaria'), requerEscola, async (req, res) => {
   try {
-    const filtro = { tipo: 'aluno', ativo: true, ...filtroEscola(req) };
-
-    const alunos = await Usuario.find(filtro).select('nome cpf email');
-    const turmas = await Turma.find(filtroEscola(req));
-    const turmaPorAluno = {};
-    turmas.forEach(t => {
-      (t.alunos || []).forEach(aid => {
-        turmaPorAluno[String(aid)] = t;
-      });
-    });
-
-    const lista = [];
-
-    for (const aluno of alunos) {
-      const boletim = await montarBoletimCompleto(aluno._id);
-      const turma = turmaPorAluno[String(aluno._id)];
+    const resumos = await resumosGestao({ tipo: 'aluno', ativo: true, ...filtroEscola(req) });
+    const lista = resumos.map(({ aluno, turma, boletim }) => {
       const medias = boletim?.disciplinas?.map(d => d.mediaFinal).filter(m => m != null) || [];
       const mediaGeral = medias.length
         ? Math.round((medias.reduce((a, b) => a + b, 0) / medias.length) * 100) / 100
         : null;
-
-      lista.push({
+      return {
         _id: aluno._id,
         nome: aluno.nome,
         cpf: aluno.cpf,
@@ -130,8 +116,8 @@ router.get('/gestao-boletins', autenticacao, verificarRole('admin', 'diretor', '
         disciplinas: boletim?.disciplinas?.length || 0,
         mediaGeral,
         situacao: mediaGeral == null ? 'Sem notas' : mediaGeral >= 6 ? 'Aprovado' : 'Recuperação'
-      });
-    }
+      };
+    });
 
     res.json({ sucesso: true, total: lista.length, alunos: lista });
   } catch (error) {

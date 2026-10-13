@@ -19,6 +19,14 @@ body {
     min-height: 100vh;
 }
 
+:root {
+    --menu-largura: 250px;
+}
+
+html.menu-recolhido {
+    --menu-largura: 0px;
+}
+
 .sidebar {
     /* 30%: estrutura cinza-azul */
     background: var(--cor-sidebar);
@@ -27,10 +35,32 @@ body {
     position: fixed;
     left: 0;
     top: 0;
-    width: 250px;
+    width: var(--menu-largura);
     height: 100vh;
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 100;
+    transition: width 0.2s ease, padding 0.2s ease;
+}
+
+html.menu-recolhido .sidebar,
+html.menu-arrastando .sidebar {
+    overflow: hidden;
+}
+
+html.menu-recolhido .sidebar {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+html.menu-arrastando .sidebar,
+html.menu-arrastando .main-content,
+html.menu-arrastando .btn-recolher-menu {
+    transition: none;
+}
+
+html.menu-arrastando {
+    user-select: none;
 }
 
 .logo {
@@ -71,11 +101,45 @@ body {
 }
 
 .main-content {
-    margin-left: 250px;
-    width: calc(100% - 250px);
+    margin-left: var(--menu-largura);
+    width: calc(100% - var(--menu-largura));
     min-height: 100vh;
     padding: 24px 16px;
     box-sizing: border-box;
+    transition: margin-left 0.2s ease, width 0.2s ease;
+}
+
+.btn-recolher-menu {
+    position: fixed;
+    top: 50%;
+    left: var(--menu-largura);
+    transform: translate(-50%, -50%);
+    z-index: 180;
+    width: 26px;
+    height: 46px;
+    border: 0;
+    border-radius: 8px;
+    background: #3e5163;
+    color: #fff;
+    cursor: ew-resize;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
+    touch-action: none;
+}
+
+html.menu-recolhido .btn-recolher-menu {
+    left: 0;
+    border-radius: 0 8px 8px 0;
+    transform: translateY(-50%);
+}
+
+.btn-recolher-menu:hover,
+.btn-recolher-menu:focus-visible {
+    background: #2c3e50;
+    outline: 2px solid #fff;
+    outline-offset: 1px;
 }
 
 .header {
@@ -1430,6 +1494,16 @@ input:focus, select:focus, textarea:focus {
         border-bottom: 1px solid #bdc3c7;
     }
 
+    html.menu-recolhido .sidebar {
+        width: 100%;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .btn-recolher-menu {
+        display: none;
+    }
+
     .main-content {
         margin-left: 0;
         width: 100%;
@@ -1765,7 +1839,7 @@ input:focus, select:focus, textarea:focus {
     color: #fff;
     padding: 10px 20px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     gap: 12px;
     position: sticky;
@@ -1776,6 +1850,38 @@ input:focus, select:focus, textarea:focus {
     box-sizing: border-box;
     margin: -24px -16px 20px;
     border-radius: 0;
+}
+
+.barra-voltar-azul:has(.barra-voltar-titulo) {
+    margin-bottom: 16px;
+}
+
+body.secao-interna .header {
+    display: none;
+}
+
+.barra-voltar-azul .barra-voltar-titulo,
+.barra-voltar-azul .notas-academicas-titulo,
+.barra-voltar-azul .portal-bloco-header,
+.barra-voltar-azul .titulo-secao-barra {
+    background: transparent;
+    color: #fff;
+    padding: 0;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    font-size: 19px;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+    order: 1;
+}
+
+.barra-voltar-azul > span {
+    order: 1;
+    flex: 1;
+    min-width: 0;
 }
 
 .detalhe-turma-panel .barra-voltar-azul {
@@ -1802,6 +1908,9 @@ input:focus, select:focus, textarea:focus {
     font-weight: 600;
     text-decoration: none;
     display: inline-block;
+    order: 2;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .barra-voltar-azul .btn-voltar-azul:hover,
@@ -2088,6 +2197,87 @@ input:focus, select:focus, textarea:focus {
     font-weight: 600;
 }
 
+.dialog-senha {
+    border: 0;
+    border-radius: 12px;
+    padding: 22px 22px 18px;
+    max-width: 420px;
+    width: calc(100% - 32px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+}
+
+.dialog-senha::backdrop {
+    background: rgba(20, 30, 40, 0.45);
+}
+
+.dialog-senha h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    color: #2c3e50;
+}
+
+.dialog-senha-dica {
+    margin: 0 0 14px;
+    color: #5c6b7a;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.dialog-senha label {
+    display: block;
+    margin: 10px 0 4px;
+    font-size: 14px;
+    color: #3a4450;
+}
+
+.dialog-senha input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #cfd6dd;
+    border-radius: 6px;
+    font: inherit;
+}
+
+.dialog-senha-aviso {
+    margin: 12px 0 0;
+    color: #a33b3b;
+    font-size: 14px;
+}
+
+.dialog-senha-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.btn-senha-secundario,
+.btn-senha-primario {
+    border-radius: 6px;
+    padding: 8px 14px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-senha-secundario {
+    background: #f4f7fb;
+    border: 1px solid #c5d0dc;
+    color: #2c3e50;
+}
+
+.btn-senha-primario {
+    background: #3d6a9f;
+    border: 0;
+    color: #fff;
+}
+
+.btn-senha-primario:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 /* Secretaria — lista de alunos */
 .lista-alunos-toolbar {
     display: flex;
@@ -2165,7 +2355,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 @media print {
-    .sidebar, .header, .lista-alunos-toolbar, .formulario, .no-print, .menu, .btn-docs-aluno {
+    .sidebar, .header, .lista-alunos-toolbar, .formulario, .no-print, .menu, .btn-docs-aluno, .btn-recolher-menu {
         display: none !important;
     }
     .accordion-turma-corpo { display: block !important; }

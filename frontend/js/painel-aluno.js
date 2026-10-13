@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await carregarPainelCompleto();
+    abrirSecaoPedida(carregarSecao);
 });
 
 function configurarNavegacao() {

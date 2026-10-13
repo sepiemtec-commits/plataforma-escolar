@@ -16,8 +16,15 @@
     <link rel="stylesheet" href="/styles/relatorios.css">
     <link rel="stylesheet" href="/styles/painel.css">
     <link rel="stylesheet" href="/styles/fonts.css">
+    <link rel="stylesheet" href="/styles/acessibilidade.css">
+    <script src="/js/acessibilidade.js"></script>
+    <script src="/js/menu-recolher.js"></script>
+    <script src="/js/trocar-senha.js"></script>
 </head>
-<body class="relatorio-page" data-pagina="diario-aula">
+<body class="relatorio-page pagina-com-menu" data-pagina="diario-aula">
+    <div class="container-principal">
+        <aside class="sidebar no-print" id="sidebarPainel"></aside>
+        <main class="main-content">
     <div class="rel-topbar no-print">
         <div class="rel-topbar-nav">
             <a href="#" class="rel-btn-voltar" id="linkVoltar">← Voltar</a>
@@ -178,8 +185,11 @@
             </p>
         </div>
     </div>
+        </main>
+    </div>
 
     <script src="/js/api.js"></script>
+    <script src="/js/menu-painel.js"></script>
     <script src="/js/academico.js"></script>
     <script src="/js/diario-classe.js"></script>
     <script src="/js/relatorio-pages.js"></script>

@@ -5,6 +5,9 @@ const { Usuario, Presenca, Avaliacao, Desempenho, Turma, Escola, Log, Responsave
 const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
 const { TIPOS_FUNCIONARIO_ESCOLA } = require('../constants/funcionarios');
 const { inferirNivel } = require('../constants/ensino');
+const { criarCache } = require('../utils/respostaCache');
+
+const cachePainelSecretaria = criarCache({ ttlMs: 4000, max: 200 });
 const { disciplinasDoProfessor } = require('../utils/professorDisciplinas');
 const { idsTurmasDaEscola } = require('../utils/tenant');
 const { montarBoletimCompleto, BIMESTRES } = require('../services/boletim');
@@ -248,46 +251,51 @@ router.get('/diretor/relatorio', autenticacao, verificarRole('diretor'), requerE
 // ==================== PAINEL DA SECRETARIA ====================
 router.get('/secretaria', autenticacao, verificarRole('secretaria'), async (req, res) => {
   try {
-    const turmasRaw = await Turma.find({ escola_id: req.usuario.escola_id })
-      .populate('professor_id', 'nome email')
-      .populate('alunos', 'nome email cpf whatsapp matriculaNumero')
-      .sort({ dataCriacao: 1 });
+    const escolaId = String(req.usuario.escola_id || '');
+    const painel = await cachePainelSecretaria.obter(`secretaria:${escolaId}`, async () => {
+      const turmasRaw = await Turma.find({ escola_id: req.usuario.escola_id })
+        .populate('professor_id', 'nome email')
+        .populate('alunos', 'nome email cpf whatsapp matriculaNumero')
+        .sort({ dataCriacao: 1 })
+        .lean();
 
-    const turmas = turmasRaw.map(t => {
-      const obj = t.toObject();
-      obj.nivel = inferirNivel(obj);
-      return obj;
+      const turmas = turmasRaw.map(t => {
+        t.nivel = inferirNivel(t);
+        return t;
+      });
+
+      const [totalAlunos, professores, funcionarios] = await Promise.all([
+        Usuario.countDocuments({
+          escola_id: req.usuario.escola_id,
+          tipo: 'aluno',
+          ativo: true
+        }),
+        Usuario.find({
+          escola_id: req.usuario.escola_id,
+          tipo: 'professor',
+          ativo: true
+        }).select('nome email cpf whatsapp').lean(),
+        Usuario.find({
+          escola_id: req.usuario.escola_id,
+          tipo: { $in: TIPOS_FUNCIONARIO_ESCOLA },
+          ativo: true
+        }).select('nome email cpf whatsapp telefone tipo disciplina disciplinas pis ctps').sort({ tipo: 1, nome: 1 }).lean()
+      ]);
+
+      return JSON.stringify({
+        sucesso: true,
+        painel: {
+          totalTurmas: turmas.length,
+          totalAlunos,
+          totalFuncionarios: funcionarios.length,
+          turmas,
+          professores,
+          funcionarios
+        }
+      });
     });
 
-    const totalAlunos = await Usuario.countDocuments({
-      escola_id: req.usuario.escola_id,
-      tipo: 'aluno',
-      ativo: true
-    });
-
-    const professores = await Usuario.find({
-      escola_id: req.usuario.escola_id,
-      tipo: 'professor',
-      ativo: true
-    }).select('nome email cpf whatsapp');
-
-    const funcionarios = await Usuario.find({
-      escola_id: req.usuario.escola_id,
-      tipo: { $in: TIPOS_FUNCIONARIO_ESCOLA },
-      ativo: true
-    }).select('nome email cpf whatsapp telefone tipo disciplina disciplinas pis ctps').sort({ tipo: 1, nome: 1 });
-
-    res.json({
-      sucesso: true,
-      painel: {
-        totalTurmas: turmas.length,
-        totalAlunos,
-        totalFuncionarios: funcionarios.length,
-        turmas,
-        professores,
-        funcionarios
-      }
-    });
+    res.type('application/json').send(painel);
   } catch (error) {
     console.error('Erro no painel da secretaria:', error);
     res.status(500).json({ sucesso: false, mensagem: 'Erro ao carregar painel' });

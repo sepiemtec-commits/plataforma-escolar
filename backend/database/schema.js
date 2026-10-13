@@ -1,6 +1,6 @@
 // database/schema.js - Esquemas MongoDB
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const { hash: hashSenha, compare: compararHash } = require('../utils/bcryptPool');
 
 // ==================== USUÁRIO ====================
 const usuarioSchema = new mongoose.Schema({
@@ -69,8 +69,7 @@ const usuarioSchema = new mongoose.Schema({
 usuarioSchema.pre('save', async function(next) {
   if (!this.isModified('senha')) return next();
   try {
-    const salt = await bcrypt.genSalt(10);
-    this.senha = await bcrypt.hash(this.senha, salt);
+    this.senha = await hashSenha(this.senha, 10);
     next();
   } catch (error) {
     next(error);
@@ -78,9 +77,11 @@ usuarioSchema.pre('save', async function(next) {
 });
 
 // Método para comparar senhas
-usuarioSchema.methods.compararSenha = async function(senhaDigitada) {
-  return await bcrypt.compare(senhaDigitada, this.senha);
+usuarioSchema.methods.compararSenha = function(senhaDigitada) {
+  return compararHash(senhaDigitada, this.senha);
 };
+
+usuarioSchema.index({ escola_id: 1, tipo: 1, ativo: 1 });
 
 // ==================== ESCOLA ====================
 const escolaSchema = new mongoose.Schema({
@@ -230,6 +231,7 @@ presencaSchema.index(
   { aluno_id: 1, data: 1, tempo: 1 },
   { unique: true }
 );
+presencaSchema.index({ turma_id: 1, data: -1 });
 
 // ==================== DISCIPLINA (tempos de aula) ====================
 const disciplinaConfigSchema = new mongoose.Schema({
@@ -437,7 +439,7 @@ const parecerIASchema = new mongoose.Schema({
   textoOrientacoes: { type: String, required: true },
   geradoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
   editado: { type: Boolean, default: false },
-  fonte: { type: String, enum: ['local', 'openai'], default: 'local' },
+  fonte: { type: String, enum: ['local', 'openai', 'ollama'], default: 'local' },
   snapshot: {
     media: { type: Number },
     frequenciaPercentual: { type: Number },
@@ -714,6 +716,37 @@ const backupEscolaSchema = new mongoose.Schema({
 });
 backupEscolaSchema.index({ escola_id: 1, dataCriacao: -1 });
 
+// ==================== CRÉDITOS E CONSUMO IA (Ollama / local) ====================
+const creditoIAEscolaSchema = new mongoose.Schema({
+  escola_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Escola', required: true, unique: true },
+  saldo: { type: Number, default: 5000, min: 0 },
+  creditoInicial: { type: Number, default: 5000 },
+  totalConsumido: { type: Number, default: 0 },
+  dataCriacao: { type: Date, default: Date.now },
+  dataAtualizacao: { type: Date, default: Date.now }
+});
+
+const consumoIASchema = new mongoose.Schema({
+  escola_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Escola', required: true },
+  usuario_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
+  finalidade: {
+    type: String,
+    enum: ['chat', 'parecer', 'pergunta', 'outro'],
+    default: 'chat'
+  },
+  modelo: { type: String, default: '' },
+  provider: { type: String, default: 'ollama' },
+  tokensEstimados: { type: Number, default: 0 },
+  promptTokens: { type: Number, default: 0 },
+  completionTokens: { type: Number, default: 0 },
+  creditosDebitados: { type: Number, default: 0 },
+  sucesso: { type: Boolean, default: true },
+  erroMensagem: { type: String, default: '' },
+  dataCriacao: { type: Date, default: Date.now }
+});
+consumoIASchema.index({ escola_id: 1, dataCriacao: -1 });
+consumoIASchema.index({ escola_id: 1, usuario_id: 1, dataCriacao: -1 });
+
 // Exportar modelos
 module.exports = {
   Usuario: mongoose.model('Usuario', usuarioSchema),
@@ -741,5 +774,7 @@ module.exports = {
   ConcurrencyLock: mongoose.model('ConcurrencyLock', concurrencyLockSchema),
   IdempotencyRecord: mongoose.model('IdempotencyRecord', idempotencyRecordSchema),
   BackupEscola: mongoose.model('BackupEscola', backupEscolaSchema),
+  CreditoIAEscola: mongoose.model('CreditoIAEscola', creditoIAEscolaSchema),
+  ConsumoIA: mongoose.model('ConsumoIA', consumoIASchema),
   Log: mongoose.model('Log', logSchema)
 };

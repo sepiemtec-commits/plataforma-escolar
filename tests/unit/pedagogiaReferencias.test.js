@@ -72,4 +72,10 @@ describe('responderChatLocal', () => {
     expect(out.resposta).toMatch(/2\)/);
     expect(out.resposta).toMatch(/desplugad|algoritmo|Robô|condi[cç]/i);
   });
+
+  test('não transforma a palavra parte em aula de artes', () => {
+    const out = responderChatLocal('Quero que a família faça parte da conversa sobre o boletim.');
+    expect(out.resposta).not.toMatch(/releitura|obra\/música|pixel art|dança/i);
+    expect(out.resposta).toMatch(/parecer|família|evidências/i);
+  });
 });

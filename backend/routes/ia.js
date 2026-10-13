@@ -1,4 +1,4 @@
-// backend/routes/ia.js — IA pedagógica (pareceres para o professor)
+// backend/routes/ia.js — IA pedagógica (pareceres + chat NICE via AIService/Ollama)
 const express = require('express');
 const router = express.Router();
 const { autenticacao, verificarRole, requerEscola } = require('../middleware/autenticacao');
@@ -11,6 +11,7 @@ const {
 } = require('../utils/tenant');
 const { ParecerIA, HorarioAula } = require('../database/schema');
 const { gerarParecerPedagogico, conversarNiceIA } = require('../services/iaPedagogica');
+const AIService = require('../services/ai/AIService');
 
 const rolesIA = ['professor', 'coordenador', 'diretor', 'admin'];
 
@@ -34,6 +35,114 @@ async function assertProfessorNaTurma(req, turmaId) {
   return turma;
 }
 
+function avisoFonte(fonte, ollamaMotivo) {
+  if (fonte === 'ollama') {
+    return 'NICE IA (modelo local Ollama). Revise antes de usar com a família.';
+  }
+  if (ollamaMotivo === 'ollama_indisponivel') {
+    return 'NICE IA (motor de regras): Ollama offline. Inicie ollama serve e baixe o modelo.';
+  }
+  if (ollamaMotivo === 'sem_creditos_internos') {
+    return 'Créditos internos de IA esgotados para a escola.';
+  }
+  if (ollamaMotivo === 'limite_diario') {
+    return 'Limite diário de uso da IA atingido.';
+  }
+  return 'NICE IA (motor de regras local com referências pedagógicas).';
+}
+
+// ==================== STATUS / CRÉDITOS ====================
+router.get(
+  '/status',
+  autenticacao,
+  verificarRole(...rolesIA),
+  requerEscola,
+  async (req, res) => {
+    try {
+      const [status, creditos] = await Promise.all([
+        AIService.status(),
+        AIService.obterStatusCreditos(req.usuario.escola_id, req.usuario._id)
+      ]);
+      res.json({ sucesso: true, ...status, creditos });
+    } catch (error) {
+      console.error('Erro status IA:', error);
+      res.status(500).json({ sucesso: false, mensagem: 'Erro ao consultar status da IA' });
+    }
+  }
+);
+
+router.get(
+  '/creditos',
+  autenticacao,
+  verificarRole(...rolesIA),
+  requerEscola,
+  async (req, res) => {
+    try {
+      const creditos = await AIService.obterStatusCreditos(
+        req.usuario.escola_id,
+        req.usuario._id
+      );
+      res.json({ sucesso: true, creditos });
+    } catch (error) {
+      console.error('Erro créditos IA:', error);
+      res.status(500).json({ sucesso: false, mensagem: 'Erro ao consultar créditos' });
+    }
+  }
+);
+
+// ==================== PERGUNTA GENÉRICA (endpoint interno) ====================
+router.post(
+  '/perguntar',
+  autenticacao,
+  verificarRole(...rolesIA),
+  requerEscola,
+  async (req, res) => {
+    try {
+      const { pergunta, historico, contexto } = req.body || {};
+      const texto = String(pergunta || req.body?.mensagem || '').trim();
+      if (!texto) {
+        return res.status(400).json({ sucesso: false, mensagem: 'pergunta é obrigatória' });
+      }
+
+      const out = await AIService.generate({
+        escolaId: req.usuario.escola_id,
+        usuarioId: req.usuario._id,
+        finalidade: 'pergunta',
+        contextoPedagogico: contexto && typeof contexto === 'object' ? contexto : null,
+        messages: [
+          ...(Array.isArray(historico)
+            ? historico
+                .filter((m) => m && m.content)
+                .slice(-8)
+                .map((m) => ({
+                  role: m.role === 'assistant' ? 'assistant' : 'user',
+                  content: String(m.content).slice(0, 4000)
+                }))
+            : []),
+          { role: 'user', content: texto.slice(0, 4000) }
+        ]
+      });
+
+      res.json({
+        sucesso: true,
+        resposta: out.texto,
+        fonte: out.fonte,
+        modelo: out.modelo,
+        tokensEstimados: out.tokensEstimados,
+        creditosDebitados: out.creditosDebitados,
+        aviso: 'Resposta gerada localmente via Ollama. Revise antes de usar.'
+      });
+    } catch (error) {
+      console.error('Erro /ia/perguntar:', error);
+      res.status(error.status || 500).json({
+        sucesso: false,
+        codigo: error.codigo || null,
+        mensagem: error.mensagem || error.message || 'Erro ao consultar a IA'
+      });
+    }
+  }
+);
+
 // ==================== GERAR PARECER ====================
 router.post(
   '/parecer/gerar',
@@ -54,22 +163,24 @@ router.post(
         alunoId: aluno_id,
         turmaId: turma_id,
         disciplina: disciplina ? String(disciplina).trim() : '',
-        escolaId: req.usuario.escola_id
+        escolaId: req.usuario.escola_id,
+        usuarioId: req.usuario._id
       });
 
       res.json({
         sucesso: true,
         ...resultado,
         aviso:
-          resultado.fonte === 'local'
-            ? 'Gerado pelo motor local da VEHO com referências pedagógicas curadas. Revise antes de salvar. (OpenAI opcional via OPENAI_API_KEY)'
-            : 'Gerado com modelo externo + base pedagógica curada. Revise antes de salvar.'
+          resultado.fonte === 'ollama'
+            ? 'Gerado com modelo local (Ollama) + base pedagógica curada. Revise antes de salvar.'
+            : 'Gerado pelo motor de regras da VEHO (Ollama indisponível ou sem créditos). Revise antes de salvar.'
       });
     } catch (error) {
       if (responderErroTenant(res, error)) return;
       console.error('Erro ao gerar parecer IA:', error);
       res.status(error.status || 500).json({
         sucesso: false,
+        codigo: error.codigo || null,
         mensagem: error.mensagem || error.message || 'Erro ao gerar parecer'
       });
     }
@@ -105,6 +216,9 @@ router.post(
       await assertProfessorNaTurma(req, turma_id);
       await assertAlunoNaTurma(req, turma_id, aluno_id);
 
+      const fonteSalva =
+        fonte === 'ollama' ? 'ollama' : fonte === 'openai' ? 'openai' : 'local';
+
       const doc = await ParecerIA.create({
         escola_id: req.usuario.escola_id,
         aluno_id,
@@ -114,7 +228,7 @@ router.post(
         textoOrientacoes: String(textoOrientacoes).trim(),
         geradoPor: req.usuario._id,
         editado: Boolean(editado),
-        fonte: fonte === 'openai' ? 'openai' : 'local',
+        fonte: fonteSalva,
         snapshot: {
           media: snapshot?.media ?? null,
           frequenciaPercentual: snapshot?.frequenciaPercentual ?? null,
@@ -164,31 +278,21 @@ router.post(
         alunoId: aluno_id || null,
         turmaId: turma_id || null,
         disciplina: disciplina ? String(disciplina).trim() : '',
-        escolaId: req.usuario.escola_id
+        escolaId: req.usuario.escola_id,
+        usuarioId: req.usuario._id
       });
-
-      const avisoLocal =
-        resultado.openaiMotivo === 'sem_creditos'
-          ? 'NICE IA (motor local): a conta OpenAI está sem créditos. Respostas pedagógicas locais ativas.'
-          : resultado.openaiMotivo === 'sem_chave'
-            ? 'NICE IA (motor local). Configure OPENAI_API_KEY para respostas mais ricas.'
-            : resultado.openaiMotivo
-              ? `NICE IA (motor local; OpenAI indisponível: ${resultado.openaiMotivo}).`
-              : 'NICE IA (motor local).';
 
       res.json({
         sucesso: true,
         ...resultado,
-        aviso:
-          resultado.fonte === 'openai'
-            ? 'NICE IA (modelo externo). Revise antes de usar com a família.'
-            : avisoLocal
+        aviso: avisoFonte(resultado.fonte, resultado.ollamaMotivo)
       });
     } catch (error) {
       if (responderErroTenant(res, error)) return;
       console.error('Erro no chat NICE IA:', error);
       res.status(error.status || 500).json({
         sucesso: false,
+        codigo: error.codigo || null,
         mensagem: error.mensagem || error.message || 'Erro no chat'
       });
     }

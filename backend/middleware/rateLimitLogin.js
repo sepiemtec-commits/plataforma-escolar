@@ -35,4 +35,29 @@ const rateLimitLogin = rateLimit({
   validate: { keyGeneratorIpFallback: false }
 });
 
-module.exports = { rateLimitLogin };
+/** Pedidos de recuperação: conta toda tentativa, não só as que falham. */
+const rateLimitRecuperacao = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: () => Number(process.env.RATE_LIMIT_RESET_MAX || 5),
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () =>
+    process.env.DISABLE_RATE_LIMIT === '1' ||
+    process.env.DISABLE_RATE_LIMIT === 'true',
+  keyGenerator: (req) => {
+    const email = String(req.body?.email || '')
+      .trim()
+      .toLowerCase();
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+    return `reset:${ip}:${email || 'sem-email'}`;
+  },
+  handler: (req, res) => {
+    res.status(429).json({
+      sucesso: false,
+      mensagem: 'Muitos pedidos de recuperação. Aguarde alguns minutos e tente novamente.'
+    });
+  },
+  validate: { keyGeneratorIpFallback: false }
+});
+
+module.exports = { rateLimitLogin, rateLimitRecuperacao };

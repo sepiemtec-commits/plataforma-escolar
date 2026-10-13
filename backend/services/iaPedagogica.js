@@ -5,6 +5,7 @@ const {
   formatarReferenciasParaTexto,
   formatarReferenciasParaPrompt
 } = require('../constants/pedagogiaReferencias');
+const AIService = require('./ai/AIService');
 
 function mediaDeNotas(avaliacoes) {
   if (!avaliacoes.length) return null;
@@ -198,92 +199,87 @@ function gerarTextoLocal(snapshot) {
   };
 }
 
-async function gerarComOpenAI(snapshot) {
-  const key = (process.env.OPENAI_API_KEY || '').trim();
-  if (!key) return null;
+function extrairJsonParecer(texto) {
+  const raw = String(texto || '').trim();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    try {
+      return JSON.parse(m[0]);
+    } catch {
+      return null;
+    }
+  }
+}
+
+/**
+ * Parecer via AIService (Ollama local). Sem PII no prompt — só métricas + turma/disciplina.
+ */
+async function gerarComOllamaParecer(snapshot, { escolaId, usuarioId }) {
+  if (!escolaId || !usuarioId) return null;
 
   const { area, referencias } = selecionarReferencias(snapshot.disciplina, snapshot.nivel);
   const blocoPedagogico = formatarReferenciasParaPrompt(referencias, area);
 
-  const model = (process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
-  const prompt = {
-    role: 'user',
-    content:
-      `Você é um assistente pedagógico para professores do ensino fundamental/médio no Brasil.\n` +
-      `Com base nos dados e nas referências curadas, produza JSON com as chaves "textoParecer" e "textoOrientacoes".\n` +
-      `textoParecer: 1–2 parágrafos descritivos, linguagem profissional, sem inventar fatos além dos dados do aluno.\n` +
-      `textoOrientacoes: lista numerada de sugestões práticas; incorpore 1–3 autores/ideias das referências curadas ` +
-      `(ex.: Vygotsky/ZDP, Freire, BNCC), sem inventar obras ou anos. Termine com um item de verificação/acompanhamento.\n` +
-      `Dados do aluno:\n${JSON.stringify(
-        {
-          aluno: snapshot.aluno.nome,
-          turma: snapshot.turma.nome,
-          disciplina: snapshot.disciplina || null,
-          media: snapshot.media,
-          frequenciaPercentual: snapshot.frequenciaPercentual,
-          totalFaltas: snapshot.totalFaltas,
-          nivel: snapshot.nivel
-        },
-        null,
-        2
-      )}\n` +
-      `Referências pedagógicas curadas:\n${JSON.stringify(blocoPedagogico, null, 2)}`
-  };
-
-  const resposta = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.4,
-      response_format: { type: 'json_object' },
+  try {
+    const out = await AIService.generate({
+      escolaId,
+      usuarioId,
+      finalidade: 'parecer',
+      system:
+        'Responda APENAS JSON válido com as chaves "textoParecer" e "textoOrientacoes" em português do Brasil. ' +
+        'Não inclua markdown nem texto fora do JSON. ' +
+        'Fundamente orientações nas referências curadas. Não invente dados além do contexto.',
       messages: [
         {
-          role: 'system',
+          role: 'user',
           content:
-            'Responda apenas JSON válido com textoParecer e textoOrientacoes em português do Brasil. ' +
-            'Fundamente orientações em pedagogia reconhecida (referências fornecidas). Não invente dados do aluno.'
-        },
-        prompt
+            `Produza JSON com textoParecer (1–2 parágrafos) e textoOrientacoes (lista numerada prática).\n` +
+            `Incorpore 1–3 ideias das referências (Vygotsky/ZDP, Freire, BNCC etc.) sem inventar obras/anos.\n` +
+            `Contexto pedagógico (sem dados pessoais):\n${JSON.stringify({
+              turma: snapshot.turma?.nome || null,
+              disciplina: snapshot.disciplina || null,
+              media: snapshot.media,
+              frequenciaPercentual: snapshot.frequenciaPercentual,
+              totalFaltas: snapshot.totalFaltas,
+              nivel: snapshot.nivel
+            })}\n` +
+            `Referências curadas:\n${JSON.stringify(blocoPedagogico)}`
+        }
       ]
-    })
-  });
+    });
 
-  if (!resposta.ok) {
-    const corpo = await resposta.text();
-    console.warn('OpenAI IA pedagógica falhou:', resposta.status, corpo.slice(0, 200));
+    const parsed = extrairJsonParecer(out.texto);
+    if (!parsed?.textoParecer || !parsed?.textoOrientacoes) return null;
+
+    return {
+      textoParecer: String(parsed.textoParecer).trim(),
+      textoOrientacoes: String(parsed.textoOrientacoes).trim(),
+      fonte: 'ollama',
+      situacao: snapshot.nivel,
+      referencias,
+      modelo: out.modelo,
+      tokensEstimados: out.tokensEstimados
+    };
+  } catch (e) {
+    if (e.status === 402 || e.status === 429) throw e;
+    console.warn('Ollama parecer indisponível, usando motor local:', e.message);
     return null;
   }
-
-  const data = await resposta.json();
-  const raw = data.choices?.[0]?.message?.content || '{}';
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-
-  if (!parsed.textoParecer || !parsed.textoOrientacoes) return null;
-
-  return {
-    textoParecer: String(parsed.textoParecer).trim(),
-    textoOrientacoes: String(parsed.textoOrientacoes).trim(),
-    fonte: 'openai',
-    situacao: snapshot.nivel,
-    referencias
-  };
 }
 
 /**
- * Gera parecer + orientações (OpenAI se houver chave; senão motor local).
+ * Gera parecer + orientações (Ollama via AIService; fallback regras locais).
  */
 async function gerarParecerPedagogico(opts) {
   const snapshot = await montarSnapshot(opts);
-  let gerado = await gerarComOpenAI(snapshot);
+  let gerado = await gerarComOllamaParecer(snapshot, {
+    escolaId: opts.escolaId,
+    usuarioId: opts.usuarioId
+  });
   if (!gerado) {
     gerado = gerarTextoLocal(snapshot);
   }
@@ -304,7 +300,9 @@ async function gerarParecerPedagogico(opts) {
     textoOrientacoes: gerado.textoOrientacoes,
     fonte: gerado.fonte,
     situacao: gerado.situacao,
-    referencias: gerado.referencias || []
+    referencias: gerado.referencias || [],
+    modelo: gerado.modelo || null,
+    tokensEstimados: gerado.tokensEstimados || null
   };
 }
 
@@ -319,19 +317,27 @@ function normalizarHistoricoChat(historico) {
     }));
 }
 
+function temTermo(texto, padrao) {
+  const re = padrao instanceof RegExp
+    ? padrao
+    : new RegExp(`(?:^|[^a-zà-ÿ])(?:${padrao})(?=$|[^a-zà-ÿ])`, 'i');
+  return re.test(String(texto || ''));
+}
+
 /** Extrai disciplina/tema da mensagem do professor (não só do select). */
 function disciplinaDaMensagem(msg) {
-  const m = String(msg || '').toLowerCase();
-  if (/computa|desplugad|algoritm|programa[cç]|pensamento\s*computacional|coding|scratch/.test(m)) {
+  const m = String(msg || '');
+  if (temTermo(m, /computa[cç][aã]o|desplugad|algoritmo|programa[cç][aã]o|pensamento\s*computacional|coding|scratch/i)) {
     return 'Computação';
   }
-  if (/matem|fra[cç]|geometr|álgebra|algebra|n[uú]mero/.test(m)) return 'Matemática';
-  if (/portugu|leitura|escrita|reda[cç]|literat/.test(m)) return 'Português';
-  if (/ci[eê]ncia|biolog|f[ií]sica|qu[ií]mica/.test(m)) return 'Ciências';
-  if (/hist[oó]ria/.test(m)) return 'História';
-  if (/geograf/.test(m)) return 'Geografia';
-  if (/educa[cç][aã]o\s*f[ií]sica|\bef\b/.test(m)) return 'Educação Física';
-  if (/arte|m[uú]sica|teatro/.test(m)) return 'Artes';
+  if (temTermo(m, /matem[aá]tica|fra[cç][oõ]es|geometria|[aá]lgebra|aritm[eé]tica/i)) return 'Matemática';
+  if (temTermo(m, /portugu[eê]s|leitura|escrita|reda[cç][aã]o|literatura/i)) return 'Português';
+  if (temTermo(m, /ci[eê]ncias|biologia|f[ií]sica|qu[ií]mica/i)) return 'Ciências';
+  if (temTermo(m, /hist[oó]ria/i)) return 'História';
+  if (temTermo(m, /geografia/i)) return 'Geografia';
+  if (temTermo(m, /educa[cç][aã]o\s*f[ií]sica/i)) return 'Educação Física';
+  if (temTermo(m, /artes|m[uú]sica|teatro|dan[cç]a/i)) return 'Artes';
+  if (temTermo(m, /ingl[eê]s|espanhol/i)) return 'Língua estrangeira';
   return '';
 }
 
@@ -427,7 +433,7 @@ function ideiasPorDisciplina(msgOuDisciplina, qtd) {
       'Jogo modificado: a turma ajuda a criar 1 regra nova e discute inclusão e fair play depois.',
       'Autopercepção: ao final, cada aluno marca no cartão “consegui / quase / preciso de ajuda” sem ranqueamento público.'
     ];
-  } else if (/arte|m[uú]sica|teatro|dan[cç]a/.test(m)) {
+  } else if (/(?:^|[^a-zà-ÿ])artes?(?:[^a-zà-ÿ]|$)|m[uú]sica|teatro|dan[cç]a/.test(m)) {
     ideias = [
       'Observação → experimentação → socialização: ver uma obra/música, experimentar técnica simples e apresentar em 1 min.',
       'Releitura criativa: reinterpretar um tema com materiais acessíveis (jornal, giz, corpo, voz).',
@@ -472,23 +478,33 @@ function responderChatLocal(mensagem, snapshot) {
     })
     .slice(0, 2);
 
-  const pedindoIdeias = /ideia|atividade|estrat[eé]gia|proposta|como\s+(trabalhar|fazer|ensinar|abordar|aplicar)|desplugad|din[aâ]mica|oficina|sugest|exerc[ií]cio|aula\s+(de|sobre)|trabalhar/.test(msgL);
+  const pedindoIdeias = /ideia|atividade|estrat[eé]gia|proposta|como\s+(trabalhar|ensinar|abordar|aplicar)|desplugad|din[aâ]mica|oficina|sugest|exerc[ií]cio|aula\s+(de|sobre)|trabalhar/.test(msgL);
   const qtd = quantidadeIdeiasPedidas(msgL);
-  const temaDetectado = disciplinaCtx || disciplinaDaMensagem(msg);
+  const temaNaMensagem = disciplinaDaMensagem(msg);
+  const temaDetectado = temaNaMensagem || '';
 
   let corpo;
+  let incluirRefs = true;
 
-  if (/desplugad|computa.*sem\s*comput|pensamento\s*computacional/.test(msgL) ||
+  // Contas simples (útil quando Ollama ainda não está ativo)
+  const conta =
+    msgL.match(/quanto\s+(?:[eé]|eh)\s+(\d+)\s*(?:\+|mais|e)\s*(\d+)/) ||
+    msgL.match(/(\d+)\s*(?:\+|mais)\s*(\d+)\s*\??\s*$/) ||
+    msgL.match(/calcule?\s+(\d+)\s*(?:\+|mais)\s*(\d+)/);
+  if (conta) {
+    const a = Number(conta[1]);
+    const b = Number(conta[2]);
+    incluirRefs = false;
+    corpo =
+      `${a} + ${b} = ${a + b}.\n\n` +
+      'Sou a NICE IA pedagógica: além de contas simples, ajudo com ideias de aula, BNCC e estratégias. ' +
+      'Ex.: “duas ideias de computação desplugada” ou “como recuperar frações com ZDP”.';
+  } else if (/desplugad|computa.*sem\s*comput|pensamento\s*computacional/.test(msgL) ||
       (/computa[cç][aã]o|algoritm|scratch|coding/.test(msgL) && (pedindoIdeias || /estudante|aluno|turma|aula/.test(msgL)))) {
     corpo =
       `Aqui vão ${qtd} ideias de computação desplugada (sem computador), prontas para sala:\n\n` +
       ideiasComputacaoDesplugada(qtd) +
       '\n\nDica: ao final, peça que a turma nomeie o conceito (algoritmo, condição, depuração) com as próprias palavras — isso fixa a metáfora.';
-  } else if (pedindoIdeias || temaDetectado) {
-    corpo =
-      `Sugestões práticas${temaDetectado ? ` para ${temaDetectado}` : ''}:\n\n` +
-      ideiasPorDisciplina(temaDetectado || msgL, qtd) +
-      `\n\nSe quiser, peça o ano/série (ex.: “5º ano”) que eu ajusto o nível.`;
   } else if (/vygotsky|zdp|proximal|andaime|scaffolding/.test(msgL)) {
     corpo =
       'A Zona de Desenvolvimento Proximal (Vygotsky) é o que o aluno faz com mediação, mas ainda não sozinho.\n\n' +
@@ -518,13 +534,25 @@ function responderChatLocal(mensagem, snapshot) {
     corpo =
       'Esses autores ajudam a planejar: Piaget (ação e desequilíbrio), Ausubel (ancorar no que o aluno já sabe), ' +
       'Wallon (afeto e vínculo como condição de aprender). Peça uma disciplina ou uma atividade que eu detalhe o passo a passo.';
-  } else {
+  } else if (pedindoIdeias) {
     corpo =
-      'Posso ajudar com ideias de aula por disciplina. Experimente perguntas como:\n' +
+      `Sugestões práticas${temaDetectado ? ` para ${temaDetectado}` : ''}:\n\n` +
+      ideiasPorDisciplina(temaDetectado || msgL, qtd) +
+      `\n\nSe quiser, peça o ano/série (ex.: “5º ano”) que eu ajusto o nível.`;
+  } else if (temaNaMensagem && /o que [eé]|explique|conceit|significa|defini/.test(msgL)) {
+    corpo =
+      `Sobre ${temaNaMensagem}: respondo ao que você perguntou, sem trocar de assunto.\n\n` +
+      `Para eu ser objetiva, diga o ano/série e se quer explicação do conceito ou uma atividade. ` +
+      `Exemplo: “explique ${temaNaMensagem.toLowerCase()} para o 5º ano” ou “2 atividades de ${temaNaMensagem.toLowerCase()}”.`;
+  } else {
+    incluirRefs = false;
+    corpo =
+      'Não entendi o pedido o bastante para responder no assunto certo.\n\n' +
+      'Pergunte de forma direta, por exemplo:\n' +
       '• “2 ideias de história com fontes”\n' +
-      '• “atividades de frações para 5º ano”\n' +
-      '• “como trabalhar ciências por investigação”\n' +
-      '• “duas ideias de computação desplugada”';
+      '• “atividades de frações para o 5º ano”\n' +
+      '• “como usar a ZDP em matemática”\n' +
+      '• “como escrever um parecer para a família”';
   }
 
   const partes = [corpo];
@@ -539,7 +567,7 @@ function responderChatLocal(mensagem, snapshot) {
     );
   }
 
-  if (refsRelevantes.length) {
+  if (incluirRefs && refsRelevantes.length && (pedindoIdeias || /vygotsky|freire|piaget|bncc|recupera|parecer|zdp/.test(msgL) || temaNaMensagem)) {
     const refsTxt = refsRelevantes
       .map((r) => `• ${r.autor} (${r.ideia}): ${r.aplicacao}`)
       .join('\n');
@@ -552,99 +580,76 @@ function responderChatLocal(mensagem, snapshot) {
   };
 }
 
-async function responderChatOpenAI({ mensagem, historico, snapshot }) {
-  const key = (process.env.OPENAI_API_KEY || '').trim();
-  if (!key) return { ok: false, motivo: 'sem_chave' };
+/**
+ * Chat via AIService (Ollama local). Sem nome/CPF — só métricas pedagógicas.
+ */
+async function responderChatOllama({ mensagem, historico, snapshot, escolaId, usuarioId }) {
+  if (!escolaId || !usuarioId) return { ok: false, motivo: 'sem_contexto_auth' };
 
   const disciplinaCtx = snapshot?.disciplina || disciplinaDaMensagem(mensagem) || '';
   const { area, referencias } = selecionarReferencias(
     disciplinaCtx,
     snapshot?.aluno ? (snapshot.nivel || 'sem_dados') : 'bom'
   );
-  const model = (process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
 
   const system =
-    'Você é a NICE IA, assistente pedagógica da plataforma VEHO Edu, para professores no Brasil.\n' +
-    'REGRAS OBRIGATÓRIAS:\n' +
-    '1) Responda SEMPRE à pergunta do professor de forma direta e útil — ideias de aula, estratégias, BNCC, autores.\n' +
-    '2) Turma/aluno são OPCIONAIS. Se não houver aluno selecionado, responda em termos gerais. NÃO peça para selecionar aluno e NÃO diga que não pode ajudar.\n' +
-    '3) Se pedirem N ideias (ex.: “duas ideias de computação desplugada”), entregue exatamente N propostas concretas, numeradas, prontas para sala (materiais, passos, objetivo).\n' +
-    '4) Não invente notas, faltas ou fatos do aluno além do contexto JSON.\n' +
-    '5) Cite autores só com ideias reconhecidas (Vygotsky, Freire, Piaget, Ausubel, Wallon, BNCC, Papert, autores da área), sem inventar livros/anos.\n' +
-    '6) Português do Brasil. Seja prática: prefira listas e passos a discurso genérico. O professor deve revisar antes de usar com a família.';
+    AIService.systemPedagogicoPadrao() +
+    '\nREGRAS:\n' +
+    '1) Responda à pergunta feita. Não mude de assunto nem invente outro tema.\n' +
+    '2) Só liste ideias de aula se pedirem ideias, atividades ou estratégias.\n' +
+    '3) Se pedirem N ideias, entregue exatamente N propostas numeradas, no tema pedido.\n' +
+    '4) Turma/aluno são opcionais; se não houver, responda em termos gerais.\n' +
+    '5) Não invente notas/faltas além do contexto. Cite só autores reconhecidos.';
 
-  const contexto = {
-    aluno: snapshot?.aluno
-      ? {
-          nome: snapshot.aluno.nome,
-          turma: snapshot.turma?.nome,
-          disciplina: snapshot.disciplina || null,
-          media: snapshot.media,
-          frequenciaPercentual: snapshot.frequenciaPercentual,
-          totalFaltas: snapshot.totalFaltas,
-          nivel: snapshot.nivel
-        }
-      : null,
+  const contextoSanitizado = {
+    turma: snapshot?.turma?.nome || null,
+    disciplina: snapshot?.disciplina || disciplinaCtx || null,
+    media: snapshot?.media ?? null,
+    frequenciaPercentual: snapshot?.frequenciaPercentual ?? null,
+    totalFaltas: snapshot?.totalFaltas ?? null,
+    nivel: snapshot?.nivel || null,
     tema_detectado: disciplinaCtx || null,
     referencias_curadas: formatarReferenciasParaPrompt(referencias, area)
   };
 
-  const messages = [
-    { role: 'system', content: system },
-    {
-      role: 'system',
-      content: `Contexto (JSON; aluno pode ser null):\n${JSON.stringify(contexto)}`
-    },
-    ...normalizarHistoricoChat(historico),
-    { role: 'user', content: String(mensagem).trim().slice(0, 4000) }
-  ];
-
   try {
-    const resposta = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.55,
-        max_tokens: 1100,
-        messages
-      })
+    const out = await AIService.generate({
+      escolaId,
+      usuarioId,
+      finalidade: 'chat',
+      system,
+      contextoPedagogico: contextoSanitizado,
+      messages: [
+        ...normalizarHistoricoChat(historico),
+        { role: 'user', content: String(mensagem).trim().slice(0, 4000) }
+      ]
     });
 
-    if (!resposta.ok) {
-      const corpo = await resposta.text();
-      console.warn('OpenAI NICE chat falhou:', resposta.status, corpo.slice(0, 200));
-      let motivo = `http_${resposta.status}`;
-      try {
-        const j = JSON.parse(corpo);
-        const code = j?.error?.code || j?.error?.type || '';
-        if (/insufficient_quota|credit_balance|billing/i.test(`${code} ${j?.error?.message || ''}`)) {
-          motivo = 'sem_creditos';
-        } else if (resposta.status === 401) {
-          motivo = 'chave_invalida';
-        }
-      } catch {
-        /* ignore */
-      }
-      return { ok: false, motivo };
-    }
-
-    const data = await resposta.json();
-    const texto = data.choices?.[0]?.message?.content;
-    if (!texto || !String(texto).trim()) return { ok: false, motivo: 'resposta_vazia' };
-
-    return { ok: true, resposta: String(texto).trim(), fonte: 'openai' };
+    return {
+      ok: true,
+      resposta: out.texto,
+      fonte: 'ollama',
+      modelo: out.modelo,
+      tokensEstimados: out.tokensEstimados,
+      creditosDebitados: out.creditosDebitados
+    };
   } catch (e) {
-    console.warn('OpenAI NICE chat erro de rede:', e.message);
-    return { ok: false, motivo: 'rede' };
+    const motivo =
+      e.codigo ||
+      (e.status === 402
+        ? 'sem_creditos_internos'
+        : e.status === 429
+          ? 'limite_diario'
+          : e.status === 503 || e.status === 504
+            ? 'ollama_indisponivel'
+            : 'erro_modelo');
+    console.warn('Ollama NICE chat falhou:', e.message);
+    return { ok: false, motivo, erro: e };
   }
 }
 
 /**
- * Chat interativo NICE IA (OpenAI se houver chave; senão respostas locais).
+ * Chat interativo NICE IA (Ollama via AIService; fallback motor de regras).
  */
 async function conversarNiceIA({
   mensagem,
@@ -652,7 +657,8 @@ async function conversarNiceIA({
   alunoId,
   turmaId,
   disciplina,
-  escolaId
+  escolaId,
+  usuarioId
 }) {
   const texto = String(mensagem || '').trim();
   if (!texto) {
@@ -676,20 +682,35 @@ async function conversarNiceIA({
     });
   }
 
-  const openai = await responderChatOpenAI({
+  const ollama = await responderChatOllama({
     mensagem: texto,
     historico,
-    snapshot
+    snapshot,
+    escolaId,
+    usuarioId
   });
 
-  const gerado = openai?.ok
-    ? { resposta: openai.resposta, fonte: 'openai' }
+  if (ollama?.erro && (ollama.erro.status === 402 || ollama.erro.status === 429)) {
+    throw ollama.erro;
+  }
+
+  const gerado = ollama?.ok
+    ? {
+        resposta: ollama.resposta,
+        fonte: 'ollama',
+        modelo: ollama.modelo,
+        tokensEstimados: ollama.tokensEstimados,
+        creditosDebitados: ollama.creditosDebitados
+      }
     : responderChatLocal(texto, snapshot);
 
   return {
     resposta: gerado.resposta,
     fonte: gerado.fonte,
-    openaiMotivo: openai?.ok ? null : (openai?.motivo || null),
+    modelo: gerado.modelo || null,
+    tokensEstimados: gerado.tokensEstimados || null,
+    creditosDebitados: gerado.creditosDebitados || null,
+    ollamaMotivo: ollama?.ok ? null : ollama?.motivo || null,
     snapshot: snapshot
       ? {
           aluno: snapshot.aluno,

@@ -2,6 +2,8 @@
 
 Gera **parecer descritivo** e **orientações pedagógicas** a partir de notas e frequência já lançadas no VEHO Edu. O texto **não é publicado automaticamente**: o professor revisa, edita e salva.
 
+A geração usa **modelo open-source local via Ollama** (sem OpenAI / API paga). Veja o guia completo: [IA-LOCAL-OLLAMA.md](./IA-LOCAL-OLLAMA.md).
+
 ## Como usar
 
 1. Entre no **painel do professor**.
@@ -15,46 +17,36 @@ Gera **parecer descritivo** e **orientações pedagógicas** a partir de notas e
 
 Rota: `POST /api/ia/chat` com `{ mensagem, historico?, aluno_id?, turma_id?, disciplina? }`.
 
-Com `OPENAI_API_KEY`, a conversa usa o modelo; sem chave, respostas locais com base pedagógica curada.
+Com Ollama em execução, a conversa usa o modelo local (`OLLAMA_MODEL`). Se o Ollama estiver offline, cai no motor de regras com base pedagógica curada (exceto bloqueio por créditos/limites).
 
-## Motor local (padrão)
+## Motor de regras (fallback)
 
-Sem configuração extra, a VEHO classifica a situação do aluno (excelente / bom / alerta / crítico / sem dados) com base em média e frequência e preenche parágrafos-modelo em português pedagógico.
+Sem Ollama, a VEHO classifica a situação do aluno (excelente / bom / alerta / crítico / sem dados) e preenche textos-modelo em português pedagógico, com referências curadas (Vygotsky, Freire, Piaget, Ausubel, Wallon, BNCC…).
 
-Além disso, anexa **referências pedagógicas curadas** (Vygotsky, Freire, Piaget, Ausubel, Wallon, BNCC e autores por área — Português, Matemática, Ciências, História, Geografia, EF, Artes etc.), escolhidas conforme a disciplina e o nível de alerta. O professor deve revisar antes de usar com a família.
+Base: `backend/constants/pedagogiaReferencias.js`.
 
-Isso permite usar o MVP **sem conta OpenAI**.
-
-Base de dados: `backend/constants/pedagogiaReferencias.js` (ampliável).
-
-## OpenAI (opcional)
-
-1. Crie conta em [platform.openai.com](https://platform.openai.com).
-2. Em **API keys**, crie uma chave secreta.
-3. No `.env` do projeto:
+## Ollama (padrão recomendado)
 
 ```env
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o-mini
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=llama3.2
 ```
 
-4. Reinicie o servidor (`npm start`).
-
-Se a chave existir, a geração tenta o modelo externo **recebendo as mesmas referências curadas no prompt** (para citar autores/ideias sem inventar bibliografia); se falhar ou a chave estiver vazia, usa o motor local.
+Instalação e testes: [IA-LOCAL-OLLAMA.md](./IA-LOCAL-OLLAMA.md).
 
 ## API
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
+| `GET` | `/api/ia/status` | Saúde Ollama + créditos |
+| `GET` | `/api/ia/creditos` | Saldo e limites |
+| `POST` | `/api/ia/perguntar` | Pergunta genérica autenticada |
+| `POST` | `/api/ia/chat` | Chat NICE IA |
 | `POST` | `/api/ia/parecer/gerar` | Gera parecer (não persiste) |
 | `POST` | `/api/ia/parecer/salvar` | Salva parecer revisado |
-| `GET` | `/api/ia/parecer/aluno/:id` | Lista pareceres salvos do aluno |
-| `POST` | `/api/ia/chat` | Chat interativo NICE IA |
+| `GET` | `/api/ia/parecer/aluno/:alunoId` | Histórico do aluno |
 
-Roles: `professor`, `coordenador`, `diretor`, `admin`. O professor só gera/salva para turmas a que está vinculado.
+## Privacidade
 
-## Limitações do MVP
-
-- Sugestão de texto — não substitui o julgamento docente.
-- Não há publicação automática para família ou boletim.
-- Qualidade depende dos dados de notas/presença já lançados.
+Prompts enviados ao modelo **não incluem** nome, CPF ou e-mail — apenas métricas pedagógicas (média, frequência, turma, disciplina).

@@ -1,6 +1,7 @@
 // backend/middleware/autenticacao.js - Middleware de Autenticação
 const { Usuario } = require('../database/schema');
 const { verificarAccessToken } = require('../utils/tokensAuth');
+const authCache = require('../utils/authCache');
 
 const autenticacao = async (req, res, next) => {
   try {
@@ -32,7 +33,12 @@ const autenticacao = async (req, res, next) => {
       });
     }
 
-    const usuario = await Usuario.findById(decoded.id);
+    let usuario = authCache.ler(decoded.id);
+    if (!usuario) {
+      usuario = await Usuario.findById(decoded.id)
+        .select('-refreshTokens -resetSenhaHash -resetSenhaExpira');
+      if (usuario) authCache.gravar(usuario);
+    }
 
     if (!usuario) {
       return res.status(401).json({

@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const usuarioOk = await verificarAutenticacao();
     if (!usuarioOk) return;
 
-    carregarSecao('dashboard');
+    if (!secaoPedidaNaUrl()) carregarSecao('dashboard');
+    abrirSecaoPedida(carregarSecao);
 
     document.getElementById('btnLogoutMenu').addEventListener('click', (e) => {
         e.preventDefault();

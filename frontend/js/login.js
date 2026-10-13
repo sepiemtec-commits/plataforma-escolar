@@ -2,6 +2,12 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('loginForm');
+    const avisoSenha = new URLSearchParams(window.location.search).get('senha');
+    if (avisoSenha === 'ok') {
+        const divSucesso = document.getElementById('mensagemSucesso');
+        divSucesso.textContent = 'Senha atualizada. Entre com a nova senha.';
+        divSucesso.style.display = 'block';
+    }
     // Submeter formulário
     form.addEventListener('submit', async (e) => {
         e.preventDefault();

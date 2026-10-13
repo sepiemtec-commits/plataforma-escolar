@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const usuarioOk = await verificarAutenticacao();
     if (!usuarioOk) return;
 
-    carregarSecao('portal');
+    if (!secaoPedidaNaUrl()) carregarSecao('portal');
+    abrirSecaoPedida(carregarSecao);
 
     document.getElementById('btnLogoutMenu').addEventListener('click', (e) => {
         e.preventDefault();

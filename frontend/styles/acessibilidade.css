@@ -1,0 +1,142 @@
+/* Tamanho das letras — escala a página inteira (textos em px inclusive). */
+html {
+    zoom: var(--escala-texto, 1);
+}
+
+.controle-letras {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    flex-shrink: 0;
+}
+
+.controle-letras button {
+    min-width: 28px;
+    min-height: 28px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #6b7785;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.controle-letras button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.controle-letras button:hover,
+.controle-letras button:focus-visible {
+    background: rgba(61, 106, 159, 0.1);
+    color: #1e3a55;
+    outline: none;
+}
+
+.controle-letras-opcoes {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.controle-letras-opcoes[hidden] {
+    display: none;
+}
+
+.controle-letras .controle-letras-valor {
+    min-width: 36px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #8a94a0;
+}
+
+.user-info-acoes {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.barra-voltar-azul .controle-letras,
+.rel-topbar .controle-letras {
+    order: 2;
+    margin-left: auto;
+}
+
+.barra-voltar-azul .controle-letras ~ .btn-voltar-azul,
+.barra-voltar-azul .controle-letras ~ a.btn-voltar-azul {
+    order: 3;
+    margin-left: 4px;
+}
+
+.rel-topbar .controle-letras {
+    order: 0;
+    margin-left: 0;
+}
+
+.barra-voltar-azul .controle-letras button,
+.rel-topbar .controle-letras button {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.barra-voltar-azul .controle-letras button:hover,
+.barra-voltar-azul .controle-letras button:focus-visible,
+.rel-topbar .controle-letras button:hover,
+.rel-topbar .controle-letras button:focus-visible {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+}
+
+.barra-voltar-azul .controle-letras-valor,
+.rel-topbar .controle-letras-valor {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Páginas sem barra própria (login, termos): faixa fina no topo. */
+.barra-letras-topo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.55);
+    border-bottom: 1px solid rgba(90, 106, 122, 0.08);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media print {
+    html {
+        zoom: 1 !important;
+    }
+
+    .controle-letras,
+    .barra-letras-topo {
+        display: none !important;
+    }
+}

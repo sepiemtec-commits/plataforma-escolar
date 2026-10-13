@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await carregarPainel();
+    abrirSecaoPedida(carregarSecaoResp);
 });
 
 function carregarSecaoResp(secao, linkAtivo) {

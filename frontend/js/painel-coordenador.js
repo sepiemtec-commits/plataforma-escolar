@@ -25,8 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('formPei')?.addEventListener('submit', salvarPei);
     document.getElementById('peiTurma')?.addEventListener('change', onPeiTurmaChange);
 
-    carregarSecao('dashboard');
+    if (!secaoPedidaNaUrl()) carregarSecao('dashboard');
     await carregarDashboard();
+    abrirSecaoPedida(carregarSecao);
 });
 
 function configurarNavegacao() {

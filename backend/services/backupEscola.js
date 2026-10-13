@@ -369,7 +369,6 @@ async function upsertPorId(Model, docs, { escolaId, exigirEscolaId = false } = {
 }
 
 async function restaurarUsuarios(docs, escolaId) {
-  const bcrypt = require('bcryptjs');
   const crypto = require('crypto');
   let criados = 0;
   let atualizados = 0;
@@ -390,7 +389,7 @@ async function restaurarUsuarios(docs, escolaId) {
       atualizados += 1;
     } else {
       const senhaTemp = crypto.randomBytes(9).toString('base64url');
-      doc.senha = await bcrypt.hash(senhaTemp, 10);
+      doc.senha = senhaTemp;
       await Usuario.create(doc);
       criados += 1;
     }

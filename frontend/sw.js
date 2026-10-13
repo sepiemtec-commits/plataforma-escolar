@@ -1,5 +1,5 @@
 /* VEHO Edu — service worker: cache do shell + Web Push */
-const CACHE_NAME = 'veho-edu-shell-v8';
+const CACHE_NAME = 'veho-edu-shell-v17';
 const SHELL = [
   '/',
   '/index.html',
@@ -9,6 +9,10 @@ const SHELL = [
   '/icons/apple-touch-icon.png',
   '/styles/tokens.css',
   '/styles/fonts.css',
+  '/styles/acessibilidade.css',
+  '/js/acessibilidade.js',
+  '/js/menu-recolher.js',
+  '/js/trocar-senha.js',
   '/styles/login.css',
   '/styles/painel.css',
   '/js/api.js',

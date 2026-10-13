@@ -98,6 +98,7 @@ async function incrementarTokenVersion(usuario) {
   const v = Number((updated && updated.tokenVersion) || Number(usuario.tokenVersion || 0) + 1);
   usuario.tokenVersion = v;
   usuario.refreshTokens = [];
+  require('./authCache').invalidar(usuario._id);
   return v;
 }
 

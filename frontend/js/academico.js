@@ -465,3 +465,15 @@ function renderBoletimTabela(boletim, container) {
             Documento emitido pela plataforma VEHO Edu · ${escaparHtml(escola.nome || 'Escola')}
         </p>`;
 }
+
+function padronizarBarraRelatorio() {
+    const barra = document.querySelector('body.relatorio-page .rel-topbar');
+    if (!barra || barra.dataset.padraoBarra === '1') return;
+    const titulo = document.querySelector('.rel-container > .rel-titulo');
+    if (titulo && !barra.contains(titulo)) {
+        barra.insertBefore(titulo, barra.firstChild);
+    }
+    barra.dataset.padraoBarra = '1';
+}
+
+padronizarBarraRelatorio();

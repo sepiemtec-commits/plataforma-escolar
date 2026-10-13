@@ -13,25 +13,29 @@ const {
   idsIguais
 } = require('../utils/tenant');
 const { asScalarString } = require('../utils/sanitizeQuery');
+const { criarCache } = require('../utils/respostaCache');
+
+const cacheListaUsuarios = criarCache({ ttlMs: 4000, max: 200 });
 
 // ==================== LISTAR USUÁRIOS ====================
 router.get('/', autenticacao, verificarRole('admin', 'diretor', 'coordenador', 'secretaria'), requerEscola, async (req, res) => {
   try {
     const tipo = asScalarString(req.query.tipo);
+    const chave = `${req.usuario.escola_id || 'all'}:${tipo || '*'}`;
+    const payload = await cacheListaUsuarios.obter(chave, async () => {
+      let filtro = { ativo: true, ...filtroEscola(req) };
+      if (tipo) filtro.tipo = tipo;
 
-    let filtro = { ativo: true, ...filtroEscola(req) };
-    if (tipo) filtro.tipo = tipo;
+      const usuarios = await Usuario.find(filtro)
+        .select('-senha -refreshTokens -resetSenhaHash -resetSenhaExpira')
+        .populate('escola_id', 'nome')
+        .sort({ nome: 1 })
+        .lean();
 
-    const usuarios = await Usuario.find(filtro)
-      .select('-senha')
-      .populate('escola_id', 'nome')
-      .sort({ nome: 1 });
-
-    res.json({
-      sucesso: true,
-      total: usuarios.length,
-      usuarios
+      return JSON.stringify({ sucesso: true, total: usuarios.length, usuarios });
     });
+
+    res.type('application/json').send(payload);
 
   } catch (error) {
     console.error('Erro ao listar usuários:', error);

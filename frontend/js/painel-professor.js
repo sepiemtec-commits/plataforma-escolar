@@ -30,8 +30,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const usuarioOk = await verificarAutenticacao();
     if (!usuarioOk) return;
 
-    carregarSecao('dashboard');
+    if (!secaoPedidaNaUrl()) carregarSecao('dashboard');
     await carregarDados();
+    abrirSecaoPedida(carregarSecao);
 
     document.getElementById('dataPresenca').valueAsDate = new Date();
 
@@ -1488,8 +1489,29 @@ function prepararSecaoIA() {
         });
     }
     preencherSelectDisciplinasProfessor('iaDisciplina');
+    atualizarStatusNiceIA();
 }
 
+async function atualizarStatusNiceIA() {
+    const status = document.getElementById('niceChatStatus');
+    if (!status) return;
+    try {
+        const resp = await api.requisicao('/ia/status');
+        const ollama = resp.ollama || {};
+        const modelo = resp.env?.OLLAMA_MODEL || ollama.model || '—';
+        if (ollama.ok && ollama.modeloDisponivel) {
+            status.textContent = `Modelo local ativo: ${modelo} (Ollama) · créditos escola: ${resp.creditos?.saldo ?? '—'}`;
+        } else if (ollama.ok) {
+            status.textContent =
+                `Ollama online, mas o modelo "${modelo}" não está baixado. Rode: ollama pull ${modelo}`;
+        } else {
+            status.textContent =
+                'Ollama offline — usando motor de regras. Inicie com: ollama serve (e ollama pull llama3.2)';
+        }
+    } catch (e) {
+        status.textContent = e.message || 'Não foi possível consultar o status da IA.';
+    }
+}
 async function onMudancaTurmaIA() {
     const turmaId = document.getElementById('iaTurma').value;
     const selAluno = document.getElementById('iaAluno');
