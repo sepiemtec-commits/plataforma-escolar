@@ -24,6 +24,7 @@
     const link = document.querySelector(`.menu a[data-secao="${home}"]`);
     if (typeof window.carregarSecao === 'function') {
       window.carregarSecao(home, link);
+      sincronizarEndereco(home);
       return;
     }
     if (typeof window.carregarSecaoResp === 'function') {
@@ -41,6 +42,23 @@
     if (el) el.style.display = 'block';
     document.querySelectorAll('.menu a[data-secao]').forEach((a) => a.classList.remove('ativo'));
     link?.classList.add('ativo');
+    sincronizarEndereco(home);
+  }
+
+  function sincronizarEndereco(secaoId) {
+    if (typeof secaoId !== 'string' || !secaoId || !window.history.replaceState) return;
+    var url;
+    try {
+      url = new URL(window.location.href);
+    } catch (e) {
+      return;
+    }
+    var home = secaoHomeId();
+    if (home && secaoId === home) url.searchParams.delete('secao');
+    else url.searchParams.set('secao', secaoId);
+    var next = url.pathname + url.search + url.hash;
+    var atual = window.location.pathname + window.location.search + window.location.hash;
+    if (next !== atual) window.history.replaceState({ secao: secaoId }, '', next);
   }
 
   function secaoJaTemBarraTopo(secao) {
@@ -188,7 +206,9 @@
       if (typeof original !== 'function' || original._paginaInterna) return;
       const envolvida = function envolvida(...args) {
         const resultado = original.apply(this, args);
-        marcarPaginaInterna(typeof args[0] === 'string' ? args[0] : null);
+        const secaoId = typeof args[0] === 'string' ? args[0] : null;
+        marcarPaginaInterna(secaoId);
+        if (secaoId) sincronizarEndereco(secaoId);
         return resultado;
       };
       envolvida._paginaInterna = true;
