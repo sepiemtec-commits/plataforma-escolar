@@ -266,6 +266,18 @@
                     <button class="btn btn-secundario" id="btnRestaurarBackup" type="button">Restaurar arquivo</button>
                     <p id="backupStatus" class="texto-muted" style="font-size:13px;margin:12px 0;"></p>
                     <div id="listaBackups"></div>
+                    <hr style="margin:22px 0;border:none;border-top:1px solid #e0e0e0;">
+                    <h3 style="margin-bottom:8px;">Herdar dados de outra plataforma</h3>
+                    <p class="texto-muted" style="margin-bottom:12px;font-size:14px;">
+                        Envie a exportação em XLS, XLSX, CSV, DOC, DOCX, PDF, JSON ou TXT.
+                        O que for reconhecido entra como aluno e turma. Linhas incompletas são puladas e o restante continua.
+                    </p>
+                    <div class="form-group">
+                        <label for="herancaArquivo">Arquivo da outra plataforma</label>
+                        <input type="file" id="herancaArquivo" accept=".xls,.xlsx,.csv,.ods,.doc,.docx,.pdf,.json,.txt,.html,.htm">
+                    </div>
+                    <button class="btn btn-sucesso" id="btnHerdarDados" type="button">Importar para o VEHO</button>
+                    <p id="herancaResultado" class="texto-muted" style="font-size:13px;margin:12px 0;white-space:pre-wrap;"></p>
                     <hr style="margin:20px 0;border:none;border-top:1px solid #e0e0e0;">
                     <h3 style="margin-bottom:8px;">Assinatura VEHO</h3>
                     <p class="texto-muted" style="margin-bottom:12px;">Gerencie pagamento, cartão e cancelamento no portal Stripe.</p>

@@ -250,9 +250,50 @@ async function verificarAlertaBackupPortal(destinoId) {
     }
 }
 
+function textoResultadoHeranca(res) {
+    const partes = [res.mensagem || 'Importação concluída.'];
+    if (res.turmasCriadas) partes.push(`${res.turmasCriadas} turma(s) criada(s).`);
+    if (res.avisos?.length) partes.push(res.avisos.join(' '));
+    if (res.ignorados?.length) partes.push(`Ignorados: ${res.ignorados.join(' · ')}`);
+    return partes.join(' ');
+}
+
+async function herdarDadosAgora() {
+    const input = document.getElementById('herancaArquivo');
+    const arquivo = input?.files?.[0];
+    const saida = document.getElementById('herancaResultado');
+    if (!arquivo) {
+        alert('Escolha o arquivo exportado pela outra plataforma.');
+        return;
+    }
+    const btn = document.getElementById('btnHerdarDados');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Importando…';
+    }
+    if (saida) saida.textContent = 'Lendo o arquivo…';
+    try {
+        const res = await api.herdarDados(arquivo);
+        const texto = textoResultadoHeranca(res);
+        if (saida) saida.textContent = texto;
+        if (typeof mostrarSucesso === 'function') mostrarSucesso(res.mensagem || 'Dados herdados');
+        if (input) input.value = '';
+    } catch (e) {
+        if (saida) saida.textContent = e.message || 'A importação não foi concluída.';
+        if (typeof mostrarErro === 'function') mostrarErro(e.message);
+        else alert(e.message || 'A importação não foi concluída.');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Importar para o VEHO';
+        }
+    }
+}
+
 function configurarEventosBackup() {
     document.getElementById('btnSalvarDriveBackup')?.addEventListener('click', salvarPastaDriveBackup);
     document.getElementById('btnGerarBackup')?.addEventListener('click', gerarBackupAgora);
     document.getElementById('btnRestaurarBackup')?.addEventListener('click', restaurarBackupArquivoAgora);
+    document.getElementById('btnHerdarDados')?.addEventListener('click', herdarDadosAgora);
     document.getElementById('backupFrequencia')?.addEventListener('change', toggleDiaSemanaBackup);
 }

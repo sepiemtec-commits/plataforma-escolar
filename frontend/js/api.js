@@ -655,6 +655,24 @@ class API {
         }
         return dados;
     }
+    async herdarDados(arquivo) {
+        const token = localStorage.getItem('token');
+        this.token = token;
+        const form = new FormData();
+        form.append('arquivo', arquivo);
+        const headers = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const resposta = await fetch(`${this.baseURL}/heranca/importar`, {
+            method: 'POST',
+            headers,
+            body: form
+        });
+        const dados = await resposta.json().catch(() => ({}));
+        if (!resposta.ok) {
+            throw new Error(dados.mensagem || 'Não foi possível herdar os dados');
+        }
+        return dados;
+    }
     async restaurarBackupId(backupId) {
         return this.requisicao(`/backup/${backupId}/restaurar`, {
             method: 'POST',

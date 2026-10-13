@@ -115,6 +115,7 @@ function createApp(options = {}) {
   app.use('/api/bncc', rotasBncc);
   app.use('/api/simulados', rotasSimulados);
   app.use('/api/backup', require('./routes/backup'));
+  app.use('/api/heranca', require('./routes/heranca'));
 
   app.get('/health', (req, res) => {
     const dbOk = mongoose.connection.readyState === 1;
