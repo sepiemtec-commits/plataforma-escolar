@@ -1,7 +1,7 @@
 /* Aumentar ou diminuir as letras. A escolha fica salva neste navegador. */
 (function () {
   var CHAVE = 'veho-tamanho-letra';
-  var NIVEIS = [0.85, 1, 1.15, 1.3, 1.5];
+  var NIVEIS = [0.85, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
   function indiceDe(valor) {
     var n = parseFloat(valor);
